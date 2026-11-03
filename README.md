@@ -22,7 +22,7 @@ Hello, World!
 200
 ```
 
-## Syntax implemented in v0.2
+## Syntax implemented in v0.3
 
 ```text
 name = "World"
@@ -32,9 +32,9 @@ print "Hello, {name}!"
 print total
 ```
 
-Supports strings, numbers, booleans, variable assignments, arithmetic with operator precedence, parentheses, comparison operators (`==`, `!=`, `<`, `<=`, `>`, `>=`), `if` / `else` blocks, nesting, string interpolation, `print`, and line comments starting with `#`.
+Supports strings, numbers, booleans, variable assignments, arithmetic with operator precedence, parentheses, comparison operators (`==`, `!=`, `<`, `<=`, `>`, `>=`), `if` / `else` blocks, `while` loops, nesting, string interpolation, `print`, and line comments starting with `#`.
 
-**Not implemented yet:** functions, loops, modules, web APIs, or database access. No dynamic code evaluation is used.
+**Not implemented yet:** functions, `for` loops, modules, web APIs, or database access. No dynamic code evaluation is used.
 
 ## Conditional example
 
@@ -50,6 +50,18 @@ if amount >= 100 {
 Run with `node dist/src/cli.js examples/discount.flux`.
 
 `if` requires a boolean expression. Braces must appear on their own closing line; `else {` starts a separate line. This is experimental syntax and may change.
+
+## Loops
+
+```flux
+count = 3
+while count > 0 {
+  print count
+  count = count - 1
+}
+```
+
+Loops and other statements are subject to a 100,000-step execution limit to guard against accidental infinite loops. This is a basic safeguard, not a complete sandbox.
 
 ## Roadmap
 
