@@ -22,7 +22,7 @@ Hello, World!
 200
 ```
 
-## Syntax implemented in v0.3
+## Syntax implemented in v0.4
 
 ```text
 name = "World"
@@ -32,9 +32,9 @@ print "Hello, {name}!"
 print total
 ```
 
-Supports strings, numbers, booleans, variable assignments, arithmetic with operator precedence, parentheses, comparison operators (`==`, `!=`, `<`, `<=`, `>`, `>=`), `if` / `else` blocks, `while` loops, nesting, string interpolation, `print`, and line comments starting with `#`.
+Supports strings, numbers, booleans, variable assignments, arithmetic with operator precedence, parentheses, comparison operators (`==`, `!=`, `<`, `<=`, `>`, `>=`), `if` / `else` blocks, `while` loops, parameterized functions with local variables, nesting, string interpolation, `print`, and line comments starting with `#`.
 
-**Not implemented yet:** functions, `for` loops, modules, web APIs, or database access. No dynamic code evaluation is used.
+**Not implemented yet:** function return values, `for` loops, modules, web APIs, or database access. No dynamic code evaluation is used.
 
 ## Conditional example
 
@@ -62,6 +62,31 @@ while count > 0 {
 ```
 
 Loops and other statements are subject to a 100,000-step execution limit to guard against accidental infinite loops. This is a basic safeguard, not a complete sandbox.
+
+## Flux Studio (local browser playground)
+
+Build the interpreter and start a local HTTP server from the repository root:
+
+```bash
+npm install
+npm run build
+python3 -m http.server 8000
+```
+
+Open `http://localhost:8000/studio/`. Studio uses the same compiled Flux interpreter as the CLI. It runs code in a browser Web Worker with a 2-second timeout and lets you save the editor content locally or download a `.flux` file. The worker timeout is not a security sandbox.
+
+The Studio files live in `studio/`, and require the generated `dist/src/` files to be available alongside them. The editor is not yet deployed publicly.
+
+## Functions (experimental)
+
+```flux
+function greet(name) {
+  print "Hello, {name}!"
+}
+greet("Ada")
+```
+
+Functions support parameters and local variables, but do not yet return values. Define functions before calling them.
 
 ## Roadmap
 
