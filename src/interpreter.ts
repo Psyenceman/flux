@@ -1,49 +1,45 @@
+import { parseExpression, type Expression } from './parser.js';
 export type Value = string | number | boolean;
-
 export function run(source: string): string[] {
   const variables = new Map<string, Value>();
   const output: string[] = [];
-  const lines = source.split(/\r?\n/);
-
-  function evaluate(raw: string, line: number): Value {
-    const expr = raw.trim();
-    if (/^"(?:[^"\\]|\\.)*"$/.test(expr)) {
-      const value = JSON.parse(expr) as string;
-      return value.replace(/\{([a-zA-Z_][a-zA-Z_0-9]*)\}/g, (_, name: string) => {
-        if (!variables.has(name)) throw new Error(`Line ${line}: unknown variable '${name}'`);
-        return String(variables.get(name));
-      });
-    }
-    if (/^(true|false)$/.test(expr)) return expr === 'true';
-    if (/^-?\d+(?:\.\d+)?$/.test(expr)) return Number(expr);
-    if (/^[a-zA-Z_][a-zA-Z_0-9]*$/.test(expr)) {
-      if (!variables.has(expr)) throw new Error(`Line ${line}: unknown variable '${expr}'`);
-      return variables.get(expr)!;
-    }
-    const arithmetic = expr.match(/^([a-zA-Z_]\w*|-?\d+(?:\.\d+)?)\s*([+*/-])\s*([a-zA-Z_]\w*|-?\d+(?:\.\d+)?)$/);
-    if (arithmetic) {
-      const left = evaluate(arithmetic[1], line);
-      const right = evaluate(arithmetic[3], line);
-      if (typeof left !== 'number' || typeof right !== 'number') throw new Error(`Line ${line}: arithmetic requires numbers`);
-      switch (arithmetic[2]) {
-        case '+': return left + right;
-        case '-': return left - right;
-        case '*': return left * right;
-        case '/': if (right === 0) throw new Error(`Line ${line}: division by zero`); return left / right;
+  function evaluate(expr: Expression, line: number): Value {
+    switch (expr.kind) {
+      case 'number': case 'boolean': return expr.value;
+      case 'string':
+        return expr.value.replace(/\{([A-Za-z_]\w*)\}/g, (_, name: string) => {
+          if (!variables.has(name)) throw new Error(`Line ${line}: unknown variable '${name}'`);
+          return String(variables.get(name));
+        });
+      case 'variable':
+        if (!variables.has(expr.name)) throw new Error(`Line ${line}: unknown variable '${expr.name}'`);
+        return variables.get(expr.name)!;
+      case 'binary': {
+        const a = evaluate(expr.left, line), b = evaluate(expr.right, line);
+        if (typeof a !== 'number' || typeof b !== 'number') throw new Error(`Line ${line}: arithmetic requires numbers`);
+        if (expr.op === '+') return a + b;
+        if (expr.op === '-') return a - b;
+        if (expr.op === '*') return a * b;
+        if (b === 0) throw new Error(`Line ${line}: division by zero`);
+        return a / b;
       }
     }
-    throw new Error(`Line ${line}: unsupported expression '${expr}'`);
   }
-
-  lines.forEach((original, index) => {
-    const line = index + 1;
-    const statement = original.trim();
+  source.split(/\r?\n/).forEach((original, index) => {
+    const line = index + 1, statement = original.trim();
     if (!statement || statement.startsWith('#')) return;
-    const assignment = statement.match(/^([a-zA-Z_]\w*)\s*=\s*(.+)$/);
-    if (assignment) { variables.set(assignment[1], evaluate(assignment[2], line)); return; }
+    const assignment = statement.match(/^([A-Za-z_]\w*)\s*=\s*(.+)$/);
     const print = statement.match(/^print\s+(.+)$/);
-    if (print) { output.push(String(evaluate(print[1], line))); return; }
-    throw new Error(`Line ${line}: unknown statement '${statement}'`);
+    if (!assignment && !print) throw new Error(`Line ${line}: unknown statement '${statement}'`);
+    const expression = assignment ? assignment[2] : print![1];
+    let value: Value;
+    try { value = evaluate(parseExpression(expression), line); }
+    catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(message.startsWith('Line ') ? message : `Line ${line}: ${message}`);
+    }
+    if (assignment) variables.set(assignment[1], value);
+    else output.push(String(value));
   });
   return output;
 }
