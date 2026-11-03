@@ -20,3 +20,11 @@ test('while false skips body', () => assert.deepEqual(run('while false {\n print
 test('nested while and if', () => assert.deepEqual(run('i = 0\nwhile i < 3 {\n if i == 1 {\n print "middle"\n }\n i = i + 1\n}'), ['middle']));
 test('while requires boolean', () => assert.throws(() => run('while 1 {\n print "never"\n}'), /boolean condition/));
 test('infinite loop is bounded', () => assert.throws(() => run('while true {\n}\n'), /execution limit exceeded/));
+
+test('function with arguments', () => assert.deepEqual(run('function greet(name) {\n print "Hello {name}"\n}\ngreet("Ada")'), ['Hello Ada']));
+test('function multiple arguments', () => assert.deepEqual(run('function add(a, b) {\n print a + b\n}\nadd(2, 3)'), ['5']));
+test('function local scope', () => assert.deepEqual(run('x = 10\nfunction show(x) {\n print x\n}\nshow(2)\nprint x'), ['2', '10']));
+test('function no arguments', () => assert.deepEqual(run('function ping() {\n print "pong"\n}\nping()'), ['pong']));
+test('function wrong arity', () => assert.throws(() => run('function ping(x) {\n print x\n}\nping()'), /expects 1 arguments/));
+test('function undefined', () => assert.throws(() => run('missing()'), /unknown function/));
+test('function duplicate parameters', () => assert.throws(() => run('function bad(x, x) {\n print x\n}'), /invalid function parameters/));
