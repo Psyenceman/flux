@@ -3,7 +3,7 @@ export type Expression =
   | { kind: 'string'; value: string }
   | { kind: 'boolean'; value: boolean }
   | { kind: 'variable'; name: string }
-  | { kind: 'binary'; op: '+' | '-' | '*' | '/'; left: Expression; right: Expression };
+  | { kind: 'binary'; op: '+' | '-' | '*' | '/' | '==' | '!=' | '<' | '<=' | '>' | '>='; left: Expression; right: Expression };
 
 type Token = { kind: 'number' | 'string' | 'identifier' | 'operator' | 'lparen' | 'rparen' | 'eof'; text: string; offset: number };
 
@@ -29,8 +29,10 @@ export function parseExpression(source: string): Expression {
     }
     const id = rest.match(/^[A-Za-z_]\w*/);
     if (id) { tokens.push({ kind: 'identifier', text: id[0], offset: start }); pos += id[0].length; continue; }
+    const pair = source.slice(pos, pos + 2);
+    if (['==', '!=', '<=', '>='].includes(pair)) { tokens.push({ kind: 'operator', text: pair, offset: start }); pos += 2; continue; }
     const char = source[pos++];
-    if ('+-*/'.includes(char)) tokens.push({ kind: 'operator', text: char, offset: start });
+    if ('+-*/<>'.includes(char)) tokens.push({ kind: 'operator', text: char, offset: start });
     else if (char === '(') tokens.push({ kind: 'lparen', text: char, offset: start });
     else if (char === ')') tokens.push({ kind: 'rparen', text: char, offset: start });
     else throw new Error('Unexpected character ' + JSON.stringify(char) + ' at column ' + (start + 1));
@@ -60,8 +62,8 @@ export function parseExpression(source: string): Expression {
   function expression(min: number): Expression {
     let left = primary();
     while (peek().kind === 'operator') {
-      const op = peek().text as '+' | '-' | '*' | '/';
-      const precedence = op === '+' || op === '-' ? 1 : 2;
+      const op = peek().text as '+' | '-' | '*' | '/' | '==' | '!=' | '<' | '<=' | '>' | '>=';
+      const precedence = ['==', '!=', '<', '<=', '>', '>='].includes(op) ? 1 : op === '+' || op === '-' ? 2 : 3;
       if (precedence < min) break;
       take();
       const right = expression(precedence + 1);
