@@ -5,6 +5,12 @@ test('variables and interpolation', () => assert.deepEqual(run('name = "World"\n
 test('operator precedence', () => assert.deepEqual(run('print 2 + 3 * 4'), ['14']));
 test('parentheses', () => assert.deepEqual(run('print (2 + 3) * 4'), ['20']));
 test('arithmetic with variables', () => assert.deepEqual(run('x = 10\nprint x * 2'), ['20']));
+test('comparisons', () => assert.deepEqual(run('print 2 + 3 * 4 == 14\nprint 5 >= 6'), ['true', 'false']));
+test('if true branch', () => assert.deepEqual(run('score = 80\nif score >= 60 {\n print "pass"\n} else {\n print "fail"\n}'), ['pass']));
+test('if false branch', () => assert.deepEqual(run('score = 30\nif score >= 60 {\n print "pass"\n} else {\n print "fail"\n}'), ['fail']));
+test('nested if', () => assert.deepEqual(run('if true {\n if 3 > 2 {\n print "yes"\n }\n}'), ['yes']));
+test('rejects nonboolean conditions', () => assert.throws(() => run('if 1 {\nprint "x"\n}'), /boolean condition/));
+test('rejects missing braces', () => assert.throws(() => run('if true {\nprint "x"'), /missing closing brace/));
 test('rejects unknown variables', () => assert.throws(() => run('print missing'), /unknown variable/));
 test('rejects unsupported statements', () => assert.throws(() => run('delete everything'), /unknown statement/));
 test('division by zero', () => assert.throws(() => run('print 1 / 0'), /division by zero/));
