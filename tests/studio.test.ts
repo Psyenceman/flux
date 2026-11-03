@@ -7,9 +7,9 @@ test('Studio entrypoint and assets exist', () => {
     assert.equal(existsSync(path), true, `Missing ${path}`);
   }
 });
-test('Studio worker loads the compiled Flux interpreter', () => {
+test('Studio worker loads the bundled Flux interpreter', () => {
   const worker = readFileSync('studio/runner.js', 'utf8');
-  assert.match(worker, /import \{ run \} from '\.\.\/dist\/src\/interpreter\.js'/);
+  assert.match(worker, /import \{ run \} from '\.\/dist\/src\/interpreter\.js'/);
 });
 test('Studio has code execution and accessible output', () => {
   const html = readFileSync('studio/index.html', 'utf8');
