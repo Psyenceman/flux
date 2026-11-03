@@ -1,8 +1,43 @@
 import { parseExpression, type Expression } from './parser.js';
 export type Value = string | number | boolean;
+type Statement = { kind: 'assign'; name: string; expr: Expression; line: number } | { kind: 'print'; expr: Expression; line: number } | { kind: 'if'; condition: Expression; yes: Statement[]; no: Statement[]; line: number };
 export function run(source: string): string[] {
   const variables = new Map<string, Value>();
   const output: string[] = [];
+  const lines = source.split(/\r?\n/);
+  let cursor = 0;
+  function parse(raw: string, line: number): Expression {
+    try { return parseExpression(raw); }
+    catch (e) { throw new Error(`Line ${line}: ${e instanceof Error ? e.message : String(e)}`); }
+  }
+  function block(nested: boolean): Statement[] {
+    const result: Statement[] = [];
+    while (cursor < lines.length) {
+      const line = cursor + 1, statement = lines[cursor++].trim();
+      if (!statement || statement.startsWith('#')) continue;
+      if (statement === '}') {
+        if (!nested) throw new Error(`Line ${line}: unexpected closing brace`);
+        return result;
+      }
+      const condition = statement.match(/^if\s+(.+?)\s*\{$/);
+      if (condition) {
+        const yes = block(true);
+        let no: Statement[] = [];
+        let next = cursor;
+        while (next < lines.length && (!lines[next].trim() || lines[next].trim().startsWith('#'))) next++;
+        if (next < lines.length && lines[next].trim() === 'else {') { cursor = next + 1; no = block(true); }
+        result.push({ kind: 'if', condition: parse(condition[1], line), yes, no, line });
+        continue;
+      }
+      const assignment = statement.match(/^([A-Za-z_]\w*)\s*=\s*(.+)$/);
+      const print = statement.match(/^print\s+(.+)$/);
+      if (assignment) { result.push({ kind: 'assign', name: assignment[1], expr: parse(assignment[2], line), line }); continue; }
+      if (print) { result.push({ kind: 'print', expr: parse(print[1], line), line }); continue; }
+      throw new Error(`Line ${line}: unknown statement '${statement}'`);
+    }
+    if (nested) throw new Error(`Line ${lines.length}: missing closing brace`);
+    return result;
+  }
   function evaluate(expr: Expression, line: number): Value {
     switch (expr.kind) {
       case 'number': case 'boolean': return expr.value;
@@ -16,30 +51,35 @@ export function run(source: string): string[] {
         return variables.get(expr.name)!;
       case 'binary': {
         const a = evaluate(expr.left, line), b = evaluate(expr.right, line);
-        if (typeof a !== 'number' || typeof b !== 'number') throw new Error(`Line ${line}: arithmetic requires numbers`);
-        if (expr.op === '+') return a + b;
-        if (expr.op === '-') return a - b;
-        if (expr.op === '*') return a * b;
-        if (b === 0) throw new Error(`Line ${line}: division by zero`);
-        return a / b;
+        if (expr.op === '==') return a === b;
+        if (expr.op === '!=') return a !== b;
+        if (typeof a !== 'number' || typeof b !== 'number') throw new Error(`Line ${line}: arithmetic and ordering require numbers`);
+        switch (expr.op) {
+          case '+': return a + b;
+          case '-': return a - b;
+          case '*': return a * b;
+          case '/': if (b === 0) throw new Error(`Line ${line}: division by zero`); return a / b;
+          case '<': return a < b;
+          case '<=': return a <= b;
+          case '>': return a > b;
+          case '>=': return a >= b;
+        }
       }
     }
   }
-  source.split(/\r?\n/).forEach((original, index) => {
-    const line = index + 1, statement = original.trim();
-    if (!statement || statement.startsWith('#')) return;
-    const assignment = statement.match(/^([A-Za-z_]\w*)\s*=\s*(.+)$/);
-    const print = statement.match(/^print\s+(.+)$/);
-    if (!assignment && !print) throw new Error(`Line ${line}: unknown statement '${statement}'`);
-    const expression = assignment ? assignment[2] : print![1];
-    let value: Value;
-    try { value = evaluate(parseExpression(expression), line); }
-    catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(message.startsWith('Line ') ? message : `Line ${line}: ${message}`);
+  function execute(statements: Statement[]): void {
+    for (const stmt of statements) {
+      if (stmt.kind === 'if') {
+        const condition = evaluate(stmt.condition, stmt.line);
+        if (typeof condition !== 'boolean') throw new Error(`Line ${stmt.line}: if requires a boolean condition`);
+        execute(condition ? stmt.yes : stmt.no);
+      } else {
+        const value = evaluate(stmt.expr, stmt.line);
+        if (stmt.kind === 'assign') variables.set(stmt.name, value);
+        else output.push(String(value));
+      }
     }
-    if (assignment) variables.set(assignment[1], value);
-    else output.push(String(value));
-  });
+  }
+  execute(block(false));
   return output;
 }
