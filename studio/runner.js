@@ -1,4 +1,4 @@
-import { run } from '../dist/src/interpreter.js';
+import { run } from './dist/src/interpreter.js';
 self.onmessage = event => {
   try {
     if (typeof event.data !== 'string' || event.data.length > 100000) throw new Error('Program is too large.');
