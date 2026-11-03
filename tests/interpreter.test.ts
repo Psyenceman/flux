@@ -14,3 +14,9 @@ test('rejects missing braces', () => assert.throws(() => run('if true {\nprint "
 test('rejects unknown variables', () => assert.throws(() => run('print missing'), /unknown variable/));
 test('rejects unsupported statements', () => assert.throws(() => run('delete everything'), /unknown statement/));
 test('division by zero', () => assert.throws(() => run('print 1 / 0'), /division by zero/));
+
+test('while loop counts', () => assert.deepEqual(run('i = 0\nwhile i < 3 {\n print i\n i = i + 1\n}'), ['0', '1', '2']));
+test('while false skips body', () => assert.deepEqual(run('while false {\n print "never"\n}\nprint "done"'), ['done']));
+test('nested while and if', () => assert.deepEqual(run('i = 0\nwhile i < 3 {\n if i == 1 {\n print "middle"\n }\n i = i + 1\n}'), ['middle']));
+test('while requires boolean', () => assert.throws(() => run('while 1 {\n print "never"\n}'), /boolean condition/));
+test('infinite loop is bounded', () => assert.throws(() => run('while true {\n}\n'), /execution limit exceeded/));
