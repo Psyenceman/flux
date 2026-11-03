@@ -1,0 +1,7 @@
+import { test } from 'node:test';
+import { strict as assert } from 'node:assert';
+import { run } from '../src/interpreter.js';
+test('variables and interpolation', () => assert.deepEqual(run('name = "World"\nprint "Hello, {name}!"'), ['Hello, World!']));
+test('arithmetic', () => assert.deepEqual(run('x = 10\nprint x * 2'), ['20']));
+test('rejects unknown variables', () => assert.throws(() => run('print missing'), /unknown variable/));
+test('rejects unsupported statements', () => assert.throws(() => run('delete everything'), /unknown statement/));
