@@ -15,7 +15,8 @@ export function run(source: string): string[] {
     while (cursor < lines.length) {
       const line = cursor + 1, statement = lines[cursor++].trim();
       if (!statement || statement.startsWith('#')) continue;
-      if (statement === '}') {
+      if (statement === '}' || statement === '} else {') {
+        if (statement === '} else {') lines.splice(cursor, 0, 'else {');
         if (!nested) throw new Error(`Line ${line}: unexpected closing brace`);
         return result;
       }
