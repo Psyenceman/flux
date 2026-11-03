@@ -1,8 +1,10 @@
 import { parseExpression, type Expression } from './parser.js';
 export type Value = string | number | boolean;
-type Statement = { kind: 'while'; condition: Expression; body: Statement[]; line: number } | { kind: 'assign'; name: string; expr: Expression; line: number } | { kind: 'print'; expr: Expression; line: number } | { kind: 'if'; condition: Expression; yes: Statement[]; no: Statement[]; line: number };
+type Statement = { kind: 'function'; name: string; params: string[]; body: Statement[]; line: number } | { kind: 'call'; name: string; args: Expression[]; line: number } | { kind: 'while'; condition: Expression; body: Statement[]; line: number } | { kind: 'assign'; name: string; expr: Expression; line: number } | { kind: 'print'; expr: Expression; line: number } | { kind: 'if'; condition: Expression; yes: Statement[]; no: Statement[]; line: number };
 export function run(source: string): string[] {
-  const variables = new Map<string, Value>();
+  let variables = new Map<string, Value>();
+  const functions = new Map<string, { params: string[]; body: Statement[] }>();
+  let callDepth = 0;
   const output: string[] = [];
   const lines = source.split(/\r?\n/);
   let cursor = 0;
@@ -33,6 +35,19 @@ export function run(source: string): string[] {
       const loop = statement.match(/^while\s+(.+?)\s*\{$/);
       if (loop) {
         result.push({ kind: 'while', condition: parse(loop[1], line), body: block(true), line });
+        continue;
+      }
+      const definition = statement.match(/^function\s+([A-Za-z_]\w*)\s*\(([^()]*)\)\s*\{$/);
+      if (definition) {
+        const params = definition[2].trim() ? definition[2].split(',').map(p => p.trim()) : [];
+        if (params.some(p => !/^[A-Za-z_]\w*$/.test(p)) || new Set(params).size !== params.length) throw new Error(`Line ${line}: invalid function parameters`);
+        result.push({ kind: 'function', name: definition[1], params, body: block(true), line });
+        continue;
+      }
+      const call = statement.match(/^([A-Za-z_]\w*)\s*\((.*)\)$/);
+      if (call) {
+        const parts = call[2].trim() ? call[2].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(p => p.trim()) : [];
+        result.push({ kind: 'call', name: call[1], args: parts.map(p => parse(p, line)), line });
         continue;
       }
       const assignment = statement.match(/^([A-Za-z_]\w*)\s*=\s*(.+)$/);
@@ -78,7 +93,19 @@ export function run(source: string): string[] {
   function execute(statements: Statement[]): void {
     for (const stmt of statements) {
       if (++steps > maxSteps) throw new Error(`Line ${stmt.line}: execution limit exceeded (${maxSteps} steps)`);
-      if (stmt.kind === 'while') {
+      if (stmt.kind === 'function') {
+        if (functions.has(stmt.name)) throw new Error(`Line ${stmt.line}: function '${stmt.name}' already defined`);
+        functions.set(stmt.name, { params: stmt.params, body: stmt.body });
+      } else if (stmt.kind === 'call') {
+        const fn = functions.get(stmt.name);
+        if (!fn) throw new Error(`Line ${stmt.line}: unknown function '${stmt.name}'`);
+        if (fn.params.length !== stmt.args.length) throw new Error(`Line ${stmt.line}: function '${stmt.name}' expects ${fn.params.length} arguments`);
+        const values = stmt.args.map(a => evaluate(a, stmt.line));
+        if (++callDepth > 100) throw new Error(`Line ${stmt.line}: maximum function call depth exceeded`);
+        const previous = variables;
+        variables = new Map(fn.params.map((name, i) => [name, values[i]]));
+        try { execute(fn.body); } finally { variables = previous; callDepth--; }
+      } else if (stmt.kind === 'while') {
         while (true) {
           if (++steps > maxSteps) throw new Error(`Line ${stmt.line}: execution limit exceeded (${maxSteps} steps)`);
           const condition = evaluate(stmt.condition, stmt.line);
