@@ -1,6 +1,6 @@
 import { parseExpression, type Expression } from './parser.js';
 export type Value = string | number | boolean;
-type Statement = { kind: 'assign'; name: string; expr: Expression; line: number } | { kind: 'print'; expr: Expression; line: number } | { kind: 'if'; condition: Expression; yes: Statement[]; no: Statement[]; line: number };
+type Statement = { kind: 'while'; condition: Expression; body: Statement[]; line: number } | { kind: 'assign'; name: string; expr: Expression; line: number } | { kind: 'print'; expr: Expression; line: number } | { kind: 'if'; condition: Expression; yes: Statement[]; no: Statement[]; line: number };
 export function run(source: string): string[] {
   const variables = new Map<string, Value>();
   const output: string[] = [];
@@ -28,6 +28,11 @@ export function run(source: string): string[] {
         while (next < lines.length && (!lines[next].trim() || lines[next].trim().startsWith('#'))) next++;
         if (next < lines.length && lines[next].trim() === 'else {') { cursor = next + 1; no = block(true); }
         result.push({ kind: 'if', condition: parse(condition[1], line), yes, no, line });
+        continue;
+      }
+      const loop = statement.match(/^while\s+(.+?)\s*\{$/);
+      if (loop) {
+        result.push({ kind: 'while', condition: parse(loop[1], line), body: block(true), line });
         continue;
       }
       const assignment = statement.match(/^([A-Za-z_]\w*)\s*=\s*(.+)$/);
@@ -68,9 +73,20 @@ export function run(source: string): string[] {
       }
     }
   }
+  let steps = 0;
+  const maxSteps = 100000;
   function execute(statements: Statement[]): void {
     for (const stmt of statements) {
-      if (stmt.kind === 'if') {
+      if (++steps > maxSteps) throw new Error(`Line ${stmt.line}: execution limit exceeded (${maxSteps} steps)`);
+      if (stmt.kind === 'while') {
+        while (true) {
+          if (++steps > maxSteps) throw new Error(`Line ${stmt.line}: execution limit exceeded (${maxSteps} steps)`);
+          const condition = evaluate(stmt.condition, stmt.line);
+          if (typeof condition !== 'boolean') throw new Error(`Line ${stmt.line}: while requires a boolean condition`);
+          if (!condition) break;
+          execute(stmt.body);
+        }
+      } else if (stmt.kind === 'if') {
         const condition = evaluate(stmt.condition, stmt.line);
         if (typeof condition !== 'boolean') throw new Error(`Line ${stmt.line}: if requires a boolean condition`);
         execute(condition ? stmt.yes : stmt.no);
