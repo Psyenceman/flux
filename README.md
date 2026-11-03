@@ -22,7 +22,7 @@ Hello, World!
 200
 ```
 
-## Syntax implemented in v0.1
+## Syntax implemented in v0.2
 
 ```text
 name = "World"
@@ -32,15 +32,30 @@ print "Hello, {name}!"
 print total
 ```
 
-Supports strings, numbers, booleans, simple variable assignments, one binary arithmetic operation per expression, string interpolation, `print`, and line comments starting with `#`.
+Supports strings, numbers, booleans, variable assignments, arithmetic with operator precedence, parentheses, comparison operators (`==`, `!=`, `<`, `<=`, `>`, `>=`), `if` / `else` blocks, nesting, string interpolation, `print`, and line comments starting with `#`.
 
-**Not implemented yet:** conditional statements, functions, loops, modules, web APIs, or database access. No dynamic code evaluation is used.
+**Not implemented yet:** functions, loops, modules, web APIs, or database access. No dynamic code evaluation is used.
+
+## Conditional example
+
+```flux
+amount = 120
+if amount >= 100 {
+  print "Discount eligible"
+} else {
+  print "Standard price"
+}
+```
+
+Run with `node dist/src/cli.js examples/discount.flux`.
+
+`if` requires a boolean expression. Braces must appear on their own closing line; `else {` starts a separate line. This is experimental syntax and may change.
 
 ## Roadmap
 
 1. Formalize the grammar and language specification.
 2. Add a tokenizer, parser, AST, and better diagnostics.
-3. Introduce control flow, functions, and types.
+3. Expand control flow with functions, loops, and types.
 4. Build JavaScript output and optional web libraries.
 5. Publish documentation and an online playground.
 
