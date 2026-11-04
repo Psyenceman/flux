@@ -1,6 +1,7 @@
 // First real Flux automation: authenticated request intake with optional outbound webhook.
 // This is a Netlify Function; it does not execute arbitrary Flux source or store data.
 import { createHash, timingSafeEqual, randomUUID } from 'node:crypto';
+import { getStore } from '@netlify/blobs';
 
 const json = (statusCode, data) => ({
   statusCode,
@@ -29,8 +30,17 @@ export async function handler(event) {
   const record={id,name:name.trim(),email:email.trim(),message:message.trim(),receivedAt:new Date().toISOString()};
   const trace=[{step:'Receive webhook',status:'completed'},{step:'Validate request',status:'completed'}];
   if(dryRun){trace.push({step:'Notify destination',status:'skipped'});return json(200,{ok:true,dryRun:true,id,trace,note:'Validated only; no notification or storage'});}
+  try {
+    const store=getStore('flux-requests');
+    await store.setJSON('requests/'+record.receivedAt.slice(0,10)+'/'+id,record);
+    trace.push({step:'Store request',status:'completed'});
+  } catch (error) {
+    console.error(JSON.stringify({event:'flux.request.storage_failed',id,reason:String(error)}));
+    trace.push({step:'Store request',status:'failed'});
+    return json(503,{ok:false,id,error:'Persistent storage unavailable; request not accepted',trace});
+  }
   const endpoint=process.env.FLUX_NOTIFICATION_WEBHOOK_URL;
-  if(!endpoint){trace.push({step:'Notify destination',status:'skipped'});return json(200,{ok:true,id,trace,note:'Request validated, but not stored; notification is not configured'});}
+  if(!endpoint){trace.push({step:'Notify destination',status:'skipped'});return json(200,{ok:true,id,trace,note:'Request saved; notification is not configured'});}
   let url;
   try{url=new URL(endpoint);if(url.protocol!=='https:'||url.username||url.password)throw Error('Invalid endpoint');}
   catch{return json(503,{ok:false,id,error:'Notification endpoint must be an HTTPS URL',trace});}
@@ -39,7 +49,7 @@ export async function handler(event) {
     if(!response.ok)throw Error('Destination returned HTTP '+response.status);
     trace.push({step:'Notify destination',status:'completed'});
     console.info(JSON.stringify({event:'flux.request.forwarded',id,at:record.receivedAt}));
-    return json(200,{ok:true,id,trace,note:'Notification delivered; durable database storage not configured'});
+    return json(200,{ok:true,id,trace,note:'Request saved and notification delivered'});
   }catch(e){
     trace.push({step:'Notify destination',status:'failed'});
     console.error(JSON.stringify({event:'flux.request.failed',id,reason:String(e)}));
