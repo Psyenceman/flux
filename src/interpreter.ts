@@ -1,8 +1,8 @@
 import { parseExpression, type Expression } from './parser.js';
 export type Value = string | number | boolean | null | Value[] | { [key: string]: Value };
-export type TraceEvent = { line: number; kind: string; status: 'started' | 'completed' | 'skipped' | 'failed'; label?: string; detail?: string };
+export type TraceEvent = { line: number; kind: string; status: 'started' | 'completed' | 'skipped' | 'failed' | 'planned'; label?: string; detail?: string };
 export type RunOptions = { dryRun?: boolean; onTrace?: (event: TraceEvent) => void };
-type Statement = { kind: 'workflow'; name: string; body: Statement[]; line: number } | { kind: 'step'; name: string; body: Statement[]; line: number } | { kind: 'return'; expr: Expression; line: number } | { kind: 'function'; name: string; params: string[]; body: Statement[]; line: number } | { kind: 'call'; name: string; args: Expression[]; line: number } | { kind: 'while'; condition: Expression; body: Statement[]; line: number } | { kind: 'assign'; name: string; expr: Expression; line: number } | { kind: 'print'; expr: Expression; line: number } | { kind: 'if'; condition: Expression; yes: Statement[]; no: Statement[]; line: number };
+type Statement = { kind: 'plan'; action: string; payload: Expression; line: number } | { kind: 'workflow'; name: string; body: Statement[]; line: number } | { kind: 'step'; name: string; body: Statement[]; line: number } | { kind: 'return'; expr: Expression; line: number } | { kind: 'function'; name: string; params: string[]; body: Statement[]; line: number } | { kind: 'call'; name: string; args: Expression[]; line: number } | { kind: 'while'; condition: Expression; body: Statement[]; line: number } | { kind: 'assign'; name: string; expr: Expression; line: number } | { kind: 'print'; expr: Expression; line: number } | { kind: 'if'; condition: Expression; yes: Statement[]; no: Statement[]; line: number };
 export function run(source: string, options: RunOptions = {}): string[] {
   let variables = new Map<string, Value>();
   const functions = new Map<string, { params: string[]; body: Statement[] }>();
@@ -32,6 +32,8 @@ export function run(source: string, options: RunOptions = {}): string[] {
       if (workflow) { result.push({kind:'workflow',name:workflow[1],body:block(true),line}); continue; }
       const step = statement.match(/^step\s+"([^"]+)"\s*\{$/);
       if (step) { result.push({kind:'step',name:step[1],body:block(true),line}); continue; }
+      const planned = statement.match(/^plan\s+"([^"]+)"\s+with\s+(.+)$/);
+      if (planned) { result.push({kind:'plan',action:planned[1],payload:parse(planned[2],line),line}); continue; }
       const condition = statement.match(/^if\s+(.+?)\s*\{$/);
       if (condition) {
         const yes = block(true);
@@ -136,6 +138,11 @@ export function run(source: string, options: RunOptions = {}): string[] {
           trace({line:stmt.line,kind:stmt.kind,status:'failed',label:stmt.name,detail:error instanceof Error?error.message:String(error)});
           throw error;
         } finally { if (stmt.kind === 'workflow') workflowDepth--; }
+      } else if (stmt.kind === 'plan') {
+        if (!workflowDepth) throw new Error(`Line ${stmt.line}: plan requires a workflow`);
+        const payload = evaluate(stmt.payload,stmt.line);
+        if (payload === null || Array.isArray(payload) || typeof payload !== 'object') throw new Error(`Line ${stmt.line}: planned action requires a record`);
+        trace({line:stmt.line,kind:'action',status:'planned',label:stmt.action,detail:display(payload)});
       } else if (stmt.kind === 'function') {
         if (functions.has(stmt.name)) throw new Error(`Line ${stmt.line}: function '${stmt.name}' already defined`);
         functions.set(stmt.name, { params: stmt.params, body: stmt.body });
