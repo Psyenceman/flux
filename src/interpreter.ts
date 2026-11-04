@@ -160,8 +160,8 @@ export function run(source: string, options: RunOptions = {}): string[] {
       } else {
         const value = evaluate(stmt.expr, stmt.line);
         if (stmt.kind === 'assign') variables.set(stmt.name, value);
-        else if (!options.dryRun) output.push(display(value));
-        trace({line:stmt.line,kind:stmt.kind,status:'completed',detail:stmt.kind === 'assign' ? stmt.name : (options.dryRun ? 'simulated output' : display(value))});
+        else output.push(display(value));
+        trace({line:stmt.line,kind:stmt.kind,status:'completed',detail:stmt.kind === 'assign' ? stmt.name : display(value)});
       }
     }
   }
