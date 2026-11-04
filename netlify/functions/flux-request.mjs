@@ -37,7 +37,7 @@ export async function handler(event) {
   } catch (error) {
     console.error(JSON.stringify({event:'flux.request.storage_failed',id,reason:String(error)}));
     trace.push({step:'Store request',status:'failed'});
-    return json(503,{ok:false,id,error:'Persistent storage unavailable; request not accepted',trace});
+    return json(503,{ok:false,id,error:'Persistent storage unavailable; request not accepted',diagnostic:String(error?.message||'').includes('environment')?'storage_environment':String(error?.message||'').includes('token')?'storage_credentials':String(error?.message||'').includes('site')?'storage_site_context':'storage_unknown',trace});
   }
   const endpoint=process.env.FLUX_NOTIFICATION_WEBHOOK_URL;
   if(!endpoint){trace.push({step:'Notify destination',status:'skipped'});return json(200,{ok:true,id,trace,note:'Request saved; notification is not configured'});}
