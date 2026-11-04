@@ -4,6 +4,7 @@ const examples = {
   hello: '# Your first Flux program\nname = "World"\nprint "Hello, {name}!"\n',
   discount: '# A simple business rule\ncustomer = "Ada"\ntotal = 120\ndiscount = 20\nif total >= 100 {\n  final = total - discount\n} else {\n  final = total\n}\nprint "Total for {customer}: {final}"\n',
   loop: 'count = 5\nwhile count > 0 {\n  print count\n  count = count - 1\n}\nprint "Go!"\n',
+  records: 'customer = {name: "Ada", orders: [120, 80]}\nfunction total(a, b) {\n  return a + b\n}\nprint "Customer: {customer}"\nprint total(customer.orders[0], customer.orders[1])\n',
   functions: 'function greet(name) {\n  print "Hello, {name}!"\n}\ngreet("Ada")\ngreet("Luca")\n'
 };
 const editor = document.querySelector('#code');
