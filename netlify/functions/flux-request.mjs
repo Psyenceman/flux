@@ -1,7 +1,7 @@
 // First real Flux automation: authenticated request intake with optional outbound webhook.
 // This is a Netlify Function; it does not execute arbitrary Flux source or store data.
 import { createHash, timingSafeEqual, randomUUID } from 'node:crypto';
-import { getStore } from '@netlify/blobs';
+import { getStore, connectLambda } from '@netlify/blobs';
 
 const json = (statusCode, data) => ({
   statusCode,
@@ -31,6 +31,7 @@ export async function handler(event) {
   const trace=[{step:'Receive webhook',status:'completed'},{step:'Validate request',status:'completed'}];
   if(dryRun){trace.push({step:'Notify destination',status:'skipped'});return json(200,{ok:true,dryRun:true,id,trace,note:'Validated only; no notification or storage'});}
   try {
+    connectLambda(event);
     const store=getStore('flux-requests');
     await store.setJSON('requests/'+record.receivedAt.slice(0,10)+'/'+id,record);
     trace.push({step:'Store request',status:'completed'});
