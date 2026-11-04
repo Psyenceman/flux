@@ -27,13 +27,22 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0b1420;padding:15px;
 <label><input id="dry" type="checkbox" checked style="width:auto"> Dry run — validate only, no forwarding</label>
 <button type="submit" id="send">Send test request</button><button class="secondary" type="button" id="clear">Clear token</button>
 </form>
-<p class="muted">Turning off dry run may forward data to the configured notification destination. The current server function does not persist records in a database.</p></section>
+<p class="muted">Turning off dry run may forward data to the configured notification destination. When dry run is off, the request is stored in Netlify Blobs before any notification is attempted. This is persistent object storage, not a relational database.</p></section>
+<section><h2>3. Saved requests</h2><p>Load the latest 30 stored requests using the same token. The history contains names, email addresses and messages; keep the token private.</p><button type="button" id="history">Load saved requests</button><pre id="history-result">No history loaded.</pre></section>
 <section aria-live="polite"><h2>Result</h2><p id="status">Ready to test.</p><pre id="result">No request sent.</pre></section>
 <script>
 const endpoint='/.netlify/functions/flux-request';
 const status=document.getElementById('status'),result=document.getElementById('result');
 const unauthorized=document.getElementById('unauthorized'),send=document.getElementById('send');
 const token=document.getElementById('token');
+document.getElementById('history').addEventListener('click',async()=>{
+ const key=token.value;
+ if(key.length<24){status.textContent='Enter your token to read saved requests';return;}
+ const button=document.getElementById('history');button.disabled=true;
+ try{const response=await fetch('/.netlify/functions/flux-requests',{headers:{'x-flux-token':key},cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(10000)});
+ const data=await response.json();document.getElementById('history-result').textContent=JSON.stringify(data,null,2);status.textContent='History: HTTP '+response.status;
+ }catch(e){status.textContent='History request failed';document.getElementById('history-result').textContent=String(e);}finally{button.disabled=false;token.value='';}
+});
 document.getElementById('clear').addEventListener('click',()=>{token.value='';status.textContent='Token cleared from the form.';});
 async function request(headers,body){
  unauthorized.disabled=true;send.disabled=true;status.textContent='Contacting Flux endpoint…';result.textContent='';
