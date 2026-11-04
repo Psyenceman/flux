@@ -17,6 +17,6 @@ export async function handler(event){
   try{const url=new URL(process.env.FLUX_NOTIFICATION_WEBHOOK_URL);if(url.protocol!=='https:'||url.username||url.password)throw Error();notificationUrl=url.toString();}
   catch{return json(503,{ok:false,error:'Server notification URL invalid'});}
  }
- try{const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl});return json(200,result);}
+ try{const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloKey:process.env.FLUX_TRELLO_API_KEY,trelloToken:process.env.FLUX_TRELLO_TOKEN});return json(200,result);}
  catch(error){console.error(JSON.stringify({event:'flux.graph.failed',reason:String(error?.message||error)}));return json(422,{ok:false,error:String(error?.message||'Execution failed').slice(0,240)});}
 }
