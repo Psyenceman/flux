@@ -68,7 +68,8 @@ export function run(source: string): string[] {
       case 'null': return null;
       case 'list': return expr.items.map(item => evaluate(item,line));
       case 'record': { const record: {[key:string]:Value} = Object.create(null); for (const field of expr.fields) record[field.name] = evaluate(field.value,line); return record; }
-      case 'field': { const target = evaluate(expr.target,line); if (target === null || Array.isArray(target) || typeof target !== 'object') throw new Error(`Line ${line}: field access requires a record`); if (!Object.hasOwn(target,expr.name)) throw new Error(`Line ${line}: unknown field '${expr.name}'`); return target[expr.name]; }
+      case 'field': { const target = evaluate(expr.target,line); if (Array.isArray(target) && expr.name === 'length') return target.length;
+        if (target === null || Array.isArray(target) || typeof target !== 'object') throw new Error(`Line ${line}: field access requires a record`); if (!Object.hasOwn(target,expr.name)) throw new Error(`Line ${line}: unknown field '${expr.name}'`); return target[expr.name]; }
       case 'index': { const target = evaluate(expr.target,line), index = evaluate(expr.index,line); if (!Array.isArray(target)) throw new Error(`Line ${line}: indexing requires a list`); if (typeof index !== 'number' || !Number.isInteger(index) || index < 0 || index >= target.length) throw new Error(`Line ${line}: list index out of range`); return target[index]; }
       case 'call': return invoke(expr.name,expr.args,line);
       case 'number': case 'boolean': return expr.value;
