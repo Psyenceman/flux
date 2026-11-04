@@ -19,3 +19,15 @@ test('dry run traces safe execution', () => {
 test('reject steps outside workflow', () => {
   assert.throws(() => run(['step "Invalid" {', ' print 1', '}'].join('\n')), /step requires a workflow/);
 });
+
+test('planned actions are traceable without side effects', () => {
+  const source = ['workflow "Lead" {',' step "Notify" {','  customer = {email: "ada@example.com"}','  plan "send-email" with {to: customer.email, subject: "Welcome"}',' }','}'].join('\n');
+  const result = runWorkflow(source,true);
+  const action = result.trace.find(event => event.kind === 'action');
+  assert.equal(action?.status,'planned');
+  assert.equal(action?.label,'send-email');
+  assert.match(action?.detail || '', /ada@example.com/);
+});
+test('planned actions outside workflow are rejected', () => {
+  assert.throws(() => run('plan "send-email" with {to: "a"}'), /plan requires a workflow/);
+});
