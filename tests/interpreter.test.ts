@@ -28,3 +28,13 @@ test('function no arguments', () => assert.deepEqual(run('function ping() {\n pr
 test('function wrong arity', () => assert.throws(() => run('function ping(x) {\n print x\n}\nping()'), /expects 1 arguments/));
 test('function undefined', () => assert.throws(() => run('missing()'), /unknown function/));
 test('function duplicate parameters', () => assert.throws(() => run('function bad(x, x) {\n print x\n}'), /invalid function parameters/));
+
+test('null literal', () => assert.deepEqual(run('print null'), ['null']));
+test('lists and indexing', () => assert.deepEqual(run('items = [10, 20, 30]\nprint items[1]'), ['20']));
+test('records and field access', () => assert.deepEqual(run('customer = {name: "Ada", active: true}\nprint customer.name'), ['Ada']));
+test('nested structures', () => assert.deepEqual(run('data = {items: [{total: 42}]}\nprint data.items[0].total'), ['42']));
+test('return value from function', () => assert.deepEqual(run('function add(a, b) {\n return a + b\n}\nprint add(2, 3)'), ['5']));
+test('function without return yields null', () => assert.deepEqual(run('function noop() {\n print "ok"\n}\nprint noop()'), ['ok','null']));
+test('return outside function rejected', () => assert.throws(() => run('return 1'), /return outside function/));
+test('invalid list index rejected', () => assert.throws(() => run('print [1][3]'), /list index out of range/));
+test('unknown record field rejected', () => assert.throws(() => run('print {name: "Ada"}.age'), /unknown field/));
