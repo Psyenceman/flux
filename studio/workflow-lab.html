@@ -11,11 +11,11 @@ label{display:block;margin:12px 0 5px;color:#d5e1ef;font-size:14px}input,select{
 <h1>See how Flux executes a workflow</h1>
 <p>Run a customer-request workflow and inspect every step. Dry run simulates the same local program. Actions such as email are shown as plans only: nothing is sent or changed.</p>
 <section class="builder"><h2>Visual Builder</h2><p>Add actions, set conditions and reorder steps. Flux generates the code for you; all actions remain simulations.</p>
-<label for="workflow-name">Workflow name</label><input id="workflow-name" value="Customer request">
+<label for="workflow-name">Workflow name</label><input id="workflow-name" value="Customer request"><label for="request-outcome">Test scenario</label><select id="request-outcome"><option value="approved">Request approved</option><option value="rejected">Request rejected</option></select>
 <div id="workflow-summary" class="workflow-summary" aria-live="polite"></div><div id="actions" aria-label="Workflow actions"></div>
 <button id="add-action" type="button" class="secondary">+ Add action</button>
 <button id="generate" type="button">Generate Flux code</button>
-<button id="generate-run" class="secondary" type="button">Generate &amp; simulate</button>
+<button id="generate-run" class="secondary" type="button">Generate &amp; simulate</button><button id="save-workflow" class="secondary" type="button">Save locally</button><button id="load-workflow" class="secondary" type="button">Load saved</button>
 <p class="builder-note">Actions are plans only. No email, webhook or database write is performed.</p></section><div class="layout">
 <section><h2>Workflow code</h2><textarea id="code" spellcheck="false">workflow "Customer request" {
   step "Validate" {
@@ -83,7 +83,8 @@ function renderActions(){
 function generate(){
  const name=document.querySelector('#workflow-name').value.trim()||'My workflow';
  if(!steps.length){state.textContent='Add at least one action';state.classList.add('failed');return false;}
- const lines=['workflow '+quote(name)+' {','  step "Check request" {','    approved = true','  }'];
+ const approved=document.querySelector('#request-outcome').value==='approved';
+ const lines=['workflow '+quote(name)+' {','  step "Check request" {','    approved = '+String(approved),'  }'];
  for(let i=0;i<steps.length;i++){
   const step=steps[i],target=step.target.trim(),message=step.message.trim();
   if(!target){state.textContent='Enter a target for step '+(i+1);state.classList.add('failed');return false;}
@@ -102,6 +103,22 @@ function generate(){
  lines.push('}');
  code.value=lines.join('\n');state.textContent='Code generated — ready to simulate';state.classList.remove('failed');return true;
 }
+const storageKey='flux-workflow-lab-v1';
+document.querySelector('#save-workflow').addEventListener('click',()=>{
+ try{localStorage.setItem(storageKey,JSON.stringify({version:1,name:document.querySelector('#workflow-name').value,outcome:document.querySelector('#request-outcome').value,steps:steps.map(({type,condition,target,message})=>({type,condition,target,message}))}));state.textContent='Saved in this browser';state.classList.remove('failed');}
+ catch{state.textContent='Could not save in this browser';state.classList.add('failed');}
+});
+document.querySelector('#load-workflow').addEventListener('click',()=>{
+ try{
+ const raw=localStorage.getItem(storageKey);if(!raw){state.textContent='No saved workflow in this browser';return;}
+ const data=JSON.parse(raw);
+ if(data.version!==1||!Array.isArray(data.steps)||data.steps.length>100||data.steps.some(s=>!actionTypes.some(t=>t[0]===s.type)||!['always','approved','rejected'].includes(s.condition)||typeof s.target!=='string'||typeof s.message!=='string'))throw Error('Invalid saved workflow');
+ document.querySelector('#workflow-name').value=String(data.name||'My workflow').slice(0,120);
+ document.querySelector('#request-outcome').value=data.outcome==='rejected'?'rejected':'approved';
+ steps.splice(0);for(const step of data.steps)steps.push({id:++nextId,type:step.type,condition:step.condition,target:step.target,message:step.message,expanded:false});
+ renderActions();state.textContent='Saved workflow loaded';state.classList.remove('failed');
+ }catch{state.textContent='Saved workflow is invalid';state.classList.add('failed');}
+});
 document.querySelector('#add-action').addEventListener('click',()=>addAction('log','always','',''));
 document.querySelector('#generate').addEventListener('click',generate);
 document.querySelector('#generate-run').addEventListener('click',()=>{if(generate())execute(true);});
