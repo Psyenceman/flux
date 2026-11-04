@@ -71,6 +71,10 @@ export const reference = [
 {title:'Comparison',syntax:'print 5 >= 3',detail:'Operators: ==, !=, <, <=, >, >=.'},
 {title:'Conditionals',syntax:'if score > 50 {\\n  print "Pass"\\n} else {\\n  print "Try again"\\n}',detail:'Conditions must evaluate to a boolean.'},
 {title:'Loops',syntax:'while count > 0 {\\n  print count\\n  count = count - 1\\n}',detail:'A while loop repeats until its condition becomes false.'},
-{title:'Functions',syntax:'function greet(name) {\\n  print "Hi, {name}"\\n}\\ngreet("Ada")',detail:'Functions accept parameters and use local variables. Return values are not supported yet.'},
+{title:'Functions',syntax:'function greet(name) {\\n  print "Hi, {name}"\\n}\\ngreet("Ada")',detail:'Functions accept parameters and use local variables. Use return to provide a value to the caller.'},
+{title:'Lists',syntax:'orders = [10, 20, 30]\\nprint orders[0]',detail:'Lists hold ordered values. Indexes start at zero.'},
+{title:'Records',syntax:'customer = {name: "Ada", active: true}\\nprint customer.name',detail:'Records group named fields and support dot access.'},
+{title:'Null',syntax:'value = null\\nprint value',detail:'Null represents a missing value.'},
+{title:'Return values',syntax:'function add(a, b) {\\n  return a + b\\n}\\nprint add(2, 3)',detail:'Functions can return a value; functions without return yield null.'},
 {title:'Comments',syntax:'# This is a comment',detail:'A line beginning with # is ignored.'}
 ];
