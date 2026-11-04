@@ -5,7 +5,7 @@
 <title>Flux Workflow Lab</title>
 <style>
 :root{font-family:system-ui,sans-serif;color-scheme:dark;background:#101827;color:#eef3fa}body{max-width:1000px;margin:auto;padding:24px}h1{font-size:2rem}p{color:#b7c5d6;line-height:1.5}.layout{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:700px){.layout{grid-template-columns:1fr}}section{background:#1b2737;border:1px solid #36485f;border-radius:12px;padding:18px}textarea{width:100%;min-height:380px;box-sizing:border-box;background:#0b1420;color:#f0f5fa;padding:14px;border:1px solid #51647b;border-radius:8px;font:14px/1.6 ui-monospace,monospace;resize:vertical}button{border:0;border-radius:8px;padding:12px 18px;background:#4d8eff;color:#071323;font-weight:700;cursor:pointer;margin:12px 8px 8px 0}button.secondary{background:#33445b;color:white}button:disabled{opacity:.5}ol{padding-left:22px}li{padding:10px;border-bottom:1px solid #36485f;line-height:1.5}.muted{font-size:13px;color:#aebdd0}pre{white-space:pre-wrap;overflow-wrap:anywhere}a{color:#9ec6ff}.status{font-size:12px;letter-spacing:.03em;text-transform:uppercase;color:#a6e7c1}.failed{color:#ffaaaa}
-label{display:block;margin:12px 0 5px;color:#d5e1ef;font-size:14px}input,select{width:100%;box-sizing:border-box;border:1px solid #51647b;background:#0b1420;color:white;border-radius:7px;padding:10px} .builder{margin-bottom:20px}.builder-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}@media(max-width:600px){.builder-grid{grid-template-columns:1fr}} .builder-note{font-size:13px}.action-card{margin:14px 0;padding:14px;border:1px solid #52647b;border-radius:10px;background:#142032}.action-controls{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.action-controls button{padding:7px 10px;font-size:12px;margin:0}.action-card label{margin-top:9px}.workflow-summary{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.summary-chip{font-size:12px;border:1px solid #425570;border-radius:20px;padding:7px 10px;color:#cbd7e7}.action-card{padding:0;overflow:hidden}.action-card summary{cursor:pointer;padding:14px;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px}.action-card summary::-webkit-details-marker{display:none}.action-card summary:hover{background:#20314a}.action-card summary span{font-size:12px;color:#aebdd0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.action-card .action-body{padding:0 14px 14px;border-top:1px solid #36485f}.action-card:not([open]) .action-body{display:none}</style></head>
+label{display:block;margin:12px 0 5px;color:#d5e1ef;font-size:14px}input,select{width:100%;box-sizing:border-box;border:1px solid #51647b;background:#0b1420;color:white;border-radius:7px;padding:10px} .builder{margin-bottom:20px}.builder-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}@media(max-width:600px){.builder-grid{grid-template-columns:1fr}} .builder-note{font-size:13px}.action-card{margin:14px 0;padding:14px;border:1px solid #52647b;border-radius:10px;background:#142032}.action-controls{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.action-controls button{padding:7px 10px;font-size:12px;margin:0}.action-card label{margin-top:9px}.workflow-summary{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.summary-chip{font-size:12px;border:1px solid #425570;border-radius:20px;padding:7px 10px;color:#cbd7e7}.action-card{padding:0;overflow:hidden}.action-card summary{cursor:pointer;padding:14px;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px}.action-card summary::-webkit-details-marker{display:none}.action-card summary:hover{background:#20314a}.action-card summary span{font-size:12px;color:#aebdd0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.action-card .action-body{padding:0 14px 14px;border-top:1px solid #36485f}.action-card:not([open]) .action-body{display:none}.live-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}@media(max-width:650px){.live-grid{grid-template-columns:1fr}}.live-note{border-left:3px solid #f3c56a;padding-left:12px}.live-result{background:#0b1420;border-radius:8px;padding:12px;min-height:54px;max-height:280px;overflow:auto}.live-actions{display:flex;flex-wrap:wrap;gap:8px}.live-actions button{margin:8px 0}.live-actions button.secondary{background:#33445b}.live-check{display:flex;align-items:center;gap:8px;margin-top:12px}.live-check input{width:auto}</style></head>
 <body>
 <p><a href="./">Flux Studio</a> / Workflow Lab · <a href="./webhook-test.html">Test real webhook</a></p>
 <h1>See how Flux executes a workflow</h1>
@@ -16,7 +16,7 @@ label{display:block;margin:12px 0 5px;color:#d5e1ef;font-size:14px}input,select{
 <button id="add-action" type="button" class="secondary">+ Add action</button>
 <button id="generate" type="button">Generate Flux code</button>
 <button id="generate-run" class="secondary" type="button">Generate &amp; simulate</button><button id="save-workflow" class="secondary" type="button">Save locally</button><button id="load-workflow" class="secondary" type="button">Load saved</button>
-<p class="builder-note">Actions are plans only. No email, webhook or database write is performed.</p></section><div class="layout">
+<p class="builder-note">Actions are plans only. No email, webhook or database write is performed.</p></section><section id="live-workflow" class="builder"><h2>Real execution — Flux Requests</h2><p>Run the verified Flux request intake and inspect saved requests. This integration does not execute the visual actions above; those remain local plans.</p><p class="live-note">Use fictional test data. The webhook token is sent only to the same-origin Netlify Function over HTTPS, is not stored, and is cleared after each request.</p><div class="live-grid"><div><label for="live-token">Webhook token</label><input id="live-token" type="password" autocomplete="off" spellcheck="false" minlength="24"><label for="live-name">Name</label><input id="live-name" value="Flux Workflow Lab Test" maxlength="120"><label for="live-email">Email</label><input id="live-email" type="email" value="test@example.com" maxlength="254"></div><div><label for="live-message">Message</label><input id="live-message" value="Request from Workflow Lab" maxlength="2000"><label class="live-check"><input type="checkbox" id="live-dry" checked> Dry run (no storage or notification)</label><p class="muted">Turn off dry run to save a real record. Notifications require separate configuration.</p></div></div><div class="live-actions"><button id="live-send" type="button">Send Flux request</button><button id="live-history" type="button" class="secondary">Load saved requests</button><button id="live-clear" type="button" class="secondary">Clear token</button></div><p id="live-status" class="status" aria-live="polite">Ready</p><pre id="live-output" class="live-result">No request sent.</pre></section><div class="layout">
 <section><h2>Workflow code</h2><textarea id="code" spellcheck="false">workflow "Customer request" {
   step "Validate" {
     approved = true
@@ -103,6 +103,33 @@ function generate(){
  lines.push('}');
  code.value=lines.join('\n');state.textContent='Code generated — ready to simulate';state.classList.remove('failed');return true;
 }
+// The real execution path is deliberately fixed to Flux's authenticated intake API.
+const liveToken=document.querySelector('#live-token'),liveStatus=document.querySelector('#live-status'),liveOutput=document.querySelector('#live-output');
+const liveSend=document.querySelector('#live-send'),liveHistory=document.querySelector('#live-history');
+document.querySelector('#live-clear').addEventListener('click',()=>{liveToken.value='';liveStatus.textContent='Token cleared';});
+async function liveCall(path,method,body){
+ const secret=liveToken.value;
+ if(secret.length<24){liveStatus.textContent='Enter your webhook token';liveStatus.classList.add('failed');return;}
+ const buttons=[liveSend,liveHistory];buttons.forEach(b=>b.disabled=true);
+ liveStatus.textContent='Contacting Flux…';liveStatus.classList.remove('failed');liveOutput.textContent='';
+ try{
+  const response=await fetch(path,{method,headers:{'x-flux-token':secret,...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',credentials:'omit',redirect:'error',signal:AbortSignal.timeout(12000)});
+  const raw=await response.text();let data;
+  try{data=JSON.parse(raw);}catch{data={ok:false,error:'Unexpected non-JSON response'};}
+  liveStatus.textContent='HTTP '+response.status+(response.ok?' — Completed':' — Failed');
+  liveStatus.classList.toggle('failed',!response.ok);
+  liveOutput.textContent=JSON.stringify(data,null,2);
+ }catch(error){liveStatus.textContent='Network error';liveStatus.classList.add('failed');liveOutput.textContent=String(error);}
+ finally{liveToken.value='';buttons.forEach(b=>b.disabled=false);}
+}
+liveSend.addEventListener('click',()=>{
+ const name=document.querySelector('#live-name').value.trim(),email=document.querySelector('#live-email').value.trim(),message=document.querySelector('#live-message').value.trim();
+ if(!name||name.length>120||!email||!document.querySelector('#live-email').checkValidity()||!message||message.length>2000){liveStatus.textContent='Enter a valid name, email and message';liveStatus.classList.add('failed');return;}
+ const dryRun=document.querySelector('#live-dry').checked;
+ if(!dryRun&&!confirm('Save this request to persistent Flux storage?'))return;
+ liveCall('/.netlify/functions/flux-request','POST',{name,email,message,dryRun});
+});
+liveHistory.addEventListener('click',()=>liveCall('/.netlify/functions/flux-requests','GET'));
 const storageKey='flux-workflow-lab-v1';
 document.querySelector('#save-workflow').addEventListener('click',()=>{
  try{localStorage.setItem(storageKey,JSON.stringify({version:1,name:document.querySelector('#workflow-name').value,outcome:document.querySelector('#request-outcome').value,steps:steps.map(({type,condition,target,message})=>({type,condition,target,message}))}));state.textContent='Saved in this browser';state.classList.remove('failed');}
