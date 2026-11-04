@@ -9,7 +9,8 @@ test('Studio entrypoint and assets exist', () => {
 });
 test('Studio worker loads the bundled Flux interpreter', () => {
   const worker = readFileSync('studio/runner.js', 'utf8');
-  assert.match(worker, /import \{ run \} from '\.\/dist\/src\/interpreter\.js'/);
+  assert.match(worker, /import \{ runWorkflow \} from '\.\/dist\/src\/interpreter\.js'/);
+  assert.match(worker, /runWorkflow\(source, dryRun\)/);
 });
 test('Studio has code execution and accessible output', () => {
   const html = readFileSync('studio/index.html', 'utf8');
