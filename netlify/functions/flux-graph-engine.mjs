@@ -3,7 +3,7 @@ export function validateGraph(graph){
  if(!graph||graph.version!==1||!Array.isArray(graph.nodes)||!Array.isArray(graph.edges))throw Error('Invalid graph');
  if(graph.nodes.length>80||graph.edges.length>300)throw Error('Graph exceeds execution limits');
  const ids=new Set();
- const allowed=new Set(['webhook','filter','flux','log','merge','http','airtable','miro','slack','email','database','delay']);
+ const allowed=new Set(['webhook','filter','flux','log','merge','http','airtable','trello','miro','slack','email','database','delay']);
  for(const n of graph.nodes){if(!n||typeof n.id!=='string'||n.id.length>80||ids.has(n.id)||!allowed.has(n.type))throw Error('Invalid or duplicate block');ids.add(n.id);}
  for(const e of graph.edges){if(!e||!ids.has(e.from)||!ids.has(e.to)||e.from===e.to)throw Error('Invalid edge');}
  const indegree=new Map(graph.nodes.map(n=>[n.id,0])),adj=new Map(graph.nodes.map(n=>[n.id,[]]));
@@ -14,7 +14,7 @@ export function validateGraph(graph){
  return {order,adj};
 }
 const get=(value,path)=>{if(!/^[a-zA-Z_][\w]*(\.[a-zA-Z_][\w]*){0,5}$/.test(path))return undefined;return path.split('.').reduce((v,k)=>v&&typeof v==='object'&&Object.hasOwn(v,k)?v[k]:undefined,value);};
-export async function executeGraph(graph,input,{dryRun=true,notificationUrl}={}){
+export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloKey,trelloToken}={}){
  const {order,adj}=validateGraph(graph),byId=new Map(graph.nodes.map(n=>[n.id,n]));
  const received=new Map(),trace=[],outputs={};let calls=0;
  for(const id of order){
@@ -38,6 +38,23 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl}={})
     else if(rule==='count')output={count:Array.isArray(value?.items)?value.items.length:1};
     else if(rule==='pass'||rule==='')output=value;
     else throw Error('Unsupported Flux transform at '+id+'. Use pass, pick or count');
+    break;
+   }
+   case 'trello':{
+    const listId=String(config.connection||'').trim();
+    if(!/^[a-f0-9]{24}$/i.test(listId))throw Error('Trello block '+id+': enter a valid Trello list ID in Connection reference');
+    if(dryRun){output={source:'trello',listId,items:[],count:0,simulated:true};status='simulated';reason='Dry run: Trello was not contacted';break;}
+    if(!trelloKey||!trelloToken){status='skipped';reason='Trello credentials not configured on server';break;}
+    if(++calls>3)throw Error('External action limit exceeded');
+    const url=new URL('https://api.trello.com/1/lists/'+listId+'/cards');
+    url.searchParams.set('fields','id,name,url,closed,due,idList');
+    url.searchParams.set('limit','20');
+    url.searchParams.set('key',trelloKey);url.searchParams.set('token',trelloToken);
+    const response=await fetch(url,{method:'GET',signal:AbortSignal.timeout(5000),redirect:'error'});
+    if(!response.ok)throw Error('Trello read failed at '+id+' (HTTP '+response.status+')');
+    const cards=await response.json();
+    if(!Array.isArray(cards))throw Error('Unexpected Trello response at '+id);
+    output={source:'trello',listId,count:cards.length,items:cards.map(c=>({id:c.id,name:c.name,url:c.url,due:c.due,idList:c.idList}))};
     break;
    }
    case 'merge':output={items:incoming};break;
