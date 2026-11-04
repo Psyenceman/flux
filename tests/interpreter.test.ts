@@ -38,3 +38,5 @@ test('function without return yields null', () => assert.deepEqual(run('function
 test('return outside function rejected', () => assert.throws(() => run('return 1'), /return outside function/));
 test('invalid list index rejected', () => assert.throws(() => run('print [1][3]'), /list index out of range/));
 test('unknown record field rejected', () => assert.throws(() => run('print {name: "Ada"}.age'), /unknown field/));
+
+test('iterate over list with while', () => assert.deepEqual(run('items = [3, 5, 7]\ni = 0\nwhile i < items.length {\n print items[i]\n i = i + 1\n}'), ['3','5','7']));
