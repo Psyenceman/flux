@@ -7,7 +7,7 @@
     "build": "tsc",
     "build:studio": "npm run build && node scripts/build-studio.mjs",
     "start": "npm run build && node dist/src/cli.js examples/hello.flux",
-    "test": "npm run build && node --test dist/tests/*.test.js"
+    "test": "npm run build && node --test dist/tests/*.test.js tests/*.test.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.3",
