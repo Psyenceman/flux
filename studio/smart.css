@@ -1,0 +1,6 @@
+.editor-shell{display:flex;background:#101a2a;min-width:0}
+#line-numbers{flex:0 0 52px;min-width:52px;max-height:440px;overflow:hidden;padding:22px 10px 22px 0;text-align:right;white-space:pre;color:#657997;background:#0e1725;border-right:1px solid #29374b;user-select:none;pointer-events:none;font:14px/1.75 monospace}
+.editor-shell #code{flex:1;min-width:0;padding-left:16px}
+.error-help{border-top:1px solid #713f51;background:#2c202e;padding:16px 20px;color:#ffd5dc}
+.error-help p{font-size:13px;line-height:1.6}
+@media(max-width:850px){#line-numbers{max-height:310px;flex-basis:42px;min-width:42px}}
