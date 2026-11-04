@@ -9,7 +9,7 @@
 <body>
 <p><a href="./">Flux Studio</a> / Workflow Lab</p>
 <h1>See how Flux executes a workflow</h1>
-<p>Run a customer-request workflow and inspect every step. Dry run simulates the same local program. This prototype does not send emails or connect to external services.</p>
+<p>Run a customer-request workflow and inspect every step. Dry run simulates the same local program. Actions such as email are shown as plans only: nothing is sent or changed.</p>
 <div class="layout">
 <section><h2>Workflow code</h2><textarea id="code" spellcheck="false">workflow "Customer request" {
   step "Validate" {
@@ -17,10 +17,10 @@
   }
   step "Respond" {
     if approved {
-      print "Request accepted"
+      plan "send-email" with {to: "customer@example.com", subject: "Request accepted"}\n      print "Request accepted"
     }
   }
-}</textarea><button id="run">Run workflow</button><button class="secondary" id="dry">Dry run</button><p class="muted">The program executes in a browser Worker with a two-second timeout. No network integrations.</p></section>
+}</textarea><button id="run">Run workflow</button><button class="secondary" id="dry">Dry run</button><p class="muted">The program executes in a browser Worker with a two-second timeout. Planned actions are never executed; no network integrations.</p></section>
 <section><h2>Execution trace</h2><p id="state" class="status">Ready</p><ol id="trace"></ol><h3>Output</h3><pre id="output">Run the workflow to see results.</pre></section>
 </div>
 <script type="module">
