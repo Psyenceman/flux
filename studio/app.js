@@ -1,3 +1,4 @@
+import { highlight, commands } from './highlight.js';
 import { explainError } from './error-help.js';
 const examples = {
   hello: '# Your first Flux program\nname = "World"\nprint "Hello, {name}!"\n',
@@ -12,6 +13,13 @@ const runButton = document.querySelector('#run');
 const selector = document.querySelector('#examples');
 const key = 'flux-studio-code-v1';
 const gutter = document.querySelector('#line-numbers');
+const highlighted = document.querySelector('#code-highlight');
+function refreshHighlight() {
+  highlighted.innerHTML = highlight(editor.value);
+  highlighted.scrollTop = editor.scrollTop;
+  highlighted.scrollLeft = editor.scrollLeft;
+}
+
 const help = document.querySelector('#error-help');
 const jump = document.querySelector('#jump-error');
 let errorLine = null;
@@ -19,8 +27,8 @@ function updateGutter() {
   const count = editor.value.split('\n').length;
   gutter.textContent = Array.from({length: count}, (_, i) => i + 1).join('\n');
 }
-editor.addEventListener('input', () => { updateGutter(); help.hidden = true; errorLine = null; });
-editor.addEventListener('scroll', () => { gutter.scrollTop = editor.scrollTop; });
+editor.addEventListener('input', () => { updateGutter(); refreshHighlight(); help.hidden = true; errorLine = null; });
+editor.addEventListener('scroll', () => { gutter.scrollTop = editor.scrollTop; highlighted.scrollTop = editor.scrollTop; highlighted.scrollLeft = editor.scrollLeft; });
 jump.addEventListener('click', () => {
   if (!errorLine) return;
   const lines = editor.value.split('\n');
@@ -33,6 +41,7 @@ jump.addEventListener('click', () => {
 
 try { editor.value = localStorage.getItem(key) ?? examples.hello; } catch { editor.value = examples.hello; }
 updateGutter();
+refreshHighlight();
 editor.addEventListener('input', () => { try { localStorage.setItem(key, editor.value); } catch {} });
 selector.addEventListener('change', () => { editor.value = examples[selector.value]; editor.dispatchEvent(new Event('input')); });
 document.querySelector('#reset').addEventListener('click', () => { editor.value = examples[selector.value]; editor.dispatchEvent(new Event('input')); });
@@ -78,6 +87,19 @@ function run() {
 }
 runButton.addEventListener('click', run);
 editor.addEventListener('keydown', event => {
+  if ((event.ctrlKey || event.metaKey) && event.code === 'Space') {
+    event.preventDefault();
+    const before = editor.value.slice(0, editor.selectionStart);
+    const word = /[A-Za-z]+$/.exec(before)?.[0] || '';
+    const matches = commands.filter(command => command.startsWith(word) && command !== word);
+    if (matches.length) {
+      editor.setRangeText(matches[0], editor.selectionStart - word.length, editor.selectionEnd, 'end');
+      editor.dispatchEvent(new Event('input'));
+    } else {
+      status.textContent = 'No command suggestion';
+    }
+    return;
+  }
   if (event.key === 'Tab') {
     event.preventDefault(); const start = editor.selectionStart; const end = editor.selectionEnd;
     editor.setRangeText('  ', start, end, 'end'); editor.dispatchEvent(new Event('input'));
