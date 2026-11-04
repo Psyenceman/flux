@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flux Workflow Lab</title>
+<style>
+:root{font-family:system-ui,sans-serif;color-scheme:dark;background:#101827;color:#eef3fa}body{max-width:1000px;margin:auto;padding:24px}h1{font-size:2rem}p{color:#b7c5d6;line-height:1.5}.layout{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:700px){.layout{grid-template-columns:1fr}}section{background:#1b2737;border:1px solid #36485f;border-radius:12px;padding:18px}textarea{width:100%;min-height:380px;box-sizing:border-box;background:#0b1420;color:#f0f5fa;padding:14px;border:1px solid #51647b;border-radius:8px;font:14px/1.6 ui-monospace,monospace;resize:vertical}button{border:0;border-radius:8px;padding:12px 18px;background:#4d8eff;color:#071323;font-weight:700;cursor:pointer;margin:12px 8px 8px 0}button.secondary{background:#33445b;color:white}button:disabled{opacity:.5}ol{padding-left:22px}li{padding:10px;border-bottom:1px solid #36485f;line-height:1.5}.muted{font-size:13px;color:#aebdd0}pre{white-space:pre-wrap;overflow-wrap:anywhere}a{color:#9ec6ff}.status{font-size:12px;letter-spacing:.03em;text-transform:uppercase;color:#a6e7c1}.failed{color:#ffaaaa}
+</style></head>
+<body>
+<p><a href="./">Flux Studio</a> / Workflow Lab</p>
+<h1>See how Flux executes a workflow</h1>
+<p>Run a customer-request workflow and inspect every step. Dry run simulates the same local program. This prototype does not send emails or connect to external services.</p>
+<div class="layout">
+<section><h2>Workflow code</h2><textarea id="code" spellcheck="false">workflow "Customer request" {
+  step "Validate" {
+    approved = true
+  }
+  step "Respond" {
+    if approved {
+      print "Request accepted"
+    }
+  }
+}</textarea><button id="run">Run workflow</button><button class="secondary" id="dry">Dry run</button><p class="muted">The program executes in a browser Worker with a two-second timeout. No network integrations.</p></section>
+<section><h2>Execution trace</h2><p id="state" class="status">Ready</p><ol id="trace"></ol><h3>Output</h3><pre id="output">Run the workflow to see results.</pre></section>
+</div>
+<script type="module">
+const code=document.querySelector('#code'),state=document.querySelector('#state'),trace=document.querySelector('#trace'),output=document.querySelector('#output');
+const buttons=[document.querySelector('#run'),document.querySelector('#dry')];
+let worker=null;
+function execute(dryRun){
+ if(worker)worker.terminate();
+ worker=new Worker('./runner.js',{type:'module'});
+ buttons.forEach(b=>b.disabled=true);state.textContent=dryRun?'Simulating':'Running';state.classList.remove('failed');trace.replaceChildren();output.textContent='';
+ const current=worker;const timeout=setTimeout(()=>finish({ok:false,message:'Execution timed out after 2 seconds.'}),2000);
+ function finish(result){
+  if(worker!==current)return;
+  clearTimeout(timeout);current.terminate();worker=null;buttons.forEach(b=>b.disabled=false);
+  state.textContent=result.ok?(dryRun?'Simulation complete':'Completed'):'Failed';
+  state.classList.toggle('failed',!result.ok);output.textContent=result.message;
+  for(const event of result.trace||[]){
+   const li=document.createElement('li');
+   const heading=document.createElement('strong');heading.textContent=(event.label||event.kind)+' — '+event.status;
+   const info=document.createElement('div');info.className='muted';info.textContent='Line '+event.line+(event.detail?' · '+event.detail:'');
+   li.append(heading,info);trace.append(li);
+  }
+ }
+ current.onmessage=e=>finish(e.data);
+ current.onerror=()=>finish({ok:false,message:'Unable to load Flux runtime.'});
+ current.postMessage({source:code.value,dryRun});
+}
+buttons[0].addEventListener('click',()=>execute(false));
+buttons[1].addEventListener('click',()=>execute(true));
+</script>
+</body></html>
