@@ -12,7 +12,7 @@ export async function handler(event){
   const store=getStore('flux-requests');
   const items=[];let cursor;
   for(let page=0;page<10;page++){
-   const batch=await store.list({prefix:'requests/',paginate:false,cursor});
+   const batch=await store.list({prefix:'requests/',paginate:false,...(cursor?{cursor}:{})});
    items.push(...batch.blobs.map(x=>x.key));
    if(!batch.cursor)break;
    cursor=batch.cursor;
@@ -20,5 +20,5 @@ export async function handler(event){
   const keys=items.sort().reverse().slice(0,30);
   const records=await Promise.all(keys.map(key=>store.get(key,{type:'json'})));
   return json(200,{ok:true,count:records.filter(Boolean).length,records:records.filter(Boolean).map(({id,name,email,message,receivedAt})=>({id,name,email,message,receivedAt})),note:'Up to 30 latest saved requests'});
- }catch(error){console.error(JSON.stringify({event:'flux.requests.list_failed',reason:String(error)}));return json(503,{ok:false,error:'Unable to read persistent storage'});}
+ }catch(error){console.error(JSON.stringify({event:'flux.requests.list_failed',reason:String(error)}));return json(503,{ok:false,error:'Unable to read persistent storage',diagnostic: String(error?.message||'').includes('environment')?'storage_environment':String(error?.message||'').includes('token')?'storage_credentials':String(error?.message||'').includes('site')?'storage_site_context':String(error?.message||'').includes('list')?'storage_list':String(error?.message||'').includes('fetch')?'storage_network':'storage_unknown'});}
 }
