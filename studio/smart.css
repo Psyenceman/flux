@@ -4,3 +4,11 @@
 .error-help{border-top:1px solid #713f51;background:#2c202e;padding:16px 20px;color:#ffd5dc}
 .error-help p{font-size:13px;line-height:1.6}
 @media(max-width:850px){#line-numbers{max-height:310px;flex-basis:42px;min-width:42px}}
+
+.code-stack{position:relative;flex:1;min-width:0;min-height:440px;background:#101a2a}
+.code-stack #code,.code-stack #code-highlight{margin:0;width:100%;height:100%;min-height:440px;padding:22px 22px 22px 16px;border:0;font:14px/1.75 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;tab-size:2;white-space:pre;overflow-wrap:normal;word-break:normal;letter-spacing:normal}
+.code-stack #code-highlight{position:absolute;inset:0;pointer-events:none;overflow:hidden;color:#d6e1ff}
+.code-stack #code{position:relative;display:block;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:#fff;resize:vertical;z-index:1;overflow:auto}
+.code-stack #code::selection{background:rgba(120,140,255,.38);-webkit-text-fill-color:transparent}
+.flux-keyword{color:#aab5ff;font-weight:700}.flux-string{color:#f2ca8d}.flux-number{color:#9edce4}.flux-comment{color:#7c91aa;font-style:italic}
+@media(max-width:850px){.code-stack,.code-stack #code,.code-stack #code-highlight{min-height:310px}}
