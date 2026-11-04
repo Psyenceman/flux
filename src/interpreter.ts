@@ -1,13 +1,17 @@
 import { parseExpression, type Expression } from './parser.js';
 export type Value = string | number | boolean | null | Value[] | { [key: string]: Value };
-type Statement = { kind: 'return'; expr: Expression; line: number } | { kind: 'function'; name: string; params: string[]; body: Statement[]; line: number } | { kind: 'call'; name: string; args: Expression[]; line: number } | { kind: 'while'; condition: Expression; body: Statement[]; line: number } | { kind: 'assign'; name: string; expr: Expression; line: number } | { kind: 'print'; expr: Expression; line: number } | { kind: 'if'; condition: Expression; yes: Statement[]; no: Statement[]; line: number };
-export function run(source: string): string[] {
+export type TraceEvent = { line: number; kind: string; status: 'started' | 'completed' | 'skipped' | 'failed'; label?: string; detail?: string };
+export type RunOptions = { dryRun?: boolean; onTrace?: (event: TraceEvent) => void };
+type Statement = { kind: 'workflow'; name: string; body: Statement[]; line: number } | { kind: 'step'; name: string; body: Statement[]; line: number } | { kind: 'return'; expr: Expression; line: number } | { kind: 'function'; name: string; params: string[]; body: Statement[]; line: number } | { kind: 'call'; name: string; args: Expression[]; line: number } | { kind: 'while'; condition: Expression; body: Statement[]; line: number } | { kind: 'assign'; name: string; expr: Expression; line: number } | { kind: 'print'; expr: Expression; line: number } | { kind: 'if'; condition: Expression; yes: Statement[]; no: Statement[]; line: number };
+export function run(source: string, options: RunOptions = {}): string[] {
   let variables = new Map<string, Value>();
   const functions = new Map<string, { params: string[]; body: Statement[] }>();
   let callDepth = 0;
   const display = (value: Value): string => value === null ? 'null' : typeof value === 'object' ? JSON.stringify(value) : String(value);
   class ReturnSignal { constructor(readonly value: Value) {} }
   const output: string[] = [];
+  const trace = (event: TraceEvent) => options.onTrace?.(event);
+  let workflowDepth = 0;
   const lines = source.split(/\r?\n/);
   let cursor = 0;
   function parse(raw: string, line: number): Expression {
@@ -24,6 +28,10 @@ export function run(source: string): string[] {
         if (!nested) throw new Error(`Line ${line}: unexpected closing brace`);
         return result;
       }
+      const workflow = statement.match(/^workflow\s+"([^"]+)"\s*\{$/);
+      if (workflow) { result.push({kind:'workflow',name:workflow[1],body:block(true),line}); continue; }
+      const step = statement.match(/^step\s+"([^"]+)"\s*\{$/);
+      if (step) { result.push({kind:'step',name:step[1],body:block(true),line}); continue; }
       const condition = statement.match(/^if\s+(.+?)\s*\{$/);
       if (condition) {
         const yes = block(true);
@@ -116,7 +124,19 @@ export function run(source: string): string[] {
   function execute(statements: Statement[]): void {
     for (const stmt of statements) {
       if (++steps > maxSteps) throw new Error(`Line ${stmt.line}: execution limit exceeded (${maxSteps} steps)`);
-      if (stmt.kind === 'function') {
+      if (stmt.kind === 'workflow' || stmt.kind === 'step') {
+        if (stmt.kind === 'step' && workflowDepth === 0) throw new Error(`Line ${stmt.line}: step requires a workflow`);
+        if (stmt.kind === 'workflow' && workflowDepth > 0) throw new Error(`Line ${stmt.line}: nested workflows are not supported`);
+        trace({line:stmt.line,kind:stmt.kind,status:'started',label:stmt.name});
+        if (stmt.kind === 'workflow') workflowDepth++;
+        try {
+          execute(stmt.body);
+          trace({line:stmt.line,kind:stmt.kind,status:'completed',label:stmt.name});
+        } catch (error) {
+          trace({line:stmt.line,kind:stmt.kind,status:'failed',label:stmt.name,detail:error instanceof Error?error.message:String(error)});
+          throw error;
+        } finally { if (stmt.kind === 'workflow') workflowDepth--; }
+      } else if (stmt.kind === 'function') {
         if (functions.has(stmt.name)) throw new Error(`Line ${stmt.line}: function '${stmt.name}' already defined`);
         functions.set(stmt.name, { params: stmt.params, body: stmt.body });
       } else if (stmt.kind === 'call') {
@@ -135,14 +155,22 @@ export function run(source: string): string[] {
       } else if (stmt.kind === 'if') {
         const condition = evaluate(stmt.condition, stmt.line);
         if (typeof condition !== 'boolean') throw new Error(`Line ${stmt.line}: if requires a boolean condition`);
+        trace({line:stmt.line,kind:'if',status:condition?'completed':'skipped',detail:condition?'true':'false'});
         execute(condition ? stmt.yes : stmt.no);
       } else {
         const value = evaluate(stmt.expr, stmt.line);
         if (stmt.kind === 'assign') variables.set(stmt.name, value);
-        else output.push(display(value));
+        else if (!options.dryRun) output.push(display(value));
+        trace({line:stmt.line,kind:stmt.kind,status:'completed',detail:stmt.kind === 'assign' ? stmt.name : (options.dryRun ? 'simulated output' : display(value))});
       }
     }
   }
   execute(block(false));
   return output;
+}
+
+export function runWorkflow(source: string, dryRun = false): { output: string[]; trace: TraceEvent[] } {
+  const trace: TraceEvent[] = [];
+  const output = run(source, {dryRun,onTrace: event => trace.push(event)});
+  return {output,trace};
 }
