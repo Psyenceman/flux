@@ -1,10 +1,12 @@
 import { parseExpression, type Expression } from './parser.js';
-export type Value = string | number | boolean;
-type Statement = { kind: 'function'; name: string; params: string[]; body: Statement[]; line: number } | { kind: 'call'; name: string; args: Expression[]; line: number } | { kind: 'while'; condition: Expression; body: Statement[]; line: number } | { kind: 'assign'; name: string; expr: Expression; line: number } | { kind: 'print'; expr: Expression; line: number } | { kind: 'if'; condition: Expression; yes: Statement[]; no: Statement[]; line: number };
+export type Value = string | number | boolean | null | Value[] | { [key: string]: Value };
+type Statement = { kind: 'return'; expr: Expression; line: number } | { kind: 'function'; name: string; params: string[]; body: Statement[]; line: number } | { kind: 'call'; name: string; args: Expression[]; line: number } | { kind: 'while'; condition: Expression; body: Statement[]; line: number } | { kind: 'assign'; name: string; expr: Expression; line: number } | { kind: 'print'; expr: Expression; line: number } | { kind: 'if'; condition: Expression; yes: Statement[]; no: Statement[]; line: number };
 export function run(source: string): string[] {
   let variables = new Map<string, Value>();
   const functions = new Map<string, { params: string[]; body: Statement[] }>();
   let callDepth = 0;
+  const display = (value: Value): string => value === null ? 'null' : typeof value === 'object' ? JSON.stringify(value) : String(value);
+  class ReturnSignal { constructor(readonly value: Value) {} }
   const output: string[] = [];
   const lines = source.split(/\r?\n/);
   let cursor = 0;
@@ -44,6 +46,8 @@ export function run(source: string): string[] {
         result.push({ kind: 'function', name: definition[1], params, body: block(true), line });
         continue;
       }
+      const returned = statement.match(/^return\s+(.+)$/);
+      if (returned) { result.push({kind:'return',expr:parse(returned[1],line),line}); continue; }
       const call = statement.match(/^([A-Za-z_]\w*)\s*\((.*)\)$/);
       if (call) {
         const parts = call[2].trim() ? call[2].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(p => p.trim()) : [];
@@ -61,11 +65,17 @@ export function run(source: string): string[] {
   }
   function evaluate(expr: Expression, line: number): Value {
     switch (expr.kind) {
+      case 'null': return null;
+      case 'list': return expr.items.map(item => evaluate(item,line));
+      case 'record': { const record: {[key:string]:Value} = Object.create(null); for (const field of expr.fields) record[field.name] = evaluate(field.value,line); return record; }
+      case 'field': { const target = evaluate(expr.target,line); if (target === null || Array.isArray(target) || typeof target !== 'object') throw new Error(`Line ${line}: field access requires a record`); if (!Object.hasOwn(target,expr.name)) throw new Error(`Line ${line}: unknown field '${expr.name}'`); return target[expr.name]; }
+      case 'index': { const target = evaluate(expr.target,line), index = evaluate(expr.index,line); if (!Array.isArray(target)) throw new Error(`Line ${line}: indexing requires a list`); if (typeof index !== 'number' || !Number.isInteger(index) || index < 0 || index >= target.length) throw new Error(`Line ${line}: list index out of range`); return target[index]; }
+      case 'call': return invoke(expr.name,expr.args,line);
       case 'number': case 'boolean': return expr.value;
       case 'string':
         return expr.value.replace(/\{([A-Za-z_]\w*)\}/g, (_, name: string) => {
           if (!variables.has(name)) throw new Error(`Line ${line}: unknown variable '${name}'`);
-          return String(variables.get(name));
+          return display(variables.get(name)!);
         });
       case 'variable':
         if (!variables.has(expr.name)) throw new Error(`Line ${line}: unknown variable '${expr.name}'`);
@@ -88,6 +98,18 @@ export function run(source: string): string[] {
       }
     }
   }
+  function invoke(name: string, args: Expression[], line: number): Value {
+    const fn = functions.get(name);
+    if (!fn) throw new Error(`Line ${line}: unknown function '${name}'`);
+    if (fn.params.length !== args.length) throw new Error(`Line ${line}: function '${name}' expects ${fn.params.length} arguments`);
+    const values = args.map(a => evaluate(a,line));
+    if (++callDepth > 100) { callDepth--; throw new Error(`Line ${line}: maximum function call depth exceeded`); }
+    const previous = variables;
+    variables = new Map(fn.params.map((param,i) => [param,values[i]]));
+    try { execute(fn.body); return null; }
+    catch (error) { if (error instanceof ReturnSignal) return error.value; throw error; }
+    finally { variables = previous; callDepth--; }
+  }
   let steps = 0;
   const maxSteps = 100000;
   function execute(statements: Statement[]): void {
@@ -97,14 +119,10 @@ export function run(source: string): string[] {
         if (functions.has(stmt.name)) throw new Error(`Line ${stmt.line}: function '${stmt.name}' already defined`);
         functions.set(stmt.name, { params: stmt.params, body: stmt.body });
       } else if (stmt.kind === 'call') {
-        const fn = functions.get(stmt.name);
-        if (!fn) throw new Error(`Line ${stmt.line}: unknown function '${stmt.name}'`);
-        if (fn.params.length !== stmt.args.length) throw new Error(`Line ${stmt.line}: function '${stmt.name}' expects ${fn.params.length} arguments`);
-        const values = stmt.args.map(a => evaluate(a, stmt.line));
-        if (++callDepth > 100) throw new Error(`Line ${stmt.line}: maximum function call depth exceeded`);
-        const previous = variables;
-        variables = new Map(fn.params.map((name, i) => [name, values[i]]));
-        try { execute(fn.body); } finally { variables = previous; callDepth--; }
+        invoke(stmt.name,stmt.args,stmt.line);
+      } else if (stmt.kind === 'return') {
+        if (!callDepth) throw new Error(`Line ${stmt.line}: return outside function`);
+        throw new ReturnSignal(evaluate(stmt.expr,stmt.line));
       } else if (stmt.kind === 'while') {
         while (true) {
           if (++steps > maxSteps) throw new Error(`Line ${stmt.line}: execution limit exceeded (${maxSteps} steps)`);
@@ -120,7 +138,7 @@ export function run(source: string): string[] {
       } else {
         const value = evaluate(stmt.expr, stmt.line);
         if (stmt.kind === 'assign') variables.set(stmt.name, value);
-        else output.push(String(value));
+        else output.push(display(value));
       }
     }
   }
