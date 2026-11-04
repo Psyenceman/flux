@@ -36,6 +36,7 @@ function run() {
     output.textContent = message;
     output.classList.toggle('error', failed);
     status.textContent = failed ? 'Error' : 'Finished';
+    window.dispatchEvent(new CustomEvent('flux:result', { detail: { message, failed, source: editor.value } }));
   }
   worker.onmessage = event => {
     if (event.data && typeof event.data.message === 'string' && typeof event.data.ok === 'boolean') finish(event.data.message, !event.data.ok);
