@@ -5,14 +5,14 @@
 <title>Flux Workflow Lab</title>
 <style>
 :root{font-family:system-ui,sans-serif;color-scheme:dark;background:#101827;color:#eef3fa}body{max-width:1000px;margin:auto;padding:24px}h1{font-size:2rem}p{color:#b7c5d6;line-height:1.5}.layout{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:700px){.layout{grid-template-columns:1fr}}section{background:#1b2737;border:1px solid #36485f;border-radius:12px;padding:18px}textarea{width:100%;min-height:380px;box-sizing:border-box;background:#0b1420;color:#f0f5fa;padding:14px;border:1px solid #51647b;border-radius:8px;font:14px/1.6 ui-monospace,monospace;resize:vertical}button{border:0;border-radius:8px;padding:12px 18px;background:#4d8eff;color:#071323;font-weight:700;cursor:pointer;margin:12px 8px 8px 0}button.secondary{background:#33445b;color:white}button:disabled{opacity:.5}ol{padding-left:22px}li{padding:10px;border-bottom:1px solid #36485f;line-height:1.5}.muted{font-size:13px;color:#aebdd0}pre{white-space:pre-wrap;overflow-wrap:anywhere}a{color:#9ec6ff}.status{font-size:12px;letter-spacing:.03em;text-transform:uppercase;color:#a6e7c1}.failed{color:#ffaaaa}
-label{display:block;margin:12px 0 5px;color:#d5e1ef;font-size:14px}input,select{width:100%;box-sizing:border-box;border:1px solid #51647b;background:#0b1420;color:white;border-radius:7px;padding:10px} .builder{margin-bottom:20px}.builder-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}@media(max-width:600px){.builder-grid{grid-template-columns:1fr}} .builder-note{font-size:13px}.action-card{margin:14px 0;padding:14px;border:1px solid #52647b;border-radius:10px;background:#142032}.action-controls{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.action-controls button{padding:7px 10px;font-size:12px;margin:0}.action-card label{margin-top:9px}</style></head>
+label{display:block;margin:12px 0 5px;color:#d5e1ef;font-size:14px}input,select{width:100%;box-sizing:border-box;border:1px solid #51647b;background:#0b1420;color:white;border-radius:7px;padding:10px} .builder{margin-bottom:20px}.builder-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}@media(max-width:600px){.builder-grid{grid-template-columns:1fr}} .builder-note{font-size:13px}.action-card{margin:14px 0;padding:14px;border:1px solid #52647b;border-radius:10px;background:#142032}.action-controls{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.action-controls button{padding:7px 10px;font-size:12px;margin:0}.action-card label{margin-top:9px}.workflow-summary{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.summary-chip{font-size:12px;border:1px solid #425570;border-radius:20px;padding:7px 10px;color:#cbd7e7}.action-card{padding:0;overflow:hidden}.action-card summary{cursor:pointer;padding:14px;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px}.action-card summary::-webkit-details-marker{display:none}.action-card summary:hover{background:#20314a}.action-card summary span{font-size:12px;color:#aebdd0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.action-card .action-body{padding:0 14px 14px;border-top:1px solid #36485f}.action-card:not([open]) .action-body{display:none}</style></head>
 <body>
 <p><a href="./">Flux Studio</a> / Workflow Lab</p>
 <h1>See how Flux executes a workflow</h1>
 <p>Run a customer-request workflow and inspect every step. Dry run simulates the same local program. Actions such as email are shown as plans only: nothing is sent or changed.</p>
 <section class="builder"><h2>Visual Builder</h2><p>Add actions, set conditions and reorder steps. Flux generates the code for you; all actions remain simulations.</p>
 <label for="workflow-name">Workflow name</label><input id="workflow-name" value="Customer request">
-<div id="actions" aria-label="Workflow actions"></div>
+<div id="workflow-summary" class="workflow-summary" aria-live="polite"></div><div id="actions" aria-label="Workflow actions"></div>
 <button id="add-action" type="button" class="secondary">+ Add action</button>
 <button id="generate" type="button">Generate Flux code</button>
 <button id="generate-run" class="secondary" type="button">Generate &amp; simulate</button>
@@ -38,13 +38,18 @@ let nextId=0;
 const steps=[];
 const actionTypes=[['send-email','Email notification'],['webhook','Webhook request'],['save-record','Save record'],['log','Log entry']];
 function addAction(type='send-email',condition='always',target='',message=''){
- const item={id:++nextId,type,condition,target,message};steps.push(item);renderActions();
+ const item={id:++nextId,type,condition,target,message,expanded:true};steps.forEach(s=>s.expanded=false);steps.push(item);renderActions();
 }
 function renderActions(){
  actions.replaceChildren();
+ const summary=document.querySelector('#workflow-summary');summary.replaceChildren();
+ for(const label of [steps.length+' actions',steps.filter(s=>s.condition!=='always').length+' conditions','Simulation only']){const chip=document.createElement('span');chip.className='summary-chip';chip.textContent=label;summary.append(chip);}
  steps.forEach((step,index)=>{
-  const card=document.createElement('div');card.className='action-card';
-  const title=document.createElement('strong');title.textContent='Step '+(index+1);
+  const card=document.createElement('details');card.className='action-card';card.open=step.expanded===true;
+  const heading=document.createElement('summary');const title=document.createElement('strong');title.textContent=(index+1)+'. '+(actionTypes.find(t=>t[0]===step.type)?.[1]||step.type);
+  const subtitle=document.createElement('span');subtitle.textContent=step.target||'Configure action';heading.append(title,subtitle);card.append(heading);
+  card.addEventListener('toggle',()=>{step.expanded=card.open;});
+  const body=document.createElement('div');body.className='action-body';card.append(body);
   const controls=document.createElement('div');controls.className='action-controls';
   for(const [label,delta] of [['Move up',-1],['Move down',1]]){
    const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=label;
@@ -54,11 +59,11 @@ function renderActions(){
   }
   const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Remove';
   remove.addEventListener('click',()=>{steps.splice(index,1);renderActions();});controls.append(remove);
-  card.append(title,controls);
+  body.append(controls);
   function field(label,element){
    const id='step-'+step.id+'-'+label.toLowerCase().replace(/\W+/g,'-');
    const caption=document.createElement('label');caption.htmlFor=id;caption.textContent=label;
-   element.id=id;card.append(caption,element);
+   element.id=id;body.append(caption,element);
   }
   const type=document.createElement('select');
   for(const [value,label] of actionTypes){const option=document.createElement('option');option.value=value;option.textContent=label;type.append(option);}
@@ -69,7 +74,7 @@ function renderActions(){
   }
   condition.value=step.condition;condition.addEventListener('change',()=>step.condition=condition.value);field('Condition',condition);
   const target=document.createElement('input');target.value=step.target;target.placeholder=step.type==='send-email'?'recipient@example.com':step.type==='webhook'?'https://example.com/hook':step.type==='save-record'?'requests':'workflow';
-  target.addEventListener('input',()=>step.target=target.value);field(step.type==='send-email'?'Recipient':step.type==='webhook'?'Endpoint':step.type==='save-record'?'Collection':'Category',target);
+  target.addEventListener('input',()=>{step.target=target.value;subtitle.textContent=step.target||'Configure action';});field(step.type==='send-email'?'Recipient':step.type==='webhook'?'Endpoint':step.type==='save-record'?'Collection':'Category',target);
   const message=document.createElement('input');message.value=step.message;message.placeholder=step.type==='send-email'?'Email subject':'Message or data';
   message.addEventListener('input',()=>step.message=message.value);field(step.type==='send-email'?'Subject':'Message',message);
   actions.append(card);
