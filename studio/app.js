@@ -1,3 +1,4 @@
+import { explainError } from './error-help.js';
 const examples = {
   hello: '# Your first Flux program\nname = "World"\nprint "Hello, {name}!"\n',
   discount: '# A simple business rule\ncustomer = "Ada"\ntotal = 120\ndiscount = 20\nif total >= 100 {\n  final = total - discount\n} else {\n  final = total\n}\nprint "Total for {customer}: {final}"\n',
@@ -10,7 +11,28 @@ const status = document.querySelector('#status');
 const runButton = document.querySelector('#run');
 const selector = document.querySelector('#examples');
 const key = 'flux-studio-code-v1';
+const gutter = document.querySelector('#line-numbers');
+const help = document.querySelector('#error-help');
+const jump = document.querySelector('#jump-error');
+let errorLine = null;
+function updateGutter() {
+  const count = editor.value.split('\n').length;
+  gutter.textContent = Array.from({length: count}, (_, i) => i + 1).join('\n');
+}
+editor.addEventListener('input', () => { updateGutter(); help.hidden = true; errorLine = null; });
+editor.addEventListener('scroll', () => { gutter.scrollTop = editor.scrollTop; });
+jump.addEventListener('click', () => {
+  if (!errorLine) return;
+  const lines = editor.value.split('\n');
+  const index = lines.slice(0, errorLine - 1).reduce((n, text) => n + text.length + 1, 0);
+  editor.focus(); editor.setSelectionRange(index, index + (lines[errorLine - 1]?.length || 0));
+  const lineHeight = parseFloat(getComputedStyle(editor).lineHeight) || 25;
+  editor.scrollTop = Math.max(0, (errorLine - 3) * lineHeight);
+  gutter.scrollTop = editor.scrollTop;
+});
+
 try { editor.value = localStorage.getItem(key) ?? examples.hello; } catch { editor.value = examples.hello; }
+updateGutter();
 editor.addEventListener('input', () => { try { localStorage.setItem(key, editor.value); } catch {} });
 selector.addEventListener('change', () => { editor.value = examples[selector.value]; editor.dispatchEvent(new Event('input')); });
 document.querySelector('#reset').addEventListener('click', () => { editor.value = examples[selector.value]; editor.dispatchEvent(new Event('input')); });
@@ -28,6 +50,7 @@ function run() {
   status.textContent = 'Running…';
   output.classList.remove('error');
   output.textContent = '';
+  help.hidden = true;
   const timeout = setTimeout(() => finish('Execution timed out (2 seconds). Check for an infinite loop.', true), 2000);
   function finish(message, failed) {
     if (activeWorker !== worker) return;
@@ -36,6 +59,14 @@ function run() {
     output.textContent = message;
     output.classList.toggle('error', failed);
     status.textContent = failed ? 'Error' : 'Finished';
+    if (failed) {
+      const explanation = explainError(message);
+      errorLine = explanation.line;
+      document.querySelector('#error-heading').textContent = errorLine ? 'Problem on line ' + errorLine : 'What happened?';
+      document.querySelector('#error-explanation').textContent = explanation.hint;
+      jump.hidden = !errorLine;
+      help.hidden = false;
+    } else { errorLine = null; help.hidden = true; }
     window.dispatchEvent(new CustomEvent('flux:result', { detail: { message, failed, source: editor.value } }));
   }
   worker.onmessage = event => {
