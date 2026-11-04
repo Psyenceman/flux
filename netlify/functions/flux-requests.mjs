@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { getStore } from '@netlify/blobs';
+import { getStore, connectLambda } from '@netlify/blobs';
 const json=(statusCode,data)=>({statusCode,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'},body:JSON.stringify(data)});
 const equal=(a,b)=>timingSafeEqual(createHash('sha256').update(a).digest(),createHash('sha256').update(b).digest());
 export async function handler(event){
@@ -9,7 +9,8 @@ export async function handler(event){
  const supplied=event.headers?.['x-flux-token']||event.headers?.['X-Flux-Token']||'';
  if(typeof supplied!=='string'||!equal(supplied,secret))return json(401,{ok:false,error:'Unauthorized'});
  try{
-  const store=getStore('flux-requests');
+  connectLambda(event);
+    const store=getStore('flux-requests');
   const items=[];let cursor;
   for(let page=0;page<10;page++){
    const batch=await store.list({prefix:'requests/',paginate:false,...(cursor?{cursor}:{})});
