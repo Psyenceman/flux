@@ -5,12 +5,18 @@
 <title>Flux Workflow Lab</title>
 <style>
 :root{font-family:system-ui,sans-serif;color-scheme:dark;background:#101827;color:#eef3fa}body{max-width:1000px;margin:auto;padding:24px}h1{font-size:2rem}p{color:#b7c5d6;line-height:1.5}.layout{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:700px){.layout{grid-template-columns:1fr}}section{background:#1b2737;border:1px solid #36485f;border-radius:12px;padding:18px}textarea{width:100%;min-height:380px;box-sizing:border-box;background:#0b1420;color:#f0f5fa;padding:14px;border:1px solid #51647b;border-radius:8px;font:14px/1.6 ui-monospace,monospace;resize:vertical}button{border:0;border-radius:8px;padding:12px 18px;background:#4d8eff;color:#071323;font-weight:700;cursor:pointer;margin:12px 8px 8px 0}button.secondary{background:#33445b;color:white}button:disabled{opacity:.5}ol{padding-left:22px}li{padding:10px;border-bottom:1px solid #36485f;line-height:1.5}.muted{font-size:13px;color:#aebdd0}pre{white-space:pre-wrap;overflow-wrap:anywhere}a{color:#9ec6ff}.status{font-size:12px;letter-spacing:.03em;text-transform:uppercase;color:#a6e7c1}.failed{color:#ffaaaa}
-label{display:block;margin:12px 0 5px;color:#d5e1ef;font-size:14px}input,select{width:100%;box-sizing:border-box;border:1px solid #51647b;background:#0b1420;color:white;border-radius:7px;padding:10px} .builder{margin-bottom:20px}.builder-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}@media(max-width:600px){.builder-grid{grid-template-columns:1fr}} .builder-note{font-size:13px}</style></head>
+label{display:block;margin:12px 0 5px;color:#d5e1ef;font-size:14px}input,select{width:100%;box-sizing:border-box;border:1px solid #51647b;background:#0b1420;color:white;border-radius:7px;padding:10px} .builder{margin-bottom:20px}.builder-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}@media(max-width:600px){.builder-grid{grid-template-columns:1fr}} .builder-note{font-size:13px}.action-card{margin:14px 0;padding:14px;border:1px solid #52647b;border-radius:10px;background:#142032}.action-controls{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.action-controls button{padding:7px 10px;font-size:12px;margin:0}.action-card label{margin-top:9px}</style></head>
 <body>
 <p><a href="./">Flux Studio</a> / Workflow Lab</p>
 <h1>See how Flux executes a workflow</h1>
 <p>Run a customer-request workflow and inspect every step. Dry run simulates the same local program. Actions such as email are shown as plans only: nothing is sent or changed.</p>
-<section class="builder"><h2>Visual Builder — no coding required</h2><p>Configure a workflow and generate readable Flux code. The generated email action is a simulation only.</p><div class="builder-grid"><div><label for="workflow-name">Workflow name</label><input id="workflow-name" value="Customer request"></div><div><label for="customer-email">Customer email</label><input id="customer-email" type="email" value="customer@example.com"></div><div><label for="condition">When should it notify?</label><select id="condition"><option value="always">Always</option><option value="approved">Only if approved</option><option value="rejected">Only if rejected</option></select></div><div><label for="email-subject">Email subject</label><input id="email-subject" value="Request accepted"></div></div><button id="generate" type="button">Generate Flux code</button><button id="generate-run" class="secondary" type="button">Generate &amp; simulate</button><p class="builder-note">Editing the generated code is optional. Generating again replaces the current editor contents.</p></section><div class="layout">
+<section class="builder"><h2>Visual Builder</h2><p>Add actions, set conditions and reorder steps. Flux generates the code for you; all actions remain simulations.</p>
+<label for="workflow-name">Workflow name</label><input id="workflow-name" value="Customer request">
+<div id="actions" aria-label="Workflow actions"></div>
+<button id="add-action" type="button" class="secondary">+ Add action</button>
+<button id="generate" type="button">Generate Flux code</button>
+<button id="generate-run" class="secondary" type="button">Generate &amp; simulate</button>
+<p class="builder-note">Actions are plans only. No email, webhook or database write is performed.</p></section><div class="layout">
 <section><h2>Workflow code</h2><textarea id="code" spellcheck="false">workflow "Customer request" {
   step "Validate" {
     approved = true
@@ -27,23 +33,74 @@ label{display:block;margin:12px 0 5px;color:#d5e1ef;font-size:14px}input,select{
 const code=document.querySelector('#code'),state=document.querySelector('#state'),trace=document.querySelector('#trace'),output=document.querySelector('#output');
 const buttons=[document.querySelector('#run'),document.querySelector('#dry')];
 const quote=value=>JSON.stringify(value);
+const actions=document.querySelector('#actions');
+let nextId=0;
+const steps=[];
+const actionTypes=[['send-email','Email notification'],['webhook','Webhook request'],['save-record','Save record'],['log','Log entry']];
+function addAction(type='send-email',condition='always',target='',message=''){
+ const item={id:++nextId,type,condition,target,message};steps.push(item);renderActions();
+}
+function renderActions(){
+ actions.replaceChildren();
+ steps.forEach((step,index)=>{
+  const card=document.createElement('div');card.className='action-card';
+  const title=document.createElement('strong');title.textContent='Step '+(index+1);
+  const controls=document.createElement('div');controls.className='action-controls';
+  for(const [label,delta] of [['Move up',-1],['Move down',1]]){
+   const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=label;
+   button.disabled=index+delta<0||index+delta>=steps.length;
+   button.addEventListener('click',()=>{const other=steps[index+delta];steps[index+delta]=step;steps[index]=other;renderActions();});
+   controls.append(button);
+  }
+  const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Remove';
+  remove.addEventListener('click',()=>{steps.splice(index,1);renderActions();});controls.append(remove);
+  card.append(title,controls);
+  function field(label,element){
+   const id='step-'+step.id+'-'+label.toLowerCase().replace(/\W+/g,'-');
+   const caption=document.createElement('label');caption.htmlFor=id;caption.textContent=label;
+   element.id=id;card.append(caption,element);
+  }
+  const type=document.createElement('select');
+  for(const [value,label] of actionTypes){const option=document.createElement('option');option.value=value;option.textContent=label;type.append(option);}
+  type.value=step.type;type.addEventListener('change',()=>{step.type=type.value;renderActions();});field('Action',type);
+  const condition=document.createElement('select');
+  for(const [value,label] of [['always','Always'],['approved','If approved'],['rejected','If rejected']]){
+   const option=document.createElement('option');option.value=value;option.textContent=label;condition.append(option);
+  }
+  condition.value=step.condition;condition.addEventListener('change',()=>step.condition=condition.value);field('Condition',condition);
+  const target=document.createElement('input');target.value=step.target;target.placeholder=step.type==='send-email'?'recipient@example.com':step.type==='webhook'?'https://example.com/hook':step.type==='save-record'?'requests':'workflow';
+  target.addEventListener('input',()=>step.target=target.value);field(step.type==='send-email'?'Recipient':step.type==='webhook'?'Endpoint':step.type==='save-record'?'Collection':'Category',target);
+  const message=document.createElement('input');message.value=step.message;message.placeholder=step.type==='send-email'?'Email subject':'Message or data';
+  message.addEventListener('input',()=>step.message=message.value);field(step.type==='send-email'?'Subject':'Message',message);
+  actions.append(card);
+ });
+}
 function generate(){
  const name=document.querySelector('#workflow-name').value.trim()||'My workflow';
- const email=document.querySelector('#customer-email').value.trim();
- const subject=document.querySelector('#email-subject').value.trim()||'Notification';
- const condition=document.querySelector('#condition').value;
- if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){state.textContent='Enter a valid email address';state.classList.add('failed');return false;}
- const action='    plan "send-email" with {to: '+quote(email)+', subject: '+quote(subject)+'}';
- const lines=['workflow '+quote(name)+' {','  step "Check request" {','    approved = true','  }','  step "Notify customer" {'];
- if(condition==='always')lines.push(action);
- else {lines.push('    if approved == '+(condition==='approved'?'true':'false')+' {', '  '+action,'    }');}
- lines.push('  }','}');
- code.value=lines.join('\n');
- state.textContent='Code generated — ready to simulate';state.classList.remove('failed');
- return true;
+ if(!steps.length){state.textContent='Add at least one action';state.classList.add('failed');return false;}
+ const lines=['workflow '+quote(name)+' {','  step "Check request" {','    approved = true','  }'];
+ for(let i=0;i<steps.length;i++){
+  const step=steps[i],target=step.target.trim(),message=step.message.trim();
+  if(!target){state.textContent='Enter a target for step '+(i+1);state.classList.add('failed');return false;}
+  if(step.type==='send-email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target)){state.textContent='Enter a valid email for step '+(i+1);state.classList.add('failed');return false;}
+  if(step.type==='webhook'&&!/^https:\/\/[^\s]+$/i.test(target)){state.textContent='Enter an HTTPS URL for step '+(i+1);state.classList.add('failed');return false;}
+  const payload=step.type==='send-email'?'{to: '+quote(target)+', subject: '+quote(message||'Notification')+'}':
+   step.type==='webhook'?'{url: '+quote(target)+', data: '+quote(message)+'}':
+   step.type==='save-record'?'{collection: '+quote(target)+', data: '+quote(message)+'}':
+   '{category: '+quote(target)+', message: '+quote(message)+'}';
+  lines.push('  step '+quote('Action '+(i+1)+': '+step.type)+' {');
+  const action='    plan '+quote(step.type)+' with '+payload;
+  if(step.condition==='always')lines.push(action);
+  else lines.push('    if approved == '+(step.condition==='approved'?'true':'false')+' {','  '+action,'    }');
+  lines.push('  }');
+ }
+ lines.push('}');
+ code.value=lines.join('\n');state.textContent='Code generated — ready to simulate';state.classList.remove('failed');return true;
 }
+document.querySelector('#add-action').addEventListener('click',()=>addAction('log','always','',''));
 document.querySelector('#generate').addEventListener('click',generate);
 document.querySelector('#generate-run').addEventListener('click',()=>{if(generate())execute(true);});
+addAction('send-email','approved','customer@example.com','Request accepted');
 let worker=null;
 function execute(dryRun){
  if(worker)worker.terminate();
