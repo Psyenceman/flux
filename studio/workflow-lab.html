@@ -5,12 +5,12 @@
 <title>Flux Workflow Lab</title>
 <style>
 :root{font-family:system-ui,sans-serif;color-scheme:dark;background:#101827;color:#eef3fa}body{max-width:1000px;margin:auto;padding:24px}h1{font-size:2rem}p{color:#b7c5d6;line-height:1.5}.layout{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:700px){.layout{grid-template-columns:1fr}}section{background:#1b2737;border:1px solid #36485f;border-radius:12px;padding:18px}textarea{width:100%;min-height:380px;box-sizing:border-box;background:#0b1420;color:#f0f5fa;padding:14px;border:1px solid #51647b;border-radius:8px;font:14px/1.6 ui-monospace,monospace;resize:vertical}button{border:0;border-radius:8px;padding:12px 18px;background:#4d8eff;color:#071323;font-weight:700;cursor:pointer;margin:12px 8px 8px 0}button.secondary{background:#33445b;color:white}button:disabled{opacity:.5}ol{padding-left:22px}li{padding:10px;border-bottom:1px solid #36485f;line-height:1.5}.muted{font-size:13px;color:#aebdd0}pre{white-space:pre-wrap;overflow-wrap:anywhere}a{color:#9ec6ff}.status{font-size:12px;letter-spacing:.03em;text-transform:uppercase;color:#a6e7c1}.failed{color:#ffaaaa}
-</style></head>
+label{display:block;margin:12px 0 5px;color:#d5e1ef;font-size:14px}input,select{width:100%;box-sizing:border-box;border:1px solid #51647b;background:#0b1420;color:white;border-radius:7px;padding:10px} .builder{margin-bottom:20px}.builder-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}@media(max-width:600px){.builder-grid{grid-template-columns:1fr}} .builder-note{font-size:13px}</style></head>
 <body>
 <p><a href="./">Flux Studio</a> / Workflow Lab</p>
 <h1>See how Flux executes a workflow</h1>
 <p>Run a customer-request workflow and inspect every step. Dry run simulates the same local program. Actions such as email are shown as plans only: nothing is sent or changed.</p>
-<div class="layout">
+<section class="builder"><h2>Visual Builder — no coding required</h2><p>Configure a workflow and generate readable Flux code. The generated email action is a simulation only.</p><div class="builder-grid"><div><label for="workflow-name">Workflow name</label><input id="workflow-name" value="Customer request"></div><div><label for="customer-email">Customer email</label><input id="customer-email" type="email" value="customer@example.com"></div><div><label for="condition">When should it notify?</label><select id="condition"><option value="always">Always</option><option value="approved">Only if approved</option><option value="rejected">Only if rejected</option></select></div><div><label for="email-subject">Email subject</label><input id="email-subject" value="Request accepted"></div></div><button id="generate" type="button">Generate Flux code</button><button id="generate-run" class="secondary" type="button">Generate &amp; simulate</button><p class="builder-note">Editing the generated code is optional. Generating again replaces the current editor contents.</p></section><div class="layout">
 <section><h2>Workflow code</h2><textarea id="code" spellcheck="false">workflow "Customer request" {
   step "Validate" {
     approved = true
@@ -26,6 +26,24 @@
 <script type="module">
 const code=document.querySelector('#code'),state=document.querySelector('#state'),trace=document.querySelector('#trace'),output=document.querySelector('#output');
 const buttons=[document.querySelector('#run'),document.querySelector('#dry')];
+const quote=value=>JSON.stringify(value);
+function generate(){
+ const name=document.querySelector('#workflow-name').value.trim()||'My workflow';
+ const email=document.querySelector('#customer-email').value.trim();
+ const subject=document.querySelector('#email-subject').value.trim()||'Notification';
+ const condition=document.querySelector('#condition').value;
+ if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){state.textContent='Enter a valid email address';state.classList.add('failed');return false;}
+ const action='    plan "send-email" with {to: '+quote(email)+', subject: '+quote(subject)+'}';
+ const lines=['workflow '+quote(name)+' {','  step "Check request" {','    approved = true','  }','  step "Notify customer" {'];
+ if(condition==='always')lines.push(action);
+ else {lines.push('    if approved == '+(condition==='approved'?'true':'false')+' {', '  '+action,'    }');}
+ lines.push('  }','}');
+ code.value=lines.join('\n');
+ state.textContent='Code generated — ready to simulate';state.classList.remove('failed');
+ return true;
+}
+document.querySelector('#generate').addEventListener('click',generate);
+document.querySelector('#generate-run').addEventListener('click',()=>{if(generate())execute(true);});
 let worker=null;
 function execute(dryRun){
  if(worker)worker.terminate();
