@@ -233,7 +233,7 @@ window.addEventListener('flux:run-summary',async event=>{
  const row=selection();if(!client||!user||!row)return;
  const detail=event.detail||{},steps=Array.isArray(detail.trace)?detail.trace:[];
  const result={dryRun:detail.dryRun!==false,steps:steps.slice(0,100).map(step=>({id:String(step.id||'').slice(0,80),type:String(step.type||'').slice(0,60),status:String(step.status||'').slice(0,30),reason:String(step.reason||'').slice(0,200)}))};
- const {error}=await client.from('automation_runs').insert({automation_id:row.id,owner_id:user.id,status:detail.ok?'completed':'failed',started_at:new Date().toISOString(),finished_at:new Date().toISOString(),result,error_message:detail.ok?null:String(detail.error||'Execution failed').slice(0,200)});
+ const {error}=await client.from('automation_runs').insert({automation_id:row.id,owner_id:user.id,status:detail.ok?'success':'failed',started_at:new Date().toISOString(),finished_at:new Date().toISOString(),result,error_message:detail.ok?null:String(detail.error||'Execution failed').slice(0,200)});
  if(error)status('Run history could not be saved: '+error.message);
  else refreshRunHistory();
 });
