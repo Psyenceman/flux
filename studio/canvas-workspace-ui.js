@@ -13,13 +13,13 @@
  if(!main||!bar||!library||!cloud||!assistant||!logs||!toolbar||!runner||!tools||!viewport)return;
  // Visual hierarchy: workspace > automation > actions > canvas > secondary tools.
  main.insertBefore(library,cloud);
- main.insertBefore(toolbar,cloud);
- main.insertBefore(tools,cloud);
- main.insertBefore(viewport,cloud);
+ main.insertBefore(cloud,toolbar);
+ main.insertBefore(toolbar,tools);
+ main.insertBefore(tools,viewport);
  const drawer=(name,panel)=>{
   const details=document.createElement('details');details.className='flux-drawer';
   const summary=document.createElement('summary');summary.textContent=name;
-  details.append(summary,panel);main.insertBefore(details,cloud);
+  details.append(summary,panel);main.append(details);
   return details;
  };
  drawer('✦ Flux Assistant & Repair',assistant);
@@ -27,5 +27,5 @@
  // Keep logs discoverable immediately after a run without hiding the canvas.
  window.addEventListener('flux:run-summary',()=>{logsDrawer.open=true;});
  // Runner remains available as part of execution workflow.
- main.insertBefore(runner,cloud);
+ main.insertBefore(runner,tools);
 })();
