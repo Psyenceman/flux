@@ -21,7 +21,7 @@ const schemas={
  loop:[['items','Items expression','text']]
 };
 window.addEventListener('flux:configure-block',event=>{
- const {node,pane,tab}=event.detail;
+ const {node,pane,tab,upstream=[]}=event.detail;
  if(tab!=='Operation')return;
  const section=document.createElement('section');section.className='block-specific';
  if(['flux','http','trello','database'].includes(node.type))return;
@@ -39,27 +39,35 @@ window.addEventListener('flux:configure-block',event=>{
   if(node.type==='flux'&&key==='source')row.dataset.advanced='source';
  }
  if(node.type==='filter'){const choice=section.querySelector('select');const value=section.querySelector('[data-conditional=value]');if(choice&&value){const update=()=>{value.hidden=choice.value==='exists';};choice.addEventListener('change',update);update();}}
- if(node.type==='mapper')buildMappingEditor(section,node);
+ if(node.type==='mapper')buildMappingEditor(section,node,upstream);
  const info=document.createElement('p');info.className='inspector-help';info.textContent='Settings are saved in the graph. Execution requires a supported backend connector; no external action is triggered by editing.';
  section.append(info);pane.prepend(section);
 });
 
-function buildMappingEditor(section,node){
+function buildMappingEditor(section,node,upstream=[]){
  const intro=document.createElement('p');intro.className='inspector-help';intro.textContent='Choose the output fields. Use {{input.field}} to reuse data from the trigger.';section.append(intro);
  const list=document.createElement('div');section.append(list);
  const add=document.createElement('button');add.type='button';add.textContent='+ Add field';section.append(add);
  let mapping={};try{const value=JSON.parse(node.config.mapping||'{}');if(value&&typeof value==='object'&&!Array.isArray(value))mapping=value;}catch{}
  const entries=Object.entries(mapping);
  if(!entries.length)entries.push(['message','{{input.message}}']);
- const persist=()=>{const output={};for(const row of list.children){const name=row.querySelector('[data-name]').value.trim(),value=row.querySelector('[data-value]').value;if(name&&/^[a-zA-Z_][\w]{0,63}$/.test(name))output[name]=value;}node.config.mapping=JSON.stringify(output);window.dispatchEvent(new Event('flux:canvas-changed'));};
+ const persist=()=>{const output={};for(const row of list.querySelectorAll('[data-picker-row]')){const name=row.querySelector('[data-name]').value.trim(),value=row.querySelector('[data-value]').value;if(name&&/^[a-zA-Z_][\w]{0,63}$/.test(name))output[name]=value;}node.config.mapping=JSON.stringify(output);window.dispatchEvent(new Event('flux:canvas-changed'));};
  function addRow(name='',value=''){
   const row=document.createElement('div');row.className='mapping-row';row.style.cssText='display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin:8px 0;align-items:center';
   const key=document.createElement('input');key.dataset.name='';key.placeholder='Output field';key.value=name;key.setAttribute('aria-label','Output field name');
   const val=document.createElement('input');val.dataset.value='';val.placeholder='Value or {{input.field}}';val.value=value;val.setAttribute('aria-label','Output field value');
-  const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.title='Remove field';remove.onclick=()=>{row.remove();persist();};
+  const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.title='Remove field';remove.onclick=()=>{row.nextElementSibling?.remove();row.remove();persist();};
+  const picker=document.createElement('select');picker.setAttribute('aria-label','Insert data reference');picker.title='Choose a previous block';const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Choose data…';picker.append(placeholder);
+  for(const source of [{id:'input',label:'Workflow input'},...upstream.map(item=>({id:item.id,label:item.label+' ('+item.id+')'}))]){
+   for(const field of ['message','status','email','customer.email','items','count']){
+    const option=document.createElement('option');option.value='{{'+source.id+'.'+field+'}}';option.textContent=source.label+' · '+field;picker.append(option);
+   }
+  }
+  picker.onchange=()=>{if(!picker.value)return;val.value=picker.value;picker.value='';persist();};
   key.oninput=persist;val.oninput=persist;row.append(key,val,remove);list.append(row);
+  const pickRow=document.createElement('div');pickRow.style.cssText='margin:0 0 10px';pickRow.append(picker);row.after(pickRow);row.dataset.pickerRow='';
  }
  entries.forEach(([key,value])=>addRow(key,String(value)));
  if(!node.config.mapping)persist();
- add.onclick=()=>{if(list.children.length>=30)return;addRow();};
+ add.onclick=()=>{if(list.querySelectorAll('[data-picker-row]').length>=30)return;addRow();};
 }
