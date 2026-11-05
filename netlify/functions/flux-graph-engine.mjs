@@ -89,7 +89,11 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
    case 'merge':output={items:incoming};break;
    case 'schedule':status='skipped';reason='Automatic scheduling requires a server scheduler';break;
    case 'delay':status='skipped';reason='Delay execution is not implemented';break;
-   case 'log':break;
+   case 'log':{
+    const message=String(config.message||'').slice(0,500);
+    output={...((value&&typeof value==='object'&&!Array.isArray(value))?value:{value}),logMessage:message};
+    break;
+   }
    case 'http':{
     // Only a preconfigured server-side destination; never trust URL from graph.
     if(!notificationUrl){status='skipped';reason='Server HTTP destination not configured';break;}
