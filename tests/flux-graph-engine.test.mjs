@@ -37,5 +37,18 @@ test('delay dry-run simulates without waiting and forwards input',async()=>{
 });
 test('delay rejects excessive waiting',async()=>{
  const g=graph([['a','delay',{milliseconds:50000}]]);
- await assert.rejects(executeGraph(g,{}),/duration must be/);
+ const result=await executeGraph(g,{});
+ assert.equal(result.ok,false);
+ assert.equal(result.failedBlock,'a');
+ assert.match(result.error,/duration must be/);
+ assert.equal(result.trace[0].status,'failed');
+});
+
+test('failed mapping produces a block-level trace without running successors',async()=>{
+ const g=graph([['a','manual'],['b','mapper',{mapping:'invalid json'}],['c','log']],[['a','b'],['b','c']]);
+ const result=await executeGraph(g,{message:'hello'});
+ assert.equal(result.ok,false);
+ assert.equal(result.failedBlock,'b');
+ assert.equal(result.trace.find(entry=>entry.id==='b').status,'failed');
+ assert.equal(result.trace.find(entry=>entry.id==='c'),undefined);
 });
