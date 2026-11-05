@@ -39,6 +39,7 @@ document.getElementById('zoom-fit').addEventListener('click', () => {
 });
 viewport.addEventListener('wheel', event => {
   if (event.target.closest('input,select,textarea')) return;
+  if (!event.metaKey && !event.altKey) return;
   event.preventDefault();
   applyZoom(zoom * Math.exp(-event.deltaY * 0.0012), event.clientX, event.clientY);
 }, { passive: false });
@@ -52,7 +53,7 @@ document.addEventListener('keyup', event => { if (event.code === 'Space') spaceH
 window.addEventListener('blur', () => { spaceHeld = false; panning = null; viewport.classList.remove('is-panning'); });
 viewport.addEventListener('pointerdown', event => {
   if (event.button !== 0 && event.button !== 1) return;
-  if (!spaceHeld && event.button !== 1 && event.target.closest('.node,button,input,select,textarea')) return;
+  if (!spaceHeld && event.button !== 1 && event.target.closest('.node,button,input,select,textarea,.port')) return;
   panning = { id: event.pointerId, x: event.clientX, y: event.clientY, left: viewport.scrollLeft, top: viewport.scrollTop };
   viewport.classList.add('is-panning');
   viewport.setPointerCapture(event.pointerId);
@@ -73,6 +74,5 @@ viewport.addEventListener('pointerup', endPan);
 viewport.addEventListener('pointercancel', endPan);
 // Start centered on the example, without changing its saved coordinates.
 requestAnimationFrame(() => {
-  viewport.scrollLeft = Math.max(0, (1600 - viewport.clientWidth) / 2);
-  viewport.scrollTop = Math.max(0, (1050 - viewport.clientHeight) / 2);
+  document.getElementById('zoom-fit')?.click();
 });
