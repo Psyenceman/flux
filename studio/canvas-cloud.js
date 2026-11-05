@@ -38,6 +38,68 @@ function updateApiPanel(){
  apiInput.value=location.origin+'/.netlify/functions/flux-automation-api?automation='+encodeURIComponent(row.id);
 }
 $('canvas-automation')?.addEventListener('change',updateApiPanel);
+const webhookPanel=document.createElement('section');webhookPanel.className='flux-webhook-panel';
+const webhookTitle=document.createElement('strong');webhookTitle.textContent='Incoming webhook · TEST';
+const webhookInfo=document.createElement('p');webhookInfo.textContent='Generate a unique URL and secret. The key is shown only once. Keep it private.';
+const webhookUrl=document.createElement('input');webhookUrl.readOnly=true;webhookUrl.setAttribute('aria-label','Webhook URL');
+const webhookKey=document.createElement('input');webhookKey.readOnly=true;webhookKey.placeholder='Secret appears once when generated';webhookKey.setAttribute('aria-label','New webhook secret');
+const webhookCreate=document.createElement('button');webhookCreate.textContent='Generate / rotate key';
+const webhookToggle=document.createElement('button');webhookToggle.textContent='Activate webhook';
+const webhookRevoke=document.createElement('button');webhookRevoke.textContent='Revoke key';
+const webhookHistory=document.createElement('div');webhookHistory.className='flux-webhook-history';
+webhookPanel.append(webhookTitle,webhookInfo,webhookUrl,webhookKey,webhookCreate,webhookToggle,webhookRevoke,webhookHistory);
+$('canvas-cloud')?.append(webhookPanel);
+let currentWebhook=null;
+const toHex=bytes=>Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+async function updateWebhookPanel(){
+ const row=selection();webhookPanel.hidden=!user||!row?.action_config?.graph;
+ if(webhookPanel.hidden){currentWebhook=null;return;}
+ const {data,error}=await client.from('flux_webhooks').select('id,enabled,revoked_at').eq('automation_id',row.id).maybeSingle();
+ if(error){webhookInfo.textContent='Webhook unavailable: '+error.message;return;}
+ currentWebhook=data;
+ webhookUrl.value=data?location.origin+'/.netlify/functions/flux-webhook?id='+data.id:'';
+ webhookKey.value='';
+ webhookToggle.disabled=!data||!!data.revoked_at;
+ webhookToggle.textContent=data?.enabled?'Deactivate webhook':'Activate webhook';
+ webhookRevoke.disabled=!data||!!data.revoked_at;
+ webhookInfo.textContent=data?.revoked_at?'Key revoked. Generate a new key.':data?'Use POST JSON with x-flux-webhook-key header. Keep the secret private.':'Generate a webhook key to begin.';
+ webhookHistory.replaceChildren();
+ if(data){
+  const logs=await client.from('flux_webhook_requests').select('received_at,status,http_status,error_code').eq('webhook_id',data.id).order('received_at',{ascending:false}).limit(20);
+  if(logs.error){webhookHistory.textContent='Request history unavailable';return;}
+  for(const log of logs.data||[]){const p=document.createElement('p');p.textContent=new Date(log.received_at).toLocaleString()+' · '+log.status;webhookHistory.append(p);}
+ }
+}
+webhookCreate.addEventListener('click',async()=>{
+ const row=selection();if(!row||!user)return;
+ if(currentWebhook&&!confirm('Rotate webhook key? The old key will stop working immediately.'))return;
+ const secret='fw_'+toHex(crypto.getRandomValues(new Uint8Array(32)));
+ const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(secret));
+ const secret_hash=toHex(new Uint8Array(digest));
+ const result=currentWebhook
+ ?await client.from('flux_webhooks').update({secret_hash,enabled:false,revoked_at:null}).eq('id',currentWebhook.id).eq('owner_id',user.id)
+ :await client.from('flux_webhooks').insert({automation_id:row.id,owner_id:user.id,secret_hash});
+ if(result.error){status('Webhook generation failed: '+result.error.message);return;}
+ await updateWebhookPanel();webhookKey.value=secret;status('Webhook generated. Copy the secret now: it cannot be retrieved later.');
+});
+webhookToggle.addEventListener('click',async()=>{
+ const row=selection();if(!currentWebhook||!row)return;
+ const enabled=!currentWebhook.enabled;
+ if(enabled&&!confirm('Enable external webhook execution for '+row.name+'? Incoming requests can trigger live actions and use FluxCoins.'))return;
+ const automation=await client.from('automations').update({enabled}).eq('id',row.id).eq('owner_id',user.id);
+ if(automation.error){status(automation.error.message);return;}
+ const result=await client.from('flux_webhooks').update({enabled}).eq('id',currentWebhook.id).eq('owner_id',user.id);
+ if(result.error){await client.from('automations').update({enabled:false}).eq('id',row.id).eq('owner_id',user.id);status('Activation failed: '+result.error.message);return;}
+ await updateWebhookPanel();status(enabled?'Webhook enabled.':'Webhook disabled.');
+});
+webhookRevoke.addEventListener('click',async()=>{
+ if(!currentWebhook||!confirm('Revoke this webhook key immediately?'))return;
+ const result=await client.from('flux_webhooks').update({enabled:false,revoked_at:new Date().toISOString()}).eq('id',currentWebhook.id).eq('owner_id',user.id);
+ if(result.error){status(result.error.message);return;}
+ await updateWebhookPanel();status('Webhook key revoked.');
+});
+$('canvas-automation')?.addEventListener('change',updateWebhookPanel);
+
 
 async function refresh() {
   const { data: auth, error: authError } = await client.auth.getUser();
@@ -45,7 +107,7 @@ async function refresh() {
   if (authError || !user) {
     $('canvas-cloud-user').textContent = 'Sign in from Flux Studio to use cloud automations';
     status('Local canvas is still available.');
-    rows=[];drawLibrary();updateApiPanel();refreshFluxCoins();
+    rows=[];drawLibrary();updateApiPanel();updateWebhookPanel();refreshFluxCoins();
     return;
   }
   $('canvas-cloud-user').textContent = user.email;
