@@ -2,6 +2,7 @@
 export function validateGraph(graph){
  if(!graph||graph.version!==1||!Array.isArray(graph.nodes)||!Array.isArray(graph.edges))throw Error('Invalid graph');
  if(graph.nodes.length>80||graph.edges.length>300)throw Error('Workflow exceeds execution limits');
+ if(JSON.stringify(graph).length>120000)throw Error('Workflow payload exceeds execution limits');
  const ids=new Set();
  const allowed=new Set(['webhook','filter','flux','log','merge','http','airtable','trello','miro','slack','email','database','delay','manual','schedule','router','mapper','loop','sheets','drive','github','wordpress']);
  for(const n of graph.nodes){if(!n||typeof n.id!=='string'||n.id.length>80||ids.has(n.id)||!allowed.has(n.type))throw Error('Invalid or duplicate block');ids.add(n.id);}
