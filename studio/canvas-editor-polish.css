@@ -1,0 +1,17 @@
+/* Flux editor interaction polish — restrained visual language */
+#canvas-shell .flux-connection-path{stroke:#8499bc;stroke-width:3;stroke-linecap:round;transition:stroke .18s ease,stroke-width .18s ease;vector-effect:non-scaling-stroke}
+#canvas-shell .flux-connection-path:hover{stroke:#6656c4;stroke-width:5;cursor:pointer}
+#canvas-shell .node{transition:box-shadow .16s ease,border-color .16s ease;user-select:none;touch-action:none}
+#canvas-shell .node:hover{box-shadow:0 8px 24px #1b2d4b24!important}
+#canvas-shell .node.selected{outline:3px solid #6e5bd0!important;outline-offset:3px!important}
+#canvas-shell .node[data-type=manual],#canvas-shell .node[data-type=schedule],#canvas-shell .node[data-type=webhook]{border-radius:28px!important}
+#canvas-shell .node[data-type=filter],#canvas-shell .node[data-type=router]{border-radius:8px 24px 8px 24px!important}
+#canvas-shell .node[data-type=mapper],#canvas-shell .node[data-type=flux]{border-radius:12px!important;border-style:solid!important}
+#canvas-shell .node[data-type=delay],#canvas-shell .node[data-type=log],#canvas-shell .node[data-type=merge]{border-radius:9px!important}
+#canvas-shell .node .node-meta{font-size:11px!important;line-height:1.4}
+#canvas-shell .node .block-icon{font-size:16px!important}
+#canvas-shell .node[data-type=filter] .block-icon,#canvas-shell .node[data-type=router] .block-icon{background:#fff1d4!important;color:#916017!important}
+#canvas-shell .node[data-type=mapper] .block-icon,#canvas-shell .node[data-type=flux] .block-icon{background:#eae2ff!important;color:#6043a7!important}
+#canvas-shell .node[data-type=webhook] .block-icon,#canvas-shell .node[data-type=manual] .block-icon,#canvas-shell .node[data-type=schedule] .block-icon{background:#ffe2ed!important;color:#a03c6d!important}
+#canvas-shell .flux-select-all:focus-visible,#canvas-shell .node:focus-visible{outline:3px solid #7564cf!important;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){#canvas-shell .node,#canvas-shell .flux-connection-path{transition:none!important}}
