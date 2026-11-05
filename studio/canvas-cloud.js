@@ -73,3 +73,5 @@ try {
   await refresh();
   client.auth.onAuthStateChange(()=>queueMicrotask(refresh));
 } catch(error){status('Cloud connection failed: '+error.message);}
+
+window.addEventListener('flux:session-request',async()=>{const {data}=await client.auth.getSession();window.dispatchEvent(new CustomEvent('flux:session-response',{detail:data?.session?.access_token||null}));});
