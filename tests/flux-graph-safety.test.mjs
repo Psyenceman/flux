@@ -25,5 +25,8 @@ test('dry-run HTTP does not make outbound request',async()=>{
 
 test('mapper blocks references outside its upstream ancestry',async()=>{
  const graph=workflow([['a','manual'],['b','manual'],['c','mapper',{mapping:JSON.stringify({email:'{{b.email}}'})}]],[['a','c']]);
- await assert.rejects(executeGraph(graph,{email:'sample@example.com'}),/unconnected block/);
+ const result=await executeGraph(graph,{email:'sample@example.com'});
+ assert.equal(result.ok,false);
+ assert.equal(result.failedBlock,'c');
+ assert.match(result.error,/unconnected block/);
 });
