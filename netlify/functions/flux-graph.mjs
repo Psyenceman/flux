@@ -43,9 +43,9 @@ export async function handler(event){
     method:'POST',headers:{apikey:'sb_publishable_vcqHLVzTy3u1Ozk9N1YBiQ_iuIhsOHu',authorization:'Bearer '+sessionToken,'content-type':'application/json'},
     body:JSON.stringify({p_action:dryRun?'workflow_test':'workflow_run'}),signal:AbortSignal.timeout(5000)
    });
-   if(!creditResponse.ok)return json(503,{ok:false,error:'Flux Credits temporarily unavailable. No workflow executed.'});
+   if(!creditResponse.ok)return json(503,{ok:false,error:'FluxCoins temporarily unavailable. No workflow executed.'});
    credits=await creditResponse.json();
-   if(!credits?.ok)return json(402,{ok:false,error:'Insufficient Flux Credits',credits});
+   if(!credits?.ok)return json(402,{ok:false,error:'Insufficient FluxCoins',credits});
   }
   const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloKey:process.env.FLUX_TRELLO_API_KEY,trelloToken:process.env.FLUX_TRELLO_TOKEN});return json(200,{...result,credits});
  }
