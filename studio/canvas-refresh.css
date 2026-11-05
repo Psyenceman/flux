@@ -53,3 +53,18 @@ header h1{color:#152b4a}header p,p{color:#65758c}a{color:#2367bc}
 @media(max-width:1100px){.shell{grid-template-columns:190px minmax(0,1fr) 220px}.shell.library-closed{grid-template-columns:0 minmax(0,1fr) 220px}.shell.inspector-closed{grid-template-columns:190px minmax(0,1fr) 0}.shell.library-closed.inspector-closed{grid-template-columns:0 minmax(0,1fr) 0}}
 @media(max-width:950px){.shell,.shell.library-closed,.shell.inspector-closed,.shell.library-closed.inspector-closed{display:flex;flex-direction:column}.shell aside{position:static;max-height:none}.shell.library-closed .library-panel,.shell.inspector-closed .inspector-panel{display:none}.canvas-wrap{min-height:65vh}.palette{grid-template-columns:repeat(2,minmax(0,1fr))}.workspace-bar{flex-wrap:wrap}}
 @media(max-width:550px){.palette{grid-template-columns:1fr 1fr}.palette button{flex-wrap:wrap}.palette button small{display:none}.workspace-actions button{font-size:12px;padding:8px}.canvas-tools{gap:6px}}
+
+.palette-search-label{display:block;font-size:12px;font-weight:650;color:#405a78;margin:12px 0 5px}
+#palette-search{display:block;width:100%;border:1px solid #bdcfe5;border-radius:9px;padding:11px 12px;background:#fff;color:#183451;font:inherit}
+.palette-filters{display:flex;gap:5px;margin:9px 0;flex-wrap:wrap}
+.palette-filters button{padding:6px 9px;border:1px solid #c6d7e9;background:#fff;border-radius:8px;color:#345477;cursor:pointer;font-size:12px}
+.palette-filters button[aria-pressed=true]{background:#e4efff;border-color:#76a5e9;color:#1b5bab}
+.palette-count{font-size:11px;color:#607590}
+.palette button[hidden]{display:none!important}
+.palette button{position:relative;flex-wrap:wrap}
+.palette button .integration-status{font-size:10px;margin-left:auto;padding:3px 6px;border-radius:5px;background:#f0f3f8;color:#66788e}
+.palette button .integration-status.available{background:#e8effc;color:#285da0}
+.palette button .integration-status.planned{background:#f5f0e7;color:#8b6937}
+.node-delete{position:absolute;right:7px;top:6px;z-index:4;width:27px;height:27px;display:flex;align-items:center;justify-content:center;border-radius:8px!important;border:1px solid transparent!important;background:transparent!important;color:#6c7d90!important;font-size:22px!important;line-height:1;cursor:pointer}
+.node-delete:hover,.node-delete:focus-visible{background:#fee8e8!important;color:#a62424!important;border-color:#f3baba!important}
+.node-head{padding-right:39px}
