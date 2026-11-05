@@ -36,7 +36,7 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
   if(incoming.length===0 && graph.edges.some(e=>e.to===id)){trace.push({id,type:n.type,status:'skipped',reason:'No active incoming branch'});continue;}
   const value=incoming.length>1?{items:incoming}:incoming.length===1?incoming[0]:input;
   const config=n.config||{};let output=value,active=true,status='completed',reason;
-  switch(n.type){
+  try{switch(n.type){
    case 'webhook':case 'manual':break;
    case 'mapper':output=applyMapping(String(config.mapping||'{}'),outputs,input,ancestors.get(id));break;
    case 'filter':{
@@ -113,6 +113,11 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
     output={delivered:true,status:res.status};break;
    }
    default:status='skipped';reason='Connector not implemented';
+  }
+  }catch(error){
+   const message=error instanceof Error?error.message:'Unknown execution error';
+   trace.push({id,type:n.type,status:'failed',reason:message.slice(0,240)});
+   return {ok:false,dryRun,failedBlock:id,error:message.slice(0,240),trace,outputs};
   }
   trace.push({id,type:n.type,status:active?status:'filtered',...(reason?{reason}:{})});
   if(!active||status==='skipped')continue;
