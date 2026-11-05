@@ -7,9 +7,13 @@
  const selector=document.getElementById('canvas-automation');
  selector?.addEventListener('change',()=>{active=selector.value||null;show();});
  const history=new Map();
+ const tools=document.createElement('div');tools.className='flux-log-tools';
+ const filter=document.createElement('select');filter.setAttribute('aria-label','Filter debug logs');for(const [value,label] of [['all','All results'],['Failed','Failed'],['Simulation','Simulations'],['Execution','Executions']]){const option=new Option(label,value);filter.add(option);}filter.addEventListener('change',show);
+ const clear=document.createElement('button');clear.type='button';clear.textContent='Clear session logs';clear.addEventListener('click',()=>{history.delete(selector?.value||active||'local');show();});
+ tools.append(filter,clear);panel.before(tools);
  function show(){
   panel.replaceChildren();
-  const entries=history.get(active)||[];
+  const entries=(history.get(selector?.value||active||'local')||[]).filter(item=>filter.value==='all'||item.status===filter.value);
   if(!entries.length){const p=document.createElement('p');p.textContent='No test logs in this browser session for the selected automation.';panel.append(p);return;}
   for(const item of entries.slice().reverse()){
    const details=document.createElement('details'),summary=document.createElement('summary');
