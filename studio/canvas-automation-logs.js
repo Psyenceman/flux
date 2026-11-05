@@ -7,8 +7,8 @@
  const selector=document.getElementById('canvas-automation');
  selector?.addEventListener('change',()=>{active=selector.value||null;show();});
  const history=new Map();
- const persistent=new Map();
- window.addEventListener('flux:persistent-runs',event=>{persistent.set(event.detail.automationId,event.detail.runs||[]);show();});
+ const persistent=new Map();const cloudErrors=new Map();
+ window.addEventListener('flux:persistent-runs',event=>{persistent.set(event.detail.automationId,event.detail.runs||[]);if(event.detail.error)cloudErrors.set(event.detail.automationId,event.detail.error);else cloudErrors.delete(event.detail.automationId);show();});
  const tools=document.createElement('div');tools.className='flux-log-tools';
  const filter=document.createElement('select');filter.setAttribute('aria-label','Filter debug logs');for(const [value,label] of [['all','All results'],['Failed','Failed'],['Simulation','Simulations'],['Execution','Executions']]){const option=new Option(label,value);filter.add(option);}filter.addEventListener('change',show);
  const clear=document.createElement('button');clear.type='button';clear.textContent='Clear session logs';clear.addEventListener('click',()=>{history.delete(selector?.value||active||'local');show();});
@@ -16,14 +16,17 @@
  function show(){
   panel.replaceChildren();
   const id=selector?.value||active||'local';
-  const stored=(persistent.get(id)||[]).map(run=>({time:new Date(run.started_at).toLocaleString(),status:run.status==='failed'?'Failed':run.result?.dryRun?'Simulation':'Execution',steps:run.result?.steps?.length||0,details:(run.result?.steps||[]).map(step=>step.type+': '+step.status+(step.reason?' — '+step.reason:'')).join('\\n')||run.error_message||'No trace available'}));
+  if(cloudErrors.has(id)){const warning=document.createElement('p');warning.textContent='Cloud history error: '+cloudErrors.get(id);panel.append(warning);}
+  const stored=(persistent.get(id)||[]).map(run=>({automationId:id,failed:run.status==='failed',time:new Date(run.started_at).toLocaleString(),status:run.status==='failed'?'Failed':run.result?.dryRun?'Simulation':'Execution',steps:run.result?.steps?.length||0,details:(run.result?.steps||[]).map(step=>step.type+': '+step.status+(step.reason?' — '+step.reason:'')).join('\\n')||run.error_message||'No trace available'}));
   const entries=[...stored,...(history.get(id)||[])].filter(item=>filter.value==='all'||item.status===filter.value);
-  if(!entries.length){const p=document.createElement('p');p.textContent='No test logs in this browser session for the selected automation.';panel.append(p);return;}
+  if(!entries.length){const p=document.createElement('p');p.textContent='No execution records for this automation.';panel.append(p);return;}
   for(const item of entries.slice().reverse()){
    const details=document.createElement('details'),summary=document.createElement('summary');
    summary.textContent=item.time+' · '+item.status+' · '+item.steps+' steps';
    const pre=document.createElement('pre');pre.textContent=item.details;
-   details.append(summary,pre);panel.append(details);
+   details.append(summary,pre);
+   if(item.failed&&item.automationId){const retry=document.createElement('button');retry.type='button';retry.textContent='Retry safely (simulation)';retry.addEventListener('click',()=>window.dispatchEvent(new CustomEvent('flux:retry-dry-run',{detail:{automationId:item.automationId}})));details.append(retry);}
+   panel.append(details);
   }
  }
  window.addEventListener('flux:automation-opened',event=>{active=event.detail?.id||null;show();});
