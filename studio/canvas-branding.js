@@ -12,3 +12,18 @@ function decorate(root){
 const observer=new MutationObserver(()=>{observer.disconnect();decorate(document);observer.observe(document.getElementById('nodes'),{childList:true});});
 observer.observe(document.getElementById('nodes'),{childList:true});
 decorate(document);
+
+function decoratePalette(){
+ for(const button of document.querySelectorAll('#palette button')){
+  const type=Object.keys(logos).find(key=>button.dataset.search?.includes(key==='sheets'?'google sheets':key==='drive'?'google drive':key));
+  if(!type)continue;
+  const slot=button.querySelector('.palette-icon');if(!slot||slot.querySelector('.brand-logo'))continue;
+  slot.querySelectorAll('img').forEach(img=>img.remove());
+  const img=document.createElement('img');img.className='brand-logo';img.alt='';img.width=25;img.height=25;
+  img.src='https://cdn.simpleicons.org/'+logos[type][0]+'/'+logos[type][1];
+  img.onerror=()=>img.remove();slot.replaceChildren(img);
+ }
+}
+decoratePalette();
+const paletteObserver=new MutationObserver(()=>{paletteObserver.disconnect();decoratePalette();paletteObserver.observe(document.getElementById('palette'),{childList:true,subtree:false});});
+paletteObserver.observe(document.getElementById('palette'),{childList:true,subtree:false});
