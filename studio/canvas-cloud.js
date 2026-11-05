@@ -226,6 +226,26 @@ async function refreshRunHistory(){
  if(error){window.dispatchEvent(new CustomEvent('flux:persistent-runs',{detail:{automationId:row.id,runs:[],error:error.message}}));status('History unavailable: '+error.message);return;}
  window.dispatchEvent(new CustomEvent('flux:persistent-runs',{detail:{automationId:row.id,runs:data||[]}}));
 }
+window.addEventListener('flux:retry-dry-run',async event=>{
+ const row=selection(),requested=event.detail?.automationId;
+ if(!user||!row||row.id!==requested||!row.action_config?.graph)return status('Select a saved automation before retrying.');
+ if(!confirm('Retry this workflow as a SAFE SIMULATION? External actions will NOT run. This costs 1 FCX for standard users.'))return;
+ const {data:sessionData}=await client.auth.getSession(),token=sessionData?.session?.access_token;
+ if(!token)return status('Sign in again before retrying.');
+ status('Running safe simulation...');
+ try{
+  const response=await fetch('/.netlify/functions/flux-automation-api?automation='+encodeURIComponent(row.id),{method:'POST',headers:{authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify({})});
+  const result=await response.json();
+  status('Safe retry HTTP '+response.status+': '+(result.ok?'Simulation completed':String(result.error||'Simulation failed')));
+  if(result.credits?.ok)window.dispatchEvent(new Event('flux:coins-refresh'));
+  if(result.credits?.ok){
+   const steps=Array.isArray(result.trace)?result.trace.slice(0,100).map(step=>({id:String(step.id||'').slice(0,80),type:String(step.type||'').slice(0,60),status:String(step.status||'').slice(0,30)})):[];
+   const {error}=await client.from('automation_runs').insert({automation_id:row.id,owner_id:user.id,status:result.ok?'success':'failed',finished_at:new Date().toISOString(),result:{source:'manual_retry',dryRun:true,steps},error_message:result.ok?null:String(result.error||'Simulation failed').slice(0,200)});
+   if(error)status('Simulation completed, but saving its history failed: '+error.message);
+  }
+  await refreshRunHistory();
+ }catch(error){status('Safe retry unavailable: '+error.message);}
+});
 window.addEventListener('flux:automation-opened',refreshRunHistory);
 window.addEventListener('flux:run-completed',()=>{if(selection())refreshRunHistory();});
 $('canvas-automation')?.addEventListener('change',refreshRunHistory);
