@@ -6,15 +6,37 @@
  const repair=document.getElementById('flux-repair-check');
  if(!feedback||!request||!suggest||!repair)return;
  function snapshot(){return new Promise((resolve,reject)=>{const timeout=setTimeout(()=>{window.removeEventListener('flux:canvas-snapshot',receive);reject(Error('Canvas unavailable'));},2500);function receive(event){clearTimeout(timeout);resolve(event.detail);}window.addEventListener('flux:canvas-snapshot',receive,{once:true});window.dispatchEvent(new Event('flux:canvas-snapshot-request'));});}
+ let proposed=null;
+ const apply=document.createElement('button');apply.type='button';apply.textContent='Create workflow from preview';apply.hidden=true;apply.className='flux-assistant-apply';suggest.insertAdjacentElement('afterend',apply);
+ function buildTemplate(words){
+  const blocks=[['manual','Manual Trigger',{}]];
+  if(/webhook|incoming|ricev|chiamata/.test(words))blocks[0]=['webhook','Webhook',{}];
+  if(/filter|approved|condition|filtr|condizion|approvat/.test(words))blocks.push(['filter','Condition',{field:'status',operator:'equals',value:'approved'}]);
+  if(/map|field|email|camp|trasform/.test(words))blocks.push(['mapper','Data Mapper',{mapping:JSON.stringify({message:'{{input.message}}'})}]);
+  if(/trello|schede/.test(words))blocks.push(['trello','Trello',{connection:''}]);
+  if(/http|api|post/.test(words))blocks.push(['http','HTTP',{method:'POST'}]);
+  if(/log|debug|tracci/.test(words))blocks.push(['log','Log',{message:'Workflow completed'}]);
+  if(blocks.length===1)blocks.push(['mapper','Data Mapper',{mapping:JSON.stringify({message:'{{input.message}}'})}],['log','Log',{message:'Workflow completed'}]);
+  const nodes=blocks.map(([type,label,config],i)=>({id:'assistant'+(i+1),type,label,x:110+i*235,y:160,config}));
+  return {version:1,nodes,edges:nodes.slice(1).map((n,i)=>({from:nodes[i].id,to:n.id}))};
+ }
+ apply.addEventListener('click',async()=>{
+  if(!proposed)return;
+  try{
+   const current=await snapshot();
+   if(current.nodes?.length&&!window.confirm('Replace the current canvas with the suggested workflow? Unsaved changes may be lost.'))return;
+   window.dispatchEvent(new CustomEvent('flux:canvas-restore-request',{detail:structuredClone(proposed)}));
+   feedback.textContent='Template applied to the canvas. Configure credentials and block settings, validate, then test. No live execution has started.';
+   apply.hidden=true;proposed=null;
+   document.querySelector('.flux-mode-tabs button')?.click();
+  }catch(error){feedback.textContent='Could not apply template: '+error.message;}
+ });
  suggest.addEventListener('click',()=>{
   const goal=request.value.trim().slice(0,500);
   if(!goal){feedback.textContent='Describe what you want to automate first.';return;}
-  const words=goal.toLowerCase(),blocks=['Webhook'];
-  if(/filter|approved|condition|filtr|condizion|approvat/.test(words))blocks.push('Filter');
-  if(/map|field|email|camp|trasform/.test(words))blocks.push('Data Mapper');
-  if(/log|debug|tracci/.test(words))blocks.push('Log');
-  if(blocks.length===1)blocks.push('Data Mapper','Log');
-  feedback.textContent='Suggested workflow (preview only):\n'+blocks.map((block,index)=>(index+1)+'. '+block).join('\n')+'\n\nConfigure each block, validate and test before live execution. No changes have been made.';
+  proposed=buildTemplate(goal.toLowerCase());
+  feedback.textContent='Workflow preview (no live connections):\\n'+proposed.nodes.map((n,i)=>(i+1)+'. '+n.label).join('\\n')+'\\n\\nReview the sequence and choose Create workflow from preview. Existing canvas will require confirmation before replacement.';
+  apply.hidden=false;
  });
  repair.addEventListener('click',async()=>{
   try{
