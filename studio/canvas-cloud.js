@@ -47,7 +47,32 @@ const webhookCreate=document.createElement('button');webhookCreate.textContent='
 const webhookToggle=document.createElement('button');webhookToggle.textContent='Activate webhook';
 const webhookRevoke=document.createElement('button');webhookRevoke.textContent='Revoke key';
 const webhookHistory=document.createElement('div');webhookHistory.className='flux-webhook-history';
-webhookPanel.append(webhookTitle,webhookInfo,webhookUrl,webhookKey,webhookCreate,webhookToggle,webhookRevoke,webhookHistory);
+const webhookTest=document.createElement('div');webhookTest.className='flux-webhook-test';
+const webhookTestLabel=document.createElement('label');webhookTestLabel.textContent='Private test key (never saved)';
+const webhookTestSecret=document.createElement('input');webhookTestSecret.type='password';webhookTestSecret.autocomplete='off';webhookTestSecret.placeholder='Paste fw_… key here';
+webhookTestLabel.append(webhookTestSecret);
+const webhookTestButton=document.createElement('button');webhookTestButton.type='button';webhookTestButton.textContent='Send TEST webhook';
+const webhookTestResult=document.createElement('pre');webhookTestResult.setAttribute('aria-live','polite');
+webhookTest.append(webhookTestLabel,webhookTestButton,webhookTestResult);
+webhookPanel.append(webhookTitle,webhookInfo,webhookUrl,webhookKey,webhookCreate,webhookToggle,webhookRevoke,webhookTest,webhookHistory);
+webhookTestButton.addEventListener('click',async()=>{
+ const row=selection();
+ if(row?.name!=='Flux – Test webhook'||!currentWebhook?.enabled){webhookTestResult.textContent='Only the active Flux – Test webhook can be tested here.';return;}
+ const graph=row.action_config?.graph;
+ if(!graph||graph.nodes?.length!==2||!graph.nodes.some(n=>n.type==='webhook')||!graph.nodes.some(n=>n.type==='log')||graph.nodes.some(n=>!['webhook','log'].includes(n.type))){webhookTestResult.textContent='Safety check failed: expected Webhook → Log only.';return;}
+ const secret=webhookTestSecret.value.trim();
+ if(!/^fw_[a-f0-9]{64}$/.test(secret)){webhookTestResult.textContent='Paste the original webhook key (fw_…) to test.';return;}
+ if(!confirm('Send one TEST request? This may deduct 1 FluxCoin.'))return;
+ webhookTestButton.disabled=true;webhookTestResult.textContent='Sending TEST request…';
+ try{
+  const response=await fetch(webhookUrl.value,{method:'POST',headers:{'content-type':'application/json','x-flux-webhook-key':secret},body:JSON.stringify({source:'flux-studio-test',status:'approved'})});
+  const data=await response.json();
+  webhookTestResult.textContent='HTTP '+response.status+'\\n'+JSON.stringify(data,null,2);
+  window.dispatchEvent(new Event('flux:coins-refresh'));
+  await updateWebhookPanel();
+ }catch(error){webhookTestResult.textContent='Request failed: '+error.message;}
+ finally{webhookTestSecret.value='';webhookTestButton.disabled=false;}
+});
 $('canvas-cloud')?.append(webhookPanel);
 let currentWebhook=null;
 const toHex=bytes=>Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
