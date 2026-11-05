@@ -8,9 +8,9 @@ if(output){
   if(!raw.startsWith('HTTP ')){panel.replaceChildren();return;}
   const start=raw.indexOf('{');if(start<0)return;
   let result;try{result=JSON.parse(raw.slice(start));}catch{return;}
-  if(result.ok&&result.outputs&&typeof result.outputs==='object')window.dispatchEvent(new CustomEvent('flux:test-outputs',{detail:{outputs:result.outputs}}));
+  window.dispatchEvent(new CustomEvent('flux:test-outputs',{detail:{outputs:result.ok&&result.outputs&&typeof result.outputs==='object'?result.outputs:{}}}));
   panel.replaceChildren();
-  const heading=document.createElement('strong');heading.textContent=result.ok?'Test completed':'Test could not finish';panel.append(heading);
+  const heading=document.createElement('strong');heading.textContent=result.ok?(result.dryRun?'Simulation completed — no live actions sent':'Execution completed'):'Test could not finish';panel.append(heading);
   if(result.error){const error=document.createElement('p');error.textContent=result.error;panel.append(error);}
   if(Array.isArray(result.trace)){
    const counts={completed:0,simulated:0,filtered:0,skipped:0};
@@ -30,6 +30,7 @@ if(output){
     list.append(item);
    }
    panel.append(list);
+   if(counts.skipped||counts.simulated){const warning=document.createElement('p');warning.className='inspector-help';warning.textContent='Important: simulated or skipped steps did not perform a real external action. Check connector configuration before going live.';panel.append(warning);}
   }
  });
  observer.observe(output,{childList:true,characterData:true,subtree:true});
