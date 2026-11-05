@@ -52,4 +52,21 @@ test('failed mapping produces a block-level trace without running successors',as
  assert.equal(result.trace.find(entry=>entry.id==='b').status,'failed');
  assert.equal(result.trace.find(entry=>entry.id==='c'),undefined);
 });
-\ntest('Telegram dry run validates approved destination and never sends',async()=>{\n const g=graph([['a','manual'],['b','telegram',{chatId:'123456789',message:'Hello Flux'}]],[['a','b']]);\n const r=await executeGraph(g,{}, {dryRun:true,telegramChatId:'123456789'});\n assert.equal(r.ok,true);assert.equal(r.trace[1].status,'simulated');\n});\ntest('Telegram rejects unapproved chat',async()=>{\n const r=await executeGraph(graph([['a','telegram',{chatId:'123456789',message:'Hello'}]]),{}, {dryRun:true,telegramChatId:'987654321'});\n assert.equal(r.ok,false);assert.match(r.error,/server-approved/);\n});\ntest('Resend dry run does not send',async()=>{\n const r=await executeGraph(graph([['a','resend',{recipient:'test@example.com',subject:'Hello',message:'Welcome'}]]),{}, {dryRun:true});\n assert.equal(r.ok,true);assert.equal(r.trace[0].status,'simulated');\n});\ntest('Resend rejects invalid recipient',async()=>{\n const r=await executeGraph(graph([['a','resend',{recipient:'invalid',subject:'Hello',message:'Welcome'}]]),{}, {dryRun:true});\n assert.equal(r.ok,false);assert.match(r.error,/valid recipient/);\n});\n
+
+test('Telegram dry run validates approved destination and never sends',async()=>{
+ const g=graph([['a','manual'],['b','telegram',{chatId:'123456789',message:'Hello Flux'}]],[['a','b']]);
+ const r=await executeGraph(g,{}, {dryRun:true,telegramChatId:'123456789'});
+ assert.equal(r.ok,true);assert.equal(r.trace[1].status,'simulated');
+});
+test('Telegram rejects unapproved chat',async()=>{
+ const r=await executeGraph(graph([['a','telegram',{chatId:'123456789',message:'Hello'}]]),{}, {dryRun:true,telegramChatId:'987654321'});
+ assert.equal(r.ok,false);assert.match(r.error,/server-approved/);
+});
+test('Resend dry run does not send',async()=>{
+ const r=await executeGraph(graph([['a','resend',{recipient:'test@example.com',subject:'Hello',message:'Welcome'}]]),{}, {dryRun:true});
+ assert.equal(r.ok,true);assert.equal(r.trace[0].status,'simulated');
+});
+test('Resend rejects invalid recipient',async()=>{
+ const r=await executeGraph(graph([['a','resend',{recipient:'invalid',subject:'Hello',message:'Welcome'}]]),{}, {dryRun:true});
+ assert.equal(r.ok,false);assert.match(r.error,/valid recipient/);
+});
