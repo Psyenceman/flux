@@ -59,14 +59,15 @@ const appIcons = {
 };
 function applyAppIcon(element,type){
   const config=appIcons[type];
-  if(!config || !element || element.querySelector('.app-logo'))return;
+  if(!config || !element)return;
+  element.querySelectorAll('.app-logo').forEach(existing=>existing.remove());
   const img=document.createElement('img');
   img.className='app-logo';
   img.alt='';
   img.loading='lazy';
   img.src='https://cdn.jsdelivr.net/npm/simple-icons@15/icons/'+config[0]+'.svg';
   img.onerror=()=>img.remove();
-  element.prepend(img);
+  element.replaceChildren(img);
   element.style.setProperty('--brand-color',config[1]);
 }
 function decorate(){
