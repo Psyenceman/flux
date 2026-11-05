@@ -45,7 +45,7 @@ window.addEventListener('flux:configure-block',event=>{
 });
 
 function buildMappingEditor(section,node,upstream=[]){
- const intro=document.createElement('p');intro.className='inspector-help';intro.textContent='Choose the output fields. Use {{input.field}} to reuse data from the trigger.';section.append(intro);
+ const intro=document.createElement('p');intro.className='inspector-help';intro.textContent='Choose output fields and suggested references from connected upstream blocks. Suggestions are examples: verify that the source actually returns the selected field.';section.append(intro);
  const list=document.createElement('div');section.append(list);
  const add=document.createElement('button');add.type='button';add.textContent='+ Add field';section.append(add);
  let mapping={};try{const value=JSON.parse(node.config.mapping||'{}');if(value&&typeof value==='object'&&!Array.isArray(value))mapping=value;}catch{}
@@ -57,7 +57,7 @@ function buildMappingEditor(section,node,upstream=[]){
   const key=document.createElement('input');key.dataset.name='';key.placeholder='Output field';key.value=name;key.setAttribute('aria-label','Output field name');
   const val=document.createElement('input');val.dataset.value='';val.placeholder='Value or {{input.field}}';val.value=value;val.setAttribute('aria-label','Output field value');
   const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.title='Remove field';remove.onclick=()=>{row.nextElementSibling?.remove();row.remove();persist();};
-  const picker=document.createElement('select');picker.setAttribute('aria-label','Insert data reference');picker.title='Choose a previous block';const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Choose data…';picker.append(placeholder);
+  const picker=document.createElement('select');picker.setAttribute('aria-label','Insert data reference');picker.title='Suggested fields from previous blocks (verify actual output)';const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Choose data…';picker.append(placeholder);
   for(const source of [{id:'input',label:'Workflow input'},...upstream.map(item=>({id:item.id,label:item.label+' ('+item.id+')'}))]){
    for(const field of ['message','status','email','customer.email','items','count']){
     const option=document.createElement('option');option.value='{{'+source.id+'.'+field+'}}';option.textContent=source.label+' · '+field;picker.append(option);
