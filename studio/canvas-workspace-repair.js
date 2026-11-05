@@ -16,6 +16,17 @@
  drawer.setAttribute('aria-label','Block library');
  drawer.append(library);
  stage.append(drawer,viewport);
+ const inspector=document.getElementById('inspector-panel');
+ const inspectorToggle=document.getElementById('toggle-inspector');
+ if(inspector){
+  const close=document.createElement('button');close.type='button';close.textContent='× Close';close.setAttribute('aria-label','Close Inspector');
+  close.style.cssText='float:right;padding:7px 11px;border-radius:8px;border:1px solid #8098b8;background:#263e5d;color:#fff;cursor:pointer';
+  inspector.prepend(close);
+  close.addEventListener('click',()=>{
+   if(inspectorToggle)inspectorToggle.click();
+   else{inspector.classList.remove('context-open');inspector.hidden=true;}
+  });
+ }
  const toggle=document.getElementById('toggle-library');
  const buttons=[...tabs.querySelectorAll('button')];
  let open=true;
