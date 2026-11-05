@@ -5,7 +5,7 @@ export function validateGraph(graph){
  if(JSON.stringify(graph).length>120000)throw Error('Workflow payload exceeds execution limits');
  const ids=new Set();
  const allowed=new Set(['webhook','filter','flux','log','merge','http','airtable','trello','miro','slack','email','database','delay','manual','schedule','router','mapper','loop','sheets','drive','github','wordpress']);
- for(const n of graph.nodes){if(!n||typeof n.id!=='string'||n.id.length>80||ids.has(n.id)||!allowed.has(n.type))throw Error('Invalid or duplicate block');ids.add(n.id);}
+ for(const n of graph.nodes){if(!n||typeof n.id!=='string'||n.id.length>80||ids.has(n.id)||!allowed.has(n.type))throw Error('Invalid or duplicate block');if(n.config!==undefined&&(!n.config||typeof n.config!=='object'||Array.isArray(n.config)))throw Error('Invalid configuration at '+n.id);ids.add(n.id);}
  for(const e of graph.edges){if(!e||!ids.has(e.from)||!ids.has(e.to)||e.from===e.to)throw Error('Invalid edge');}
  const indegree=new Map(graph.nodes.map(n=>[n.id,0])),adj=new Map(graph.nodes.map(n=>[n.id,[]]));
  for(const e of graph.edges){if(adj.get(e.from).includes(e.to))throw Error('Duplicate edge');adj.get(e.from).push(e.to);indegree.set(e.to,indegree.get(e.to)+1);}
