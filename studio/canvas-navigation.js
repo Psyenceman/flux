@@ -52,6 +52,8 @@ document.addEventListener('keydown', event => {
 document.addEventListener('keyup', event => { if (event.code === 'Space') spaceHeld = false; });
 window.addEventListener('blur', () => { spaceHeld = false; panning = null; viewport.classList.remove('is-panning'); });
 viewport.addEventListener('pointerdown', event => {
+  // Workflow move mode owns primary-button drags; never steal its pointer capture.
+  if (window.fluxMoveAll && event.button === 0 && !spaceHeld) return;
   if (event.button !== 0 && event.button !== 1) return;
   if (!spaceHeld && event.button !== 1 && event.target.closest('.node,button,input,select,textarea,.port')) return;
   panning = { id: event.pointerId, x: event.clientX, y: event.clientY, left: viewport.scrollLeft, top: viewport.scrollTop };
