@@ -16,7 +16,7 @@ window.addEventListener('flux:configure-block',event=>{
  for(const [name,label] of extras[node.type]||[]){const row=document.createElement('label');row.className='field';row.textContent=label;const control=document.createElement('input');control.placeholder=label;control.value=node.config[name]||'';control.oninput=()=>{node.config[name]=control.value;window.dispatchEvent(new Event('flux:canvas-changed'));};row.append(control);section.append(row);}
  input.oninput=()=>{node.config.mapping=input.value;window.dispatchEvent(new Event('flux:canvas-changed'));};
  function refresh(){
-  field.hidden=node.type!=='flux'||select.value!=='pick';
+  field.style.display=node.type==='flux'&&select.value==='pick'?'block':'none';
   help.textContent=node.type==='flux'?'This transformation runs in the Flux test engine.':node.type==='http'?'Live sending is limited to the server-approved destination.':node.type==='trello'?'Live reading requires server credentials.':'Database execution is not available yet.';
  }
  select.onchange=()=>{node.config[key]=select.value;refresh();window.dispatchEvent(new Event('flux:canvas-changed'));};
