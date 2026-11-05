@@ -49,8 +49,13 @@ async function refresh() {
   const list = $('#cloud-list');
   list.replaceChildren(new Option('Select a project to load', ''));
   for (const project of projects) list.add(new Option(project.name, project.id));
-  if (selected && projects.some(p => p.id === selected)) list.value = selected;
-  else { selected = null; $('#cloud-update').disabled = true; }
+  if (selected && projects.some(p => p.id === selected)) {
+    list.value = selected;
+    $('#cloud-update').disabled = false;
+  } else {
+    selected = null;
+    $('#cloud-update').disabled = true;
+  }
   message(projects.length + ' cloud project(s) available.');
 }
 async function authenticate(mode) {
@@ -84,6 +89,7 @@ $('#cloud-list').addEventListener('change', event => {
   $('#cloud-update').disabled = !selected;
 });
 $('#cloud-load').addEventListener('click', async () => {
+  selected = $('#cloud-list').value || selected;
   if (!selected) return message('Select a project first.');
   if (!window.confirm('Replace the current editor content? Save or download your local draft first.')) return;
   const { data, error } = await client.from('projects').select('name,source_code').eq('id', selected).single();
@@ -91,10 +97,12 @@ $('#cloud-load').addEventListener('click', async () => {
   editor.value = data.source_code;
   editor.dispatchEvent(new Event('input'));
   $('#cloud-project-name').value = data.name;
-  message('Project loaded into the editor.');
+  $('#cloud-update').disabled = false;
+  message('Project loaded into the editor. You can now update this project.');
 });
 $('#cloud-update').addEventListener('click', async () => {
-  if (!selected) return;
+  selected = $('#cloud-list').value || selected;
+  if (!selected) return message('Select a project first.');
   if (!window.confirm('Overwrite the selected cloud project with the current editor content?')) return;
   const name = $('#cloud-project-name').value.trim();
   if (!name) return message('Enter a project name.');
