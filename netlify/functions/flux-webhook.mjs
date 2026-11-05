@@ -20,6 +20,13 @@ export async function handler(event){
   if(!result.ok){const status=result.reason==='rate_limited'?429:result.reason==='insufficient_credits'?402:result.reason==='disabled'?403:404;return response(status,{ok:false,error:result.reason});}
   try{validateGraph(result.graph);}catch{return response(422,{ok:false,error:'Saved workflow invalid'});}
   const run=await executeGraph(result.graph,input,{dryRun:false,notificationUrl:process.env.FLUX_NOTIFICATION_WEBHOOK_URL,trelloKey:process.env.FLUX_TRELLO_API_KEY,trelloToken:process.env.FLUX_TRELLO_TOKEN,telegramToken:process.env.FLUX_TELEGRAM_BOT_TOKEN,telegramChatId:process.env.FLUX_TELEGRAM_CHAT_ID,resendApiKey:process.env.FLUX_RESEND_API_KEY,resendFrom:process.env.FLUX_RESEND_FROM});
-  return response(run.ok?200:422,{ok:run.ok,runId:id,trace:run.trace?.map(x=>({id:x.id,status:x.status})),error:run.ok?undefined:String(run.error||'Execution failed').slice(0,180)});
+  // Persist a sanitized run summary server-side; never store webhook payloads or secrets.
+  const steps=Array.isArray(run.trace)?run.trace.slice(0,100).map(step=>({id:String(step.id||'').slice(0,80),status:String(step.status||'').slice(0,30)})):[];
+  let historySaved=false;
+  try{
+   const history=await fetch(BASE+'/rest/v1/automation_runs',{method:'POST',headers:{apikey:serviceKey,authorization:'Bearer '+serviceKey,'content-type':'application/json','prefer':'return=minimal'},body:JSON.stringify({owner_id:result.owner_id,automation_id:result.automation_id,status:run.ok?'completed':'failed',finished_at:new Date().toISOString(),result:{source:'webhook',dryRun:false,steps},error_message:run.ok?null:String(run.error||'Execution failed').slice(0,200)}),signal:AbortSignal.timeout(5000)});
+   historySaved=history.ok;
+  }catch{}
+  return response(run.ok?200:422,{ok:run.ok,runId:id,trace:steps,error:run.ok?undefined:String(run.error||'Execution failed').slice(0,180),historySaved});
  }catch{return response(503,{ok:false,error:'Webhook temporarily unavailable'});}
 }
