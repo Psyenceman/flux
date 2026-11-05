@@ -1,0 +1,46 @@
+/* Flux Aurora — independent visual identity, no Make-style purple sidebar. */
+:root{--flux-ink:#14243a;--flux-blue:#00b8d9;--flux-purple:#14243a;--flux-pink:#ff6473;--flux-orange:#ffba49;--flux-teal:#00b8d9;--flux-yellow:#ffba49;--flux-line:#d8e5eb;--flux-canvas:#edf6f7}
+html,body{background:#eaf2f4!important;color:#14243a!important}
+body>header{background:#14243a!important;border-bottom:1px solid #30455c!important;color:#fff!important}
+body>header h1{color:#fff!important}body>header p{color:#b9d3df!important}body>header a{color:#76e4ef!important}
+#canvas-shell,#canvas-shell main,#canvas-shell .flux-main-view{background:#edf6f7!important;color:#14243a!important}
+#canvas-shell .workspace-bar{background:#fff!important;border-color:#dce8eb!important}
+#canvas-shell .flux-mode-tabs button[aria-current=true]{background:#14243a!important;color:#fff!important;box-shadow:0 3px 9px #14243a25!important}
+#canvas-shell .workspace-actions #toggle-library{background:#e8f6f8!important;color:#126879!important;border-color:#c6e7eb!important}
+#canvas-shell .compact-actions{background:#fff!important;border-color:#dce8eb!important}
+#canvas-shell .compact-actions #execute,#canvas-shell .compact-actions #save{background:#14243a!important;border-color:#14243a!important;color:#fff!important}
+#canvas-shell .compact-actions .more-actions>summary{background:#e7f5f7!important;color:#15596c!important;border-color:#c9e4e8!important}
+#canvas-shell .compact-actions .more-actions>.flux-settings>summary{background:#e7f5f7!important;color:#15596c!important;border-color:#c9e4e8!important}
+#canvas-shell .canvas-wrap,#canvas-shell #viewport{background-color:#edf6f7!important;background-image:radial-gradient(circle,#bdd5dc 1.2px,transparent 1.5px),linear-gradient(135deg,#f5fbfa 0%,#e8f4f6 55%,#f5f8ee 100%)!important;background-size:27px 27px,100% 100%!important}
+#canvas-shell #library-panel{background:#14243a!important;color:#fff!important;border-right:1px solid #263e55!important}
+#canvas-shell #library-panel h2,#canvas-shell #library-panel label,#canvas-shell #library-panel p,#canvas-shell #library-panel .palette-count{color:#fff!important}
+#canvas-shell #library-panel .palette-search-label{color:#d7eaf1!important}
+#canvas-shell #library-panel #palette-search{background:#fff!important;color:#14243a!important;border-color:#a7c6d0!important}
+#canvas-shell #library-panel .palette-filters button{background:#263d53!important;color:#fff!important;border-color:#58738a!important}
+#canvas-shell #library-panel .palette-filters button[aria-pressed=true]{background:#00b8d9!important;color:#09283a!important;border-color:#00b8d9!important}
+#canvas-shell #library-panel .palette button{background:#fff!important;color:#14243a!important;border:1px solid #d1e1e8!important;box-shadow:none!important}
+#canvas-shell #library-panel .palette button:hover{background:#e8f9fb!important;border-color:#00b8d9!important}
+#canvas-shell .node{background:#fff!important;color:#14243a!important;box-shadow:0 5px 16px #14243a19!important}
+#canvas-shell .node .node-head{color:#14243a!important}
+#canvas-shell .node .node-meta{color:#5c7180!important}
+#canvas-shell .node[data-type=manual],#canvas-shell .node[data-type=schedule],#canvas-shell .node[data-type=webhook]{background:#fff0f1!important;border-color:#ff6473!important}
+#canvas-shell .node[data-type=manual] .block-icon,#canvas-shell .node[data-type=schedule] .block-icon,#canvas-shell .node[data-type=webhook] .block-icon{background:#ff6473!important;color:#fff!important}
+#canvas-shell .node[data-type=filter],#canvas-shell .node[data-type=router]{background:#fff6e5!important;border-color:#ffba49!important}
+#canvas-shell .node[data-type=filter] .block-icon,#canvas-shell .node[data-type=router] .block-icon{background:#ffba49!important;color:#473006!important}
+#canvas-shell .node[data-type=mapper],#canvas-shell .node[data-type=flux]{background:#e6f9fc!important;border-color:#00b8d9!important}
+#canvas-shell .node[data-type=mapper] .block-icon,#canvas-shell .node[data-type=flux] .block-icon{background:#00b8d9!important;color:#fff!important}
+#canvas-shell .node[data-type=log],#canvas-shell .node[data-type=delay],#canvas-shell .node[data-type=merge],#canvas-shell .node[data-type=loop]{background:#f2f9e7!important;border-color:#a4d65e!important}
+#canvas-shell .node[data-type=log] .block-icon,#canvas-shell .node[data-type=delay] .block-icon,#canvas-shell .node[data-type=merge] .block-icon,#canvas-shell .node[data-type=loop] .block-icon{background:#a4d65e!important;color:#203a19!important}
+#canvas-shell .node[data-type=airtable],#canvas-shell .node[data-type=trello],#canvas-shell .node[data-type=slack],#canvas-shell .node[data-type=miro],#canvas-shell .node[data-type=email],#canvas-shell .node[data-type=http],#canvas-shell .node[data-type=sheets],#canvas-shell .node[data-type=drive],#canvas-shell .node[data-type=github],#canvas-shell .node[data-type=wordpress],#canvas-shell .node[data-type=database]{background:#eef3fb!important;border-color:#557db5!important}
+#canvas-shell .node.selected{outline:3px solid #00b8d9!important}
+#canvas-shell .node .port.in{background:#00b8d9!important}
+#canvas-shell .node .port.out{background:#a4d65e!important}
+#canvas-shell .flux-connection-path{stroke:#5c9db1!important}
+#canvas-shell .flux-connection-path:hover{stroke:#00b8d9!important}
+#canvas-shell .flux-edge-plus{color:#087a91!important;border-color:#00b8d9!important;box-shadow:0 3px 12px #14243a20!important}
+#canvas-shell .flux-edge-plus:hover{background:#00b8d9!important;color:#fff!important}
+#canvas-shell .flux-select-all{background:#e5f7f9!important;color:#116a7c!important;border-color:#a5dbe4!important}
+#canvas-shell .flux-select-all[aria-pressed=true]{background:#14243a!important;color:#fff!important}
+#canvas-shell.flux-group-mode .node{outline:2px dashed #00b8d9!important}
+#flux-assistant-suggest{background:#14243a!important;border-color:#14243a!important;color:#fff!important}
+#flux-automation-library h2,#flux-assistant-panel h2,#flux-automation-logs h2{color:#14243a!important}
