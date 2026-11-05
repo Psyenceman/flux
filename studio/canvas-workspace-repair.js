@@ -19,7 +19,7 @@
  const toggle=document.getElementById('toggle-library');
  const buttons=[...tabs.querySelectorAll('button')];
  let open=true;
- const mode=()=>buttons.find(b=>b.getAttribute('aria-current')==='true')?.textContent?.trim()||'Editor';
+ const mode=()=>body.dataset.view==='editor'?'Editor':body.dataset.view==='automations'?'Automations':body.dataset.view==='assistant'?'Assistant':body.dataset.view==='logs'?'History':(buttons.find(b=>b.getAttribute('aria-current')==='true')?.textContent?.trim()||'Editor');
  const sync=()=>{
   const editor=mode()==='Editor';
   stage.hidden=!editor;
@@ -34,6 +34,8 @@
  automations.append(cloud);
  for(const b of buttons)b.addEventListener('click',()=>queueMicrotask(sync));
  // Opening a saved automation switches tabs programmatically, without a tab click.
- window.addEventListener('flux:automation-opened',()=>queueMicrotask(sync));
+ window.addEventListener('flux:automation-opened',()=>{queueMicrotask(sync);requestAnimationFrame(sync);});
+ // Keep the stage in sync with programmatic view changes and restored workflows.
+ new MutationObserver(()=>queueMicrotask(sync)).observe(body,{attributes:true,attributeFilter:['data-view']});
  sync();
 })();
