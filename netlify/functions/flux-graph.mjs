@@ -1,5 +1,5 @@
 import {createHash,timingSafeEqual} from 'node:crypto';
-import {executeGraph} from './flux-graph-engine.mjs';
+import {executeGraph,validateGraph} from './flux-graph-engine.mjs';
 const json=(statusCode,data)=>({statusCode,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'},body:JSON.stringify(data)});
 const equal=(a,b)=>timingSafeEqual(createHash('sha256').update(a).digest(),createHash('sha256').update(b).digest());
 export async function handler(event){
@@ -12,6 +12,7 @@ export async function handler(event){
  const supplied=event.headers?.['x-flux-token']||event.headers?.['X-Flux-Token']||'';
  const token=process.env.FLUX_WEBHOOK_TOKEN;
  const legacy=typeof supplied==='string'&&token?.length>=24&&equal(supplied,token);
+ let sessionToken='';
  if(!legacy){
   const authorization=event.headers?.authorization||event.headers?.Authorization||'';
   const bearer=authorization.match(/^Bearer ([A-Za-z0-9._-]+)$/);
@@ -25,6 +26,7 @@ export async function handler(event){
    if(response.ok){const identity=await response.json();authenticated=Boolean(identity?.id&&identity?.aud==='authenticated');}
   }catch{return json(503,{ok:false,error:'Authentication service unavailable'});}
   if(!authenticated)return json(401,{ok:false,error:'Flux Studio session expired. Sign in again.'});
+  sessionToken=bearer[1];
   if(!dryRun)return json(403,{ok:false,error:'Live execution requires separate server authorization. Use Dry run.'});
  }
 
@@ -33,6 +35,19 @@ export async function handler(event){
   try{const url=new URL(process.env.FLUX_NOTIFICATION_WEBHOOK_URL);if(url.protocol!=='https:'||url.username||url.password)throw Error();notificationUrl=url.toString();}
   catch{return json(503,{ok:false,error:'Server notification URL invalid'});}
  }
- try{const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloKey:process.env.FLUX_TRELLO_API_KEY,trelloToken:process.env.FLUX_TRELLO_TOKEN});return json(200,result);}
+ try{
+  validateGraph(body.graph);
+  let credits=null;
+  if(sessionToken){
+   const creditResponse=await fetch('https://sgxinvmfkznzoueqjzop.supabase.co/rest/v1/rpc/flux_consume_credit',{
+    method:'POST',headers:{apikey:'sb_publishable_vcqHLVzTy3u1Ozk9N1YBiQ_iuIhsOHu',authorization:'Bearer '+sessionToken,'content-type':'application/json'},
+    body:JSON.stringify({p_action:dryRun?'workflow_test':'workflow_run'}),signal:AbortSignal.timeout(5000)
+   });
+   if(!creditResponse.ok)return json(503,{ok:false,error:'Flux Credits temporarily unavailable. No workflow executed.'});
+   credits=await creditResponse.json();
+   if(!credits?.ok)return json(402,{ok:false,error:'Insufficient Flux Credits',credits});
+  }
+  const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloKey:process.env.FLUX_TRELLO_API_KEY,trelloToken:process.env.FLUX_TRELLO_TOKEN});return json(200,{...result,credits});
+ }
  catch(error){console.error(JSON.stringify({event:'flux.graph.failed',reason:String(error?.message||error)}));return json(422,{ok:false,error:String(error?.message||'Execution failed').slice(0,240)});}
 }
