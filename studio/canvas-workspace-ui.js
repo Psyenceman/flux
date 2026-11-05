@@ -25,6 +25,16 @@
  main.insertBefore(options,actions);
  const body=document.createElement('div');body.className='flux-main-view';
  main.insertBefore(body,navigation);
+ main.insertBefore(navigation,body);
+ main.insertBefore(actions,navigation);
+ const primaryIds=['save','load','validate','execute'];
+ const overflow=document.createElement('details');overflow.className='more-actions';
+ const overflowLabel=document.createElement('summary');overflowLabel.textContent='More ···';overflow.append(overflowLabel);
+ for(const id of ['export','import','reset']){const button=document.getElementById(id);if(button)overflow.append(button);}
+ const labels={save:'Save',load:'Open',validate:'Validate',execute:'Test workflow'};
+ for(const id of primaryIds){const button=document.getElementById(id);if(button)button.textContent=labels[id];}
+ actions.append(overflow);
+ actions.classList.add('compact-actions');
  for(const view of Object.values(views))body.append(view);
  const footer=main.querySelector('#status');
  const logsOpen=()=>activate('logs');
