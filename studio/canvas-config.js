@@ -24,7 +24,7 @@ window.addEventListener('flux:configure-block',event=>{
  const {node,pane,tab}=event.detail;
  if(tab!=='Operation')return;
  const section=document.createElement('section');section.className='block-specific';
- const heading=document.createElement('h3');heading.textContent='Block settings';section.append(heading);
+ const heading=document.createElement('h3');heading.textContent='Configure this block';section.append(heading);
  for(const [key,label,type,choices] of schemas[node.type]||[]){
   const row=document.createElement('label');row.className='field';row.textContent=label;
   let input;
@@ -34,7 +34,10 @@ window.addEventListener('flux:configure-block',event=>{
   input.value=node.config[key]??(key==='timezone'?'Europe/Rome':'');
   input.addEventListener('input',()=>{node.config[key]=input.value;window.dispatchEvent(new Event('flux:canvas-changed'));});
   row.append(input);section.append(row);
+  if(node.type==='filter'&&key==='value')row.dataset.conditional='value';
+  if(node.type==='flux'&&key==='source')row.dataset.advanced='source';
  }
+ if(node.type==='filter'){const choice=section.querySelector('select');const value=section.querySelector('[data-conditional=value]');if(choice&&value){const update=()=>{value.hidden=choice.value==='exists';};choice.addEventListener('change',update);update();}}
  if(node.type==='mapper')buildMappingEditor(section,node);
  const info=document.createElement('p');info.className='inspector-help';info.textContent='Settings are saved in the graph. Execution requires a supported backend connector; no external action is triggered by editing.';
  section.append(info);pane.prepend(section);
