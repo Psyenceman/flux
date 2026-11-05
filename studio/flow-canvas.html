@@ -218,16 +218,16 @@ byId('save').addEventListener('click',()=>{try{localStorage.setItem(key,JSON.str
 byId('load').addEventListener('click',()=>{try{const raw=localStorage.getItem(key);if(!raw){note('No saved graph');return;}restore(JSON.parse(raw));note('Graph loaded');}catch(e){note('Load failed: '+e.message);}});
 byId('export').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(snapshot(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='flux-workflow.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 byId('import').addEventListener('click',()=>byId('file').click());byId('file').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;if(file.size>250000){note('File too large');return;}try{restore(JSON.parse(await file.text()));note('Graph imported');}catch(error){note('Import failed: '+error.message);}e.target.value='';});
-byId('execute').addEventListener('click',()=>{const panel=byId('runner');panel.style.display=panel.style.display==='none'?'block':'none';if(panel.style.display==='block')byId('run-token').focus();});
+byId('execute').addEventListener('click',()=>{byId('run-dry').checked=true;byId('run-now').click();});
 byId('run-now').addEventListener('click',async()=>{
  const token=byId('run-token').value,output=byId('run-output'),dryRun=byId('run-dry').checked;
 
  let input;try{input=JSON.parse(byId('run-input').value);if(!input||typeof input!=='object'||Array.isArray(input))throw Error('Input must be an object');}catch(e){output.textContent='Invalid input JSON: '+e.message;return;}
  if(!dryRun&&!confirm('Execute workflow with real server-side HTTP actions?'))return;
- const button=byId('run-now');button.disabled=true;output.textContent='Executing…';
- try{const response=await fetch('/.netlify/functions/flux-graph',{method:'POST',headers:await window.fluxExecutionHeaders(token),body:JSON.stringify({graph:snapshot(),input,dryRun})});const data=await response.json();output.textContent='HTTP '+response.status+'\n'+JSON.stringify(data,null,2);}
- catch(e){output.textContent='Execution error: '+e.message;}
- finally{button.disabled=false;byId('run-token').value='';}
+ const button=byId('run-now'),primary=byId('execute');button.disabled=true;primary.disabled=true;primary.textContent='Testing…';output.textContent='Executing…';note('Testing workflow…');
+ try{const response=await fetch('/.netlify/functions/flux-graph',{method:'POST',headers:await window.fluxExecutionHeaders(token),body:JSON.stringify({graph:snapshot(),input,dryRun})});const data=await response.json();output.textContent='HTTP '+response.status+'\n'+JSON.stringify(data,null,2);note(data.ok?'Test complete: '+(data.trace?.filter(item=>item.status==='completed'||item.status==='simulated').length||0)+' blocks executed.':('Test failed: '+(data.error||'Check execution results.')));window.dispatchEvent(new CustomEvent('flux:run-completed',{detail:{...data,httpStatus:response.status}}));}
+ catch(e){output.textContent='Execution error: '+e.message;note('Test failed: '+e.message);}
+ finally{button.disabled=false;primary.disabled=false;primary.textContent='Test workflow';byId('run-token').value='';}
 });
 byId('validate').addEventListener('click',()=>{const disconnected=nodes.filter(n=>!edges.some(e=>e.from===n.id||e.to===n.id));note('Graph structurally valid: '+nodes.length+' blocks, '+edges.length+' connections.'+(disconnected.length?' Unconnected blocks: '+disconnected.map(n=>n.id).join(', '):'')+' No actions were executed.');});
 byId('reset').addEventListener('click',()=>{if(!confirm('Replace current canvas with the example? Save or export first.'))return;example();});
