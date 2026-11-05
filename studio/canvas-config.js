@@ -24,6 +24,7 @@ window.addEventListener('flux:configure-block',event=>{
  const {node,pane,tab}=event.detail;
  if(tab!=='Operation')return;
  const section=document.createElement('section');section.className='block-specific';
+ if(['flux','http','trello','database'].includes(node.type))return;
  const heading=document.createElement('h3');heading.textContent='Configure this block';section.append(heading);
  for(const [key,label,type,choices] of schemas[node.type]||[]){
   const row=document.createElement('label');row.className='field';row.textContent=label;
