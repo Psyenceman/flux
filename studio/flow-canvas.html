@@ -14,12 +14,20 @@ const note=message=>{status.textContent=message;};
 window.addEventListener('flux:delete-block',event=>deleteNode(event.detail));
 function deleteNode(id){const node=nodes.find(n=>n.id===id);if(!node)return;const linked=edges.filter(e=>e.from===id||e.to===id).length;if(!confirm('Delete '+node.label+' ('+id+') and '+linked+' connected link(s)?'))return;nodes=nodes.filter(n=>n.id!==id);edges=edges.filter(e=>e.from!==id&&e.to!==id);if(selected===id)selected=null;if(connecting===id)connecting=null;wireDrag=null;render();note('Block '+id+' deleted. Save your canvas to keep this change.');}
 
-function add(type,x=100,y=100,config={}){const n={id:'n'+(++sequence),type,x:Math.max(15,Math.min(1350,x)),y:Math.max(15,Math.min(950,y)),label:types.find(t=>t[0]===type)?.[1]||type,config};nodes.push(n);selected=n.id;render();return n;}
+function add(type,x=100,y=100,config={}){const n={id:'n'+(++sequence),type,x:Math.max(0,x),y:Math.max(0,y),label:types.find(t=>t[0]===type)?.[1]||type,config};nodes.push(n);selected=n.id;render();return n;}
 window.addEventListener('flux:insert-between',event=>{const {from,to,type}=event.detail;const edge=edges.find(e=>e.from===from&&e.to===to);const a=nodes.find(n=>n.id===from),b=nodes.find(n=>n.id===to);if(!edge||!a||!b||!types.some(t=>t[0]===type))return;edges=edges.filter(e=>e!==edge);const node=add(type,(a.x+b.x)/2,(a.y+b.y)/2+110);connect(from,node.id);connect(node.id,to);note('Block inserted between '+from+' and '+to+'. Save your changes.');});
 function path(a,b){const sx=a.x+204,sy=a.y+52,tx=b.x,ty=b.y+52;const dx=Math.max(65,Math.abs(tx-sx)*.5);return 'M'+sx+' '+sy+' C'+(sx+dx)+' '+sy+','+(tx-dx)+' '+ty+','+tx+' '+ty;}
 function reaches(from,to,visited=new Set()){if(from===to)return true;if(visited.has(from))return false;visited.add(from);return edges.some(e=>e.from===from&&reaches(e.to,to,visited));}
 function connect(from,to){if(from===to){note('Cannot connect a block to itself');return;}if(edges.some(e=>e.from===from&&e.to===to)){note('Connection already exists');return;}if(reaches(to,from)){note('Cycles are disabled until controlled loops are implemented');return;}edges.push({from,to});note('Connected '+from+' → '+to);render();}
+function resizeWorkspace(){
+ const width=Math.max(1600,...nodes.map(n=>n.x+450));
+ const height=Math.max(1050,...nodes.map(n=>n.y+300));
+ canvas.style.width=width+'px';canvas.style.height=height+'px';
+ edgesEl.style.width=width+'px';edgesEl.style.height=height+'px';
+ edgesEl.setAttribute('viewBox','0 0 '+width+' '+height);
+}
 function render(){
+ resizeWorkspace();
  queueMicrotask(()=>window.dispatchEvent(new Event('flux:canvas-changed')));
  nodesEl.replaceChildren();edgesEl.replaceChildren();
  for(const edge of edges){const a=nodes.find(n=>n.id===edge.from),b=nodes.find(n=>n.id===edge.to);if(!a||!b)continue;const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',path(a,b));p.setAttribute('stroke','#80b9ff');p.setAttribute('stroke-width','2.5');p.setAttribute('fill','none');p.dataset.from=edge.from;p.dataset.to=edge.to;p.style.pointerEvents='stroke';p.style.cursor='copy';p.addEventListener('click',event=>{event.stopPropagation();window.dispatchEvent(new CustomEvent('flux:edge-insert-menu',{detail:{from:edge.from,to:edge.to,x:event.clientX,y:event.clientY}}));});edgesEl.append(p);}
@@ -53,7 +61,7 @@ function render(){
   port.addEventListener('click',e=>{e.stopPropagation();if(suppressPortClick){suppressPortClick=false;return;}if(side==='out'){connecting=n.id;note('Now click the input circle on another block.');}else if(connecting){const from=connecting;connecting=null;connect(from,n.id);}else{note('First click the output circle on the right of a block.');}});el.append(port);}
   el.addEventListener('click',()=>{selected=n.id;render();});el.addEventListener('contextmenu',event=>{event.preventDefault();event.stopPropagation();selected=n.id;render();window.dispatchEvent(new CustomEvent('flux:block-menu',{detail:{id:n.id,label:n.label,x:event.clientX,y:event.clientY}}));});
   let drag=null;el.addEventListener('pointerdown',e=>{if(e.button!==0||e.target.closest('.port'))return;selected=n.id;drag={x:e.clientX,y:e.clientY,nx:n.x,ny:n.y};el.setPointerCapture(e.pointerId);});
-  el.addEventListener('pointermove',e=>{if(!drag)return;n.x=Math.max(15,Math.min(1350,drag.nx+(e.clientX-drag.x)/(window.fluxCanvasZoom||1)));n.y=Math.max(15,Math.min(950,drag.ny+(e.clientY-drag.y)/(window.fluxCanvasZoom||1)));el.style.left=n.x+'px';el.style.top=n.y+'px';drawEdges();});
+  el.addEventListener('pointermove',e=>{if(!drag)return;n.x=Math.max(0,drag.nx+(e.clientX-drag.x)/(window.fluxCanvasZoom||1));n.y=Math.max(0,drag.ny+(e.clientY-drag.y)/(window.fluxCanvasZoom||1));el.style.left=n.x+'px';el.style.top=n.y+'px';resizeWorkspace();drawEdges();});
   el.addEventListener('pointerup',()=>{if(drag){drag=null;render();}});nodesEl.append(el);
  }
  renderInspector();renderConnections();byId('stats').textContent=nodes.length+' blocks · '+edges.length+' connections';
@@ -73,7 +81,7 @@ const operations={trello:['read_list'],webhook:['receive'],manual:['start'],filt
 function inspectorHelp(root,text){const p=document.createElement('p');p.className='inspector-help';p.textContent=text;root.append(p);}
 function renderInspector(){const n=nodes.find(n=>n.id===selected),root=byId('inspector');root.replaceChildren();byId('selection').textContent=n?'Editing '+n.id+' ('+n.type+')':'Select a block to configure it.';if(!n)return;
  const tabs=document.createElement('div');tabs.className='inspector-tabs';tabs.setAttribute('role','tablist');for(const name of inspectorTabs){const b=document.createElement('button');b.textContent=name;b.setAttribute('role','tab');b.setAttribute('aria-selected',String(name===inspectorTab));b.addEventListener('click',()=>{inspectorTab=name;renderInspector();});tabs.append(b);}root.append(tabs);
- const pane=document.createElement('div');pane.setAttribute('role','tabpanel');root.append(pane);
+ const pane=document.createElement('div');pane.setAttribute('role','tabpanel');root.append(pane);if(inspectorTab==='Operation'||inspectorTab==='Advanced')window.dispatchEvent(new CustomEvent('flux:configure-block',{detail:{node:n,pane,tab:inspectorTab}}));
  if(inspectorTab==='Connection'){
   inspectorHelp(pane,n.type==='trello'?'Trello list ID is public metadata. Never paste an API key or token here. Credentials are configured on the server.':'Use a non-secret connection reference. Credentials are managed separately on the server.');
   field(pane,n.type==='trello'?'Trello list ID':'Connection reference',n.config.connection||'',v=>n.config.connection=v.slice(0,120));
@@ -140,7 +148,7 @@ function snapshot(){return {version:1,nodes:nodes.map(n=>({...n,config:{...n.con
 function restore(data){if(!data||data.version!==1||!Array.isArray(data.nodes)||!Array.isArray(data.edges)||data.nodes.length>500||data.edges.length>5000)throw Error('Invalid graph size or format');
  const ids=new Set();for(const n of data.nodes){if(typeof n.id!=='string'||ids.has(n.id)||!types.some(t=>t[0]===n.type)||!Number.isFinite(n.x)||!Number.isFinite(n.y)||typeof n.label!=='string'||n.label.length>80||!n.config||typeof n.config!=='object'||Array.isArray(n.config))throw Error('Invalid block');ids.add(n.id);}
  for(const e of data.edges){if(!ids.has(e.from)||!ids.has(e.to))throw Error('Invalid connection');}
- nodes=data.nodes.map(n=>({id:n.id,type:n.type,label:n.label,x:Math.max(15,Math.min(1350,n.x)),y:Math.max(15,Math.min(950,n.y)),config:{operation:String(n.config.operation||'').slice(0,160),mapping:String(n.config.mapping||'').slice(0,4000),connection:String(n.config.connection||'').slice(0,120),timeout:String(n.config.timeout||'').slice(0,6),retries:String(n.config.retries||'').slice(0,1),onError:String(n.config.onError||'').slice(0,30)}}));edges=[];for(const e of data.edges){if(e.from===e.to||edges.some(x=>x.from===e.from&&x.to===e.to)||reaches(e.to,e.from))throw Error('Graph has duplicate or cyclic connections');edges.push({from:e.from,to:e.to});}
+ nodes=data.nodes.map(n=>({id:n.id,type:n.type,label:n.label,x:Math.max(0,n.x),y:Math.max(0,n.y),config:{...Object.fromEntries(Object.entries(n.config).filter(([k,v])=>typeof k==='string'&&k.length<60&&['string','number','boolean'].includes(typeof v)).map(([k,v])=>[k,typeof v==='string'?v.slice(0,4000):v]))}}));edges=[];for(const e of data.edges){if(e.from===e.to||edges.some(x=>x.from===e.from&&x.to===e.to)||reaches(e.to,e.from))throw Error('Graph has duplicate or cyclic connections');edges.push({from:e.from,to:e.to});}
  sequence=Math.max(0,...nodes.map(n=>Number(n.id.slice(1))||0));selected=null;render();}
 byId('save').addEventListener('click',()=>{try{localStorage.setItem(key,JSON.stringify(snapshot()));note('Graph saved in this browser');}catch{note('Local save failed');}});
 byId('load').addEventListener('click',()=>{try{const raw=localStorage.getItem(key);if(!raw){note('No saved graph');return;}restore(JSON.parse(raw));note('Graph loaded');}catch(e){note('Load failed: '+e.message);}});
@@ -161,4 +169,4 @@ byId('validate').addEventListener('click',()=>{const disconnected=nodes.filter(n
 byId('reset').addEventListener('click',()=>{if(!confirm('Replace current canvas with the example? Save or export first.'))return;example();});
 function example(){nodes=[];edges=[];sequence=0;const a=add('airtable',90,190,{operation:'new record'}),b=add('filter',360,190,{operation:'status approved'}),c=add('miro',650,100,{operation:'create card'}),d=add('slack',650,290,{operation:'send message'}),e=add('email',930,290,{operation:'send email'});edges=[{from:a.id,to:b.id},{from:b.id,to:c.id},{from:b.id,to:d.id},{from:d.id,to:e.id}];selected=null;render();note('Example graph ready. Design only; integrations are not connected.');}
 example();
-</script><script type="module" src="./canvas-context.js"></script><script type="module" src="./canvas-history.js"></script><script type="module" src="./canvas-toolbar.js"></script><script type="module" src="./canvas-layout.js"></script><script type="module" src="./canvas-navigation.js"></script><script type="module" src="./canvas-cloud.js"></script></body></html>
+</script><script type="module" src="./canvas-config.js"></script><script type="module" src="./canvas-context.js"></script><script type="module" src="./canvas-history.js"></script><script type="module" src="./canvas-toolbar.js"></script><script type="module" src="./canvas-layout.js"></script><script type="module" src="./canvas-navigation.js"></script><script type="module" src="./canvas-cloud.js"></script></body></html>
