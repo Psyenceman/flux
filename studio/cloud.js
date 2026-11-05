@@ -42,6 +42,23 @@ root.innerHTML = `
       <button id="automation-delete" type="button" disabled>Delete draft</button>
       <button id="automation-refresh" type="button">Refresh</button>
     </div>
+    <div class="automation-designer">
+      <h4>Visual workflow builder <small>Draft designer</small></h4>
+      <p>Choose a saved automation, add steps and save its visual workflow. Steps do not execute yet.</p>
+      <div class="cloud-form">
+        <label>Step type <select id="flow-step-type">
+          <option value="condition">Condition</option>
+          <option value="transform">Transform data</option>
+          <option value="notify">Notification</option>
+          <option value="http">HTTP request (planned)</option>
+        </select></label>
+        <label>Step label <input id="flow-step-label" maxlength="100" placeholder="Describe this step"></label>
+        <button id="flow-add" type="button">Add step</button>
+        <button id="flow-save" type="button" disabled>Save workflow</button>
+      </div>
+      <ol id="flow-steps" class="flow-steps"></ol>
+      <p id="flow-status" role="status" aria-live="polite"></p>
+    </div>
     <p id="automation-status" role="status" aria-live="polite"></p>
   </section>
 `;
@@ -139,7 +156,7 @@ const automationMessage = text => { $('#automation-status').textContent = text; 
 async function refreshAutomations() {
   if (!session || !client) return;
   const { data, error } = await client.from('automations')
-    .select('id,name,project_id,trigger_type,trigger_config,enabled,updated_at')
+    .select('id,name,project_id,trigger_type,trigger_config,action_config,enabled,updated_at')
     .order('updated_at', { ascending: false });
   if (error) return automationMessage(error.message);
   automationRows = data || [];
@@ -150,6 +167,9 @@ async function refreshAutomations() {
     list.add(new Option(item.name + ' · ' + (project?.name || 'Project') + ' · Draft', item.id));
   }
   $('#automation-delete').disabled = true;
+  $('#flow-save').disabled = true;
+  flowSteps = [];
+  renderFlow();
   automationMessage(automationRows.length + ' saved draft(s). All are inactive.');
 }
 $('#automation-form').addEventListener('submit', async event => {
@@ -179,7 +199,10 @@ $('#automation-list').addEventListener('change', event => {
     $('#automation-project').value = item.project_id;
     $('#automation-trigger').value = item.trigger_type;
     $('#automation-notes').value = item.trigger_config?.notes || '';
-    automationMessage('Draft selected. Create draft makes a new automation; Delete draft removes this one.');
+    flowSteps = Array.isArray(item.action_config?.steps) ? item.action_config.steps.filter(step => ['condition','transform','notify','http'].includes(step.type)).map(step => ({ type: step.type, label: String(step.label || '').slice(0,100) })).slice(0,30) : [];
+    renderFlow();
+    $('#flow-save').disabled = false;
+    automationMessage('Draft selected. Edit its steps below, then Save workflow.');
   }
 });
 $('#automation-delete').addEventListener('click', async () => {
@@ -191,6 +214,51 @@ $('#automation-delete').addEventListener('click', async () => {
   automationMessage('Automation draft deleted.');
 });
 $('#automation-refresh').addEventListener('click', refreshAutomations);
+
+
+let flowSteps = [];
+function renderFlow() {
+  const list = $('#flow-steps');
+  list.replaceChildren();
+  if (!flowSteps.length) {
+    const empty = document.createElement('li');
+    empty.textContent = 'No steps yet. Add your first step.';
+    list.append(empty);
+  }
+  flowSteps.forEach((step, index) => {
+    const item = document.createElement('li');
+    const label = document.createElement('span');
+    label.textContent = (index + 1) + '. ' + step.type + ': ' + step.label;
+    const up = document.createElement('button');
+    up.type = 'button'; up.textContent = 'Move up'; up.disabled = index === 0;
+    up.addEventListener('click', () => { [flowSteps[index - 1], flowSteps[index]] = [flowSteps[index], flowSteps[index - 1]]; renderFlow(); });
+    const remove = document.createElement('button');
+    remove.type = 'button'; remove.textContent = 'Remove';
+    remove.addEventListener('click', () => { flowSteps.splice(index, 1); renderFlow(); });
+    item.append(label, up, remove);
+    list.append(item);
+  });
+}
+$('#flow-add').addEventListener('click', () => {
+  if (!$('#automation-list').value) return $('#flow-status').textContent = 'Select a saved automation first.';
+  if (flowSteps.length >= 30) return $('#flow-status').textContent = 'Maximum 30 steps per draft.';
+  const label = $('#flow-step-label').value.trim();
+  if (!label) return $('#flow-status').textContent = 'Enter a step label.';
+  flowSteps.push({ type: $('#flow-step-type').value, label });
+  $('#flow-step-label').value = '';
+  renderFlow();
+  $('#flow-status').textContent = 'Unsaved changes. Click Save workflow.';
+});
+$('#flow-save').addEventListener('click', async () => {
+  const id = $('#automation-list').value;
+  const row = automationRows.find(item => item.id === id);
+  if (!row) return $('#flow-status').textContent = 'Select a saved automation.';
+  const action_config = { ...row.action_config, steps: flowSteps.map(step => ({...step})), version: 1 };
+  const { error } = await client.from('automations').update({ action_config, enabled: false, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) return $('#flow-status').textContent = error.message;
+  row.action_config = action_config;
+  $('#flow-status').textContent = 'Workflow draft saved to Supabase. Execution remains disabled.';
+});
 
 async function initializeCloud() {
   try {
