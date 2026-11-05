@@ -28,7 +28,19 @@ const schemas={
  miro:[['board','Board ID','text'],['title','Card title','text']],
  log:[['message','Log message','textarea']],
  router:[['route','Route expression','text']],
- loop:[['items','Items expression','text']]
+ loop:[['items','Items expression','text']],
+ whatsapp:[['recipient','Recipient phone number','text'],['template','Approved template name','text']],
+ telegram:[['chatId','Chat ID','text'],['message','Message','textarea']],
+ discord:[['channel','Channel ID','text'],['message','Message','textarea']],
+ notion:[['databaseId','Database ID','text'],['title','Page title','text']],
+ calendar:[['calendarId','Calendar ID','text'],['start','Start time','text'],['end','End time','text']],
+ stripe:[['event','Event type','text'],['priceId','Price ID','text']],
+ hubspot:[['objectType','Object type','select','contacts,companies,deals'],['property','Property','text']],
+ shopify:[['store','Store domain','text'],['orderStatus','Order status','text']],
+ openai:[['model','Model identifier','text'],['prompt','Prompt','textarea']],
+ resend:[['recipient','Recipient','email'],['subject','Subject','text'],['message','Message','textarea']],
+ supabase:[['table','Table','text'],['operation','Operation','select','select,insert,update']],
+ cloudflare:[['worker','Worker name','text'],['event','Event','text']]
 };
 window.addEventListener('flux:configure-block',event=>{
  const {node,pane,tab,upstream=[]}=event.detail;
