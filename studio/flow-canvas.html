@@ -78,11 +78,36 @@ function renderInspector(){const n=nodes.find(n=>n.id===selected),root=byId('ins
   const wrap=document.createElement('div');wrap.className='field';const lab=document.createElement('label');lab.textContent='Operation';const select=document.createElement('select');const opts=[...new Set([...(operations[n.type]||['default']),n.config.operation||''].filter(Boolean))];for(const op of opts){const o=document.createElement('option');o.value=op;o.textContent=op;select.append(o);}select.value=n.config.operation||opts[0];select.addEventListener('change',()=>n.config.operation=select.value);wrap.append(lab,select);pane.append(wrap);
   inspectorHelp(pane,'Operations not yet implemented in the server runner are configuration previews only.');
  }else if(inspectorTab==='Input'){
-  inspectorHelp(pane,'Reference data from an earlier block. Select a source below to insert its ID into the mapping.');
-  const sources=edges.filter(e=>e.to===n.id).map(e=>nodes.find(x=>x.id===e.from)).filter(Boolean);
-  if(sources.length){const wrap=document.createElement('div');wrap.className='field';const select=document.createElement('select');const blank=document.createElement('option');blank.textContent='Select connected source';blank.value='';select.append(blank);for(const source of sources){const option=document.createElement('option');option.value=source.id;option.textContent=source.label+' ('+source.id+')';select.append(option);}wrap.append(select);pane.append(wrap);select.addEventListener('change',()=>{if(!select.value)return;const ref='{{'+select.value+'.name}}';if(n.type==='mapper'){let obj={};try{obj=JSON.parse(n.config.mapping||'{}');}catch{}if(!obj||Array.isArray(obj)||typeof obj!=='object')obj={};obj.value=ref;n.config.mapping=JSON.stringify(obj,null,2);}else{n.config.mapping=ref;}renderInspector();});}
-  field(pane,n.type==='mapper'?'Output fields (JSON object)':'Input mapping / expression',n.config.mapping||(n.type==='mapper'?'{\n  "value": "{{input.message}}"\n}':''),v=>n.config.mapping=v.slice(0,4000),true);
-  inspectorHelp(pane,n.type==='mapper'?'Data Mapper executes on the server. Example: {"title":"{{input.message}}","card":"{{n1.name}}"}. Referenced nodes must be upstream. Other blocks may not yet use these expressions.':'Flux pick currently accepts a property path such as message. Expression mapping is executed only by the Data Mapper block.');
+  if(n.type==='mapper'){
+   inspectorHelp(pane,'Create output fields visually. Choose a source and a property; the editor generates safe mapping expressions automatically.');
+   let map={};try{map=JSON.parse(n.config.mapping||'{}');if(!map||typeof map!=='object'||Array.isArray(map))map={};}catch{map={};}
+   const candidates=[{id:'input',label:'Workflow input',fields:['message','status','name','count','email','id','items']}];
+   const seen=new Set(),visit=id=>{for(const e of edges.filter(e=>e.to===id)){if(seen.has(e.from))continue;seen.add(e.from);visit(e.from);}};
+   visit(n.id);
+   for(const id of seen){const src=nodes.find(x=>x.id===id);if(src)candidates.push({id,label:src.label+' ('+id+')',fields:src.type==='trello'?['items','count','listId']:src.type==='mapper'?Object.keys((()=>{try{return JSON.parse(src.config.mapping||'{}')}catch{return {}}})()):['message','status','name','count','id','items']});}
+   const save=()=>{n.config.mapping=JSON.stringify(map,null,2).slice(0,4000);};
+   const renderRows=()=>{
+    const holder=byId('mapper-fields');if(!holder)return;holder.replaceChildren();
+    for(const [key,value] of Object.entries(map)){
+     const line=document.createElement('div');line.className='field';line.style.cssText='padding:8px;border:1px solid #435b79;border-radius:8px;margin:8px 0';
+     const name=document.createElement('input');name.value=key;name.title='Output field name';name.setAttribute('aria-label','Output field name');
+     const source=document.createElement('select');for(const c of [{id:'literal',label:'Fixed value'},...candidates]){const o=document.createElement('option');o.value=c.id;o.textContent=c.label;source.append(o);}
+     const match=typeof value==='string'?value.match(/^\\{\\{(input|[a-zA-Z][\\w]*)\\.([a-zA-Z_][\\w.]*)\\}\\}$/):null;
+     source.value=match?match[1]:'literal';const prop=document.createElement('input');prop.placeholder='Property or fixed value';prop.value=match?match[2]:String(value);prop.setAttribute('aria-label','Source property or fixed value');
+     const hint=document.createElement('div');hint.className='inspector-help';hint.textContent='Select a source to see available fields.';
+     const choices=document.createElement('select');choices.setAttribute('aria-label','Suggested property');const updateChoices=()=>{choices.replaceChildren();const c=candidates.find(x=>x.id===source.value);if(!c){choices.style.display='none';return;}choices.style.display='block';const blank=document.createElement('option');blank.value='';blank.textContent='Choose a suggested field';choices.append(blank);for(const f of c.fields){const o=document.createElement('option');o.value=f;o.textContent=f;choices.append(o);}};
+     const persist=()=>{const newKey=name.value.trim();if(!/^[a-zA-Z_][\\w]{0,63}$/.test(newKey)){hint.textContent='Field name must start with a letter or underscore';return;}const val=source.value==='literal'?prop.value:'{{'+source.value+'.'+prop.value.trim()+'}}';if(newKey!==key)delete map[key];map[newKey]=val;save();hint.textContent='Saved';};
+     name.addEventListener('change',()=>{persist();renderRows();});source.addEventListener('change',()=>{updateChoices();persist();});prop.addEventListener('change',persist);choices.addEventListener('change',()=>{if(choices.value){prop.value=choices.value;persist();}});
+     const del=document.createElement('button');del.textContent='Remove field';del.addEventListener('click',()=>{delete map[key];save();renderRows();});line.append(name,source,choices,prop,hint,del);holder.append(line);updateChoices();
+    }
+   };
+   const holder=document.createElement('div');holder.id='mapper-fields';pane.append(holder);const addField=document.createElement('button');addField.textContent='+ Add output field';addField.addEventListener('click',()=>{let i=1;while(Object.hasOwn(map,'field'+i))i++;map['field'+i]='{{input.message}}';save();renderRows();});pane.append(addField);renderRows();
+   inspectorHelp(pane,'Advanced: JSON mapping remains available below for manual editing. Changes to the JSON refresh the visual fields when you reopen Input.');
+   field(pane,'JSON mapping (optional)',n.config.mapping||JSON.stringify(map,null,2),v=>n.config.mapping=v.slice(0,4000),true);
+  }else{
+   inspectorHelp(pane,'Configure a property path for supported transformations. Visual mapping is currently executed by Data Mapper.');
+   field(pane,'Input mapping / expression',n.config.mapping||'',v=>n.config.mapping=v.slice(0,4000),true);
+  }
  }else if(inspectorTab==='Output'){
   inspectorHelp(pane,'Preview of the current block definition (not live API output).');
   const pre=document.createElement('pre');pre.className='inspector-preview';pre.textContent=JSON.stringify({id:n.id,type:n.type,operation:n.config.operation||null,connectedTo:edges.filter(e=>e.from===n.id).map(e=>e.to)},null,2);pane.append(pre);
