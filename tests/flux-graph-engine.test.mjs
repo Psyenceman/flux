@@ -28,3 +28,14 @@ test('http does not contact an arbitrary user URL',async()=>{
  const r=await executeGraph(g,{message:'test'});
  assert.equal(r.trace.find(x=>x.id==='b').status,'skipped');
 });
+
+test('delay dry-run simulates without waiting and forwards input',async()=>{
+ const g=graph([['a','manual'],['b','delay',{milliseconds:1500}],['c','log']],[['a','b'],['b','c']]);
+ const result=await executeGraph(g,{message:'hello'});
+ assert.equal(result.trace[1].status,'simulated');
+ assert.equal(result.outputs.c.message,'hello');
+});
+test('delay rejects excessive waiting',async()=>{
+ const g=graph([['a','delay',{milliseconds:50000}]]);
+ await assert.rejects(executeGraph(g,{}),/duration must be/);
+});
