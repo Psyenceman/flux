@@ -3,7 +3,9 @@
  const panel=document.getElementById('flux-automation-log-list');
  const output=document.getElementById('run-output');
  if(!panel||!output)return;
- let active=null;
+ let active=document.getElementById('canvas-automation')?.value||null;
+ const selector=document.getElementById('canvas-automation');
+ selector?.addEventListener('change',()=>{active=selector.value||null;show();});
  const history=new Map();
  function show(){
   panel.replaceChildren();
@@ -21,9 +23,9 @@
   const raw=output.textContent||'';if(!raw.startsWith('HTTP '))return;
   const start=raw.indexOf('{');if(start<0)return;
   let result;try{result=JSON.parse(raw.slice(start));}catch{return;}
-  const key=active||'local';
+  const key=selector?.value||active||'local';
   const entries=history.get(key)||[];
-  const fingerprint=raw.slice(0,1500);
+  const fingerprint=raw;
   if(entries.length&&entries[entries.length-1].fingerprint===fingerprint)return;
   const statuses=(result.trace||[]).map(step=>step.type+': '+step.status+(step.reason?' — '+step.reason:''));
   entries.push({fingerprint,time:new Date().toLocaleTimeString(),status:result.ok?(result.dryRun?'Simulation':'Execution'):'Failed',steps:statuses.length,details:statuses.join('\n')||String(result.error||'No trace available')});
