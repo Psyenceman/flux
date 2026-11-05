@@ -31,7 +31,7 @@ async function refresh() {
   if (authError || !user) {
     $('canvas-cloud-user').textContent = 'Sign in from Flux Studio to use cloud automations';
     status('Local canvas is still available.');
-    rows=[];drawLibrary();
+    rows=[];drawLibrary();refreshFluxCoins();
     return;
   }
   $('canvas-cloud-user').textContent = user.email;
@@ -47,8 +47,24 @@ async function refresh() {
     if (requested && rows.some(row=>row.id===requested)) $('canvas-automation').value=requested;
   }
   drawLibrary();
+  refreshFluxCoins();
   status(rows.length+' automation(s) available. Select one to load or save its canvas.');
 }
+async function refreshFluxCoins(){
+ if(!client||!user){window.dispatchEvent(new CustomEvent('flux:coins-loaded',{detail:{signedIn:false}}));return;}
+ const [{data:profile,error:profileError},{data:wallet,error:walletError},{data:ledger,error:ledgerError}]=await Promise.all([
+  client.from('profiles').select('role').eq('id',user.id).maybeSingle(),
+  client.from('flux_credit_accounts').select('balance,lifetime_used').eq('user_id',user.id).maybeSingle(),
+  client.from('flux_credit_ledger').select('delta,action,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(20)
+ ]);
+ window.dispatchEvent(new CustomEvent('flux:coins-loaded',{detail:{
+  signedIn:true,unlimited:!profileError&&profile?.role==='super_admin',
+  balance:walletError?null:(wallet?.balance??100),used:wallet?.lifetime_used??0,
+  entries:ledgerError?[]:(ledger||[]),error:walletError?.message||ledgerError?.message||null
+ }}));
+}
+window.addEventListener('flux:run-completed',refreshFluxCoins);
+window.addEventListener('flux:coins-refresh',refreshFluxCoins);
 function requestSnapshot() {
   return new Promise((resolve,reject)=>{
     const timeout = setTimeout(()=>{cleanup();reject(new Error('Canvas did not respond'));},2000);
