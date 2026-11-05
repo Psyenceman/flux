@@ -17,7 +17,7 @@ function connectionPanel(node,section){
  const controls={};
  for(const [key,label] of provider.fields){
   const row=document.createElement('label');row.className='field';row.textContent=label;
-  const input=document.createElement('input');input.placeholder=label;input.value=node.config[key]||'';input.addEventListener('input',()=>{node.config[key]=input.value;window.dispatchEvent(new Event('flux:canvas-changed'));});
+  const input=document.createElement('input');input.placeholder=label;input.value=node.config[key]||'';input.addEventListener('input',()=>{node.config[key]=input.value;if(node.type==='trello'&&key==='list')node.config.connection=input.value;window.dispatchEvent(new Event('flux:canvas-changed'));});
   row.append(input);fields.append(row);controls[key]=input;
  }
  function refresh(){
@@ -27,7 +27,7 @@ function connectionPanel(node,section){
   select.value=options.some(x=>x.id===node.config.connectionRef)?node.config.connectionRef:'';
   remove.disabled=!select.value;
  }
- select.onchange=()=>{const entry=read().find(x=>x.id===select.value);node.config.connectionRef=entry?.id||'';if(entry){for(const [key] of provider.fields){controls[key].value=entry.values[key]||'';node.config[key]=controls[key].value;}}window.dispatchEvent(new Event('flux:canvas-changed'));refresh();};
+ select.onchange=()=>{const entry=read().find(x=>x.id===select.value);node.config.connectionRef=entry?.id||'';if(entry){for(const [key] of provider.fields){controls[key].value=entry.values[key]||'';node.config[key]=controls[key].value;if(node.type==='trello'&&key==='list')node.config.connection=controls[key].value;}}window.dispatchEvent(new Event('flux:canvas-changed'));refresh();};
  save.onclick=()=>{
   const values=Object.fromEntries(provider.fields.map(([key])=>[key,controls[key].value.trim()]));
   if(!Object.values(values).some(Boolean)){status.textContent='Enter at least one reference value.';return;}
