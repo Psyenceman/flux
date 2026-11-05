@@ -27,6 +27,23 @@ root.innerHTML = `
     <button id="cloud-load" type="button">Load selected into editor</button>
   </div>
   <p id="cloud-message" role="status" aria-live="polite"></p>
+  <section id="flux-automations" hidden>
+    <h3>My Automations <small>TEST · Drafts only, not running</small></h3>
+    <p>Design automations linked to your Flux projects. Execution, scheduling and webhooks are not active yet.</p>
+    <form id="automation-form" class="cloud-form">
+      <label>Name <input id="automation-name" required maxlength="120" placeholder="Daily report"></label>
+      <label>Project <select id="automation-project" required></select></label>
+      <label>Trigger <select id="automation-trigger"><option value="manual">Manual</option><option value="schedule">Schedule (planned)</option><option value="webhook">Webhook (planned)</option></select></label>
+      <label>Notes / trigger settings <input id="automation-notes" maxlength="500" placeholder="e.g. Every weekday at 09:00"></label>
+      <button type="submit" id="automation-save">Create draft</button>
+    </form>
+    <div class="cloud-form">
+      <label>Saved automations <select id="automation-list"><option value="">Select an automation</option></select></label>
+      <button id="automation-delete" type="button" disabled>Delete draft</button>
+      <button id="automation-refresh" type="button">Refresh</button>
+    </div>
+    <p id="automation-status" role="status" aria-live="polite"></p>
+  </section>
 `;
 const $ = selector => root.querySelector(selector);
 let session = null;
@@ -39,6 +56,7 @@ function setSession(next) {
   $('#cloud-login').hidden = !!next;
   $('#cloud-projects').hidden = !next;
   $('#cloud-logout').hidden = !next;
+  $('#flux-automations').hidden = !next;
   if (!next) { projects = []; selected = null; $('#cloud-update').disabled = true; }
 }
 async function refresh() {
@@ -57,6 +75,10 @@ async function refresh() {
     $('#cloud-update').disabled = true;
   }
   message(projects.length + ' cloud project(s) available.');
+  const projectSelect = $('#automation-project');
+  projectSelect.replaceChildren(new Option('Select a project', ''));
+  for (const project of projects) projectSelect.add(new Option(project.name, project.id));
+  await refreshAutomations();
 }
 async function authenticate(mode) {
   const email = $('#cloud-email').value.trim();
@@ -111,6 +133,65 @@ $('#cloud-update').addEventListener('click', async () => {
   await refresh();
   message('Cloud project updated.');
 });
+
+let automationRows = [];
+const automationMessage = text => { $('#automation-status').textContent = text; };
+async function refreshAutomations() {
+  if (!session || !client) return;
+  const { data, error } = await client.from('automations')
+    .select('id,name,project_id,trigger_type,trigger_config,enabled,updated_at')
+    .order('updated_at', { ascending: false });
+  if (error) return automationMessage(error.message);
+  automationRows = data || [];
+  const list = $('#automation-list');
+  list.replaceChildren(new Option('Select an automation', ''));
+  for (const item of automationRows) {
+    const project = projects.find(p => p.id === item.project_id);
+    list.add(new Option(item.name + ' · ' + (project?.name || 'Project') + ' · Draft', item.id));
+  }
+  $('#automation-delete').disabled = true;
+  automationMessage(automationRows.length + ' saved draft(s). All are inactive.');
+}
+$('#automation-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!session || !client) return;
+  const name = $('#automation-name').value.trim();
+  const projectId = $('#automation-project').value;
+  if (!name || !projectId) return automationMessage('Enter a name and choose a project.');
+  const trigger = $('#automation-trigger').value;
+  const notes = $('#automation-notes').value.trim();
+  const { error } = await client.from('automations').insert({
+    owner_id: session.user.id, project_id: projectId, name,
+    trigger_type: trigger, trigger_config: { notes },
+    action_config: { type: 'flux_project', project_id: projectId },
+    enabled: false
+  });
+  if (error) return automationMessage(error.message);
+  $('#automation-form').reset();
+  await refreshAutomations();
+  automationMessage('Automation draft saved. No execution was scheduled.');
+});
+$('#automation-list').addEventListener('change', event => {
+  const item = automationRows.find(row => row.id === event.target.value);
+  $('#automation-delete').disabled = !item;
+  if (item) {
+    $('#automation-name').value = item.name;
+    $('#automation-project').value = item.project_id;
+    $('#automation-trigger').value = item.trigger_type;
+    $('#automation-notes').value = item.trigger_config?.notes || '';
+    automationMessage('Draft selected. Create draft makes a new automation; Delete draft removes this one.');
+  }
+});
+$('#automation-delete').addEventListener('click', async () => {
+  const id = $('#automation-list').value;
+  if (!id || !window.confirm('Permanently delete this automation draft?')) return;
+  const { error } = await client.from('automations').delete().eq('id', id);
+  if (error) return automationMessage(error.message);
+  await refreshAutomations();
+  automationMessage('Automation draft deleted.');
+});
+$('#automation-refresh').addEventListener('click', refreshAutomations);
+
 async function initializeCloud() {
   try {
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.49.10');
