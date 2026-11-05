@@ -16,15 +16,15 @@ export function validateGraph(graph){
 const get=(value,path)=>{if(!/^[a-zA-Z_][\w]*(\.[a-zA-Z_][\w]*){0,5}$/.test(path))return undefined;return path.split('.').reduce((v,k)=>v&&typeof v==='object'&&Object.hasOwn(v,k)?v[k]:undefined,value);};
 function resolveTemplate(template,outputs,input,allowed){
  if(typeof template!=='string'||template.length>4000)throw Error('Invalid mapping expression');
- const exact=template.match(/^\\{\\{(input|[a-zA-Z][\\w]{0,79})\\.([a-zA-Z_][\\w]*(?:\\.[a-zA-Z_][\\w]*){0,5})\\}\\}$/);
+ const exact=template.match(/^\{\{(input|[a-zA-Z][\w]{0,79})\.([a-zA-Z_][\w]*(?:\.[a-zA-Z_][\w]*){0,5})\}\}$/);
  const resolve=(id,path)=>{if(id!=='input'&&!allowed.has(id))throw Error('Mapping references an unconnected block: '+id);const source=id==='input'?input:outputs[id];return get(source,path)??null;};
  if(exact)return resolve(exact[1],exact[2]);
- return template.replace(/\\{\\{(input|[a-zA-Z][\\w]{0,79})\\.([a-zA-Z_][\\w]*(?:\\.[a-zA-Z_][\\w]*){0,5})\\}\\}/g,(_,id,path)=>String(resolve(id,path)??''));
+ return template.replace(/\{\{(input|[a-zA-Z][\w]{0,79})\.([a-zA-Z_][\w]*(?:\.[a-zA-Z_][\w]*){0,5})\}\}/g,(_,id,path)=>String(resolve(id,path)??''));
 }
 function applyMapping(mapping,outputs,input,allowed){
  let spec;try{spec=JSON.parse(mapping);}catch{throw Error('Data Mapper expects a JSON object mapping fields to values');}
  if(!spec||typeof spec!=='object'||Array.isArray(spec)||Object.keys(spec).length>30)throw Error('Invalid Data Mapper object');
- const result={};for(const [key,val] of Object.entries(spec)){if(!/^[a-zA-Z_][\\w]{0,63}$/.test(key)||typeof val!=='string')throw Error('Invalid Data Mapper field');result[key]=resolveTemplate(val,outputs,input,allowed);}
+ const result={};for(const [key,val] of Object.entries(spec)){if(!/^[a-zA-Z_][\w]{0,63}$/.test(key)||typeof val!=='string')throw Error('Invalid Data Mapper field');result[key]=resolveTemplate(val,outputs,input,allowed);}
  return result;
 }
 export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloKey,trelloToken}={}){
