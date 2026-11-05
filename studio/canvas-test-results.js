@@ -8,6 +8,7 @@ if(output){
   if(!raw.startsWith('HTTP ')){panel.replaceChildren();return;}
   const start=raw.indexOf('{');if(start<0)return;
   let result;try{result=JSON.parse(raw.slice(start));}catch{return;}
+  if(raw!==window.fluxLastLoggedResponse){window.fluxLastLoggedResponse=raw;window.dispatchEvent(new CustomEvent('flux:run-summary',{detail:{...result,dryRun:document.getElementById('run-dry')?.checked!==false}}));}
   window.dispatchEvent(new CustomEvent('flux:test-outputs',{detail:{outputs:result.ok&&result.outputs&&typeof result.outputs==='object'?result.outputs:{}}}));
   panel.replaceChildren();
   const heading=document.createElement('strong');heading.textContent=result.ok?(result.dryRun?'Simulation completed — no live actions sent':'Execution completed'):'Test could not finish';panel.append(heading);
