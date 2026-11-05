@@ -17,7 +17,7 @@
   panel.replaceChildren();
   const id=selector?.value||active||'local';
   if(cloudErrors.has(id)){const warning=document.createElement('p');warning.textContent='Cloud history error: '+cloudErrors.get(id);panel.append(warning);}
-  const stored=(persistent.get(id)||[]).map(run=>({automationId:id,failed:run.status==='failed',time:new Date(run.started_at).toLocaleString(),status:run.status==='failed'?'Failed':run.result?.dryRun?'Simulation':'Execution',steps:run.result?.steps?.length||0,details:(run.result?.steps||[]).map(step=>step.type+': '+step.status+(step.reason?' — '+step.reason:'')).join('\\n')||run.error_message||'No trace available'}));
+  const stored=(persistent.get(id)||[]).map(run=>({automationId:id,runId:run.id,failed:run.status==='failed',time:new Date(run.started_at).toLocaleString(),status:run.status==='failed'?'Failed':run.result?.dryRun?'Simulation':'Execution',steps:run.result?.steps?.length||0,details:(run.result?.steps||[]).map(step=>step.type+': '+step.status+(step.reason?' — '+step.reason:'')).join('\\n')||run.error_message||'No trace available'}));
   const entries=[...stored,...(history.get(id)||[])].filter(item=>filter.value==='all'||item.status===filter.value);
   if(!entries.length){const p=document.createElement('p');p.textContent='No execution records for this automation.';panel.append(p);return;}
   for(const item of entries.slice().reverse()){
@@ -25,7 +25,7 @@
    summary.textContent=item.time+' · '+item.status+' · '+item.steps+' steps';
    const pre=document.createElement('pre');pre.textContent=item.details;
    details.append(summary,pre);
-   if(item.failed&&item.automationId){const retry=document.createElement('button');retry.type='button';retry.textContent='Retry safely (simulation)';retry.addEventListener('click',()=>window.dispatchEvent(new CustomEvent('flux:retry-dry-run',{detail:{automationId:item.automationId}})));details.append(retry);}
+   if(item.failed&&item.automationId){const retry=document.createElement('button');retry.type='button';retry.textContent='Retry safely (simulation)';retry.addEventListener('click',()=>window.dispatchEvent(new CustomEvent('flux:retry-dry-run',{detail:{automationId:item.automationId,runId:item.runId}})));details.append(retry);}
    panel.append(details);
   }
  }
