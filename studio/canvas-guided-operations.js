@@ -12,6 +12,8 @@ window.addEventListener('flux:configure-block',event=>{
  section.append(select);
  const help=document.createElement('p');help.className='inspector-help';section.append(help);
  const field=document.createElement('label');field.className='field';field.textContent='Field path';const input=document.createElement('input');input.placeholder='customer.email';input.value=node.config.mapping||'';field.append(input);section.append(field);
+ const extras={http:[['url','Destination URL']],trello:[['connection','Trello list ID']],database:[['table','Table'],['filter','Filter']]};
+ for(const [name,label] of extras[node.type]||[]){const row=document.createElement('label');row.className='field';row.textContent=label;const control=document.createElement('input');control.placeholder=label;control.value=node.config[name]||'';control.oninput=()=>{node.config[name]=control.value;window.dispatchEvent(new Event('flux:canvas-changed'));};row.append(control);section.append(row);}
  input.oninput=()=>{node.config.mapping=input.value;window.dispatchEvent(new Event('flux:canvas-changed'));};
  function refresh(){
   field.hidden=node.type!=='flux'||select.value!=='pick';
