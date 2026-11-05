@@ -1,7 +1,6 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.10';
 import { supabaseUrl, supabasePublishableKey } from './supabase-config.js';
 
-const client = createClient(supabaseUrl, supabasePublishableKey);
+let client;
 const editor = document.querySelector('#code');
 const root = document.querySelector('#flux-account');
 root.innerHTML = `
@@ -57,6 +56,7 @@ async function refresh() {
 async function authenticate(mode) {
   const email = $('#cloud-email').value.trim();
   const password = $('#cloud-password').value;
+  if (!client) return message('Cloud connection is still loading.');
   const { error } = mode === 'register'
     ? await client.auth.signUp({ email, password })
     : await client.auth.signInWithPassword({ email, password });
@@ -103,7 +103,16 @@ $('#cloud-update').addEventListener('click', async () => {
   await refresh();
   message('Cloud project updated.');
 });
-client.auth.onAuthStateChange((_event, next) => {
+async function initializeCloud() {
+  try {
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.49.10');
+    client = createClient(supabaseUrl, supabasePublishableKey);
+  } catch (error) {
+    message('Unable to load Supabase client: ' + error.message + '. Check browser console / network policy.');
+    $('#cloud-login').querySelectorAll('button').forEach(button => button.disabled = true);
+    return;
+  }
+  client.auth.onAuthStateChange((_event, next) => {
   const oldId = session?.user?.id;
   setSession(next);
   if (next && oldId !== next.user.id) queueMicrotask(() => refresh());
@@ -111,3 +120,5 @@ client.auth.onAuthStateChange((_event, next) => {
 const { data, error } = await client.auth.getSession();
 if (error) message(error.message);
 else { setSession(data.session); if (data.session) await refresh(); }
+}
+initializeCloud();
