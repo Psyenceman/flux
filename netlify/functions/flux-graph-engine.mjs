@@ -87,8 +87,8 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
     break;
    }
    case 'merge':output={items:incoming};break;
-   case 'schedule':status='simulated';reason='Schedule configuration saved; automatic scheduling requires a server scheduler';break;
-   case 'delay':status='simulated';reason='Delay configuration saved; execution is not paused';break;
+   case 'schedule':status='skipped';reason='Automatic scheduling requires a server scheduler';break;
+   case 'delay':status='skipped';reason='Delay execution is not implemented';break;
    case 'log':break;
    case 'http':{
     // Only a preconfigured server-side destination; never trust URL from graph.
