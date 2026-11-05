@@ -4,13 +4,14 @@
  if(!bar)return;
  const button=document.createElement('button');
  button.type='button';button.className='flux-select-all';button.setAttribute('aria-pressed','false');
- button.title='Select every block and drag the workflow as a group (Shift + drag also works)';
- button.textContent='Select all · Move';
+ button.title='Move the entire workflow: drag a block or empty canvas; use arrow keys for precise movement (Shift = 40px)';
+ button.textContent='Move workflow';
  const activate=value=>{
   window.fluxMoveAll=value;
   button.setAttribute('aria-pressed',String(value));
-  button.textContent=value?'✓ Moving entire workflow':'Select all · Move';
+  button.textContent=value?'✓ Move mode · arrows / drag':'Move workflow';
   document.getElementById('canvas-shell')?.classList.toggle('flux-group-mode',value);
+  button.setAttribute('aria-label',value?'Exit workflow move mode':'Move entire workflow');
  };
  button.addEventListener('click',()=>activate(!window.fluxMoveAll));
  bar.append(button);
