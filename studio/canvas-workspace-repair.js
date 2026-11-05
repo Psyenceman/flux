@@ -33,5 +33,7 @@
  if(settings)settings.open=false;
  automations.append(cloud);
  for(const b of buttons)b.addEventListener('click',()=>queueMicrotask(sync));
+ // Opening a saved automation switches tabs programmatically, without a tab click.
+ window.addEventListener('flux:automation-opened',()=>queueMicrotask(sync));
  sync();
 })();
