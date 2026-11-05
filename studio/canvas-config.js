@@ -7,7 +7,7 @@ const schemas={
  slack:[['channel','Channel','text'],['message','Message','textarea']],
  delay:[['duration','Duration','number'],['unit','Unit','select','seconds,minutes,hours,days']],
  flux:[['source','Flux code','textarea']],
- mapper:[['mapping','Field mapping (JSON)','textarea']],
+ mapper:[],
  database:[['table','Table','text'],['operation','Action','select','select,insert,update,delete'],['filter','Filter','text']],
  trello:[['board','Board ID','text'],['list','List ID','text']],
  airtable:[['base','Base ID','text'],['table','Table','text']],
@@ -35,6 +35,26 @@ window.addEventListener('flux:configure-block',event=>{
   input.addEventListener('input',()=>{node.config[key]=input.value;window.dispatchEvent(new Event('flux:canvas-changed'));});
   row.append(input);section.append(row);
  }
+ if(node.type==='mapper')buildMappingEditor(section,node);
  const info=document.createElement('p');info.className='inspector-help';info.textContent='Settings are saved in the graph. Execution requires a supported backend connector; no external action is triggered by editing.';
  section.append(info);pane.prepend(section);
 });
+
+function buildMappingEditor(section,node){
+ const intro=document.createElement('p');intro.className='inspector-help';intro.textContent='Choose the output fields. Use {{input.field}} to reuse data from the trigger.';section.append(intro);
+ const list=document.createElement('div');section.append(list);
+ const add=document.createElement('button');add.type='button';add.textContent='+ Add field';section.append(add);
+ let mapping={};try{const value=JSON.parse(node.config.mapping||'{}');if(value&&typeof value==='object'&&!Array.isArray(value))mapping=value;}catch{}
+ const entries=Object.entries(mapping);
+ if(!entries.length)entries.push(['message','{{input.message}}']);
+ const persist=()=>{const output={};for(const row of list.children){const name=row.querySelector('[data-name]').value.trim(),value=row.querySelector('[data-value]').value;if(name&&/^[a-zA-Z_][\w]{0,63}$/.test(name))output[name]=value;}node.config.mapping=JSON.stringify(output);window.dispatchEvent(new Event('flux:canvas-changed'));};
+ function addRow(name='',value=''){
+  const row=document.createElement('div');row.className='mapping-row';row.style.cssText='display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin:8px 0;align-items:center';
+  const key=document.createElement('input');key.dataset.name='';key.placeholder='Output field';key.value=name;key.setAttribute('aria-label','Output field name');
+  const val=document.createElement('input');val.dataset.value='';val.placeholder='Value or {{input.field}}';val.value=value;val.setAttribute('aria-label','Output field value');
+  const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.title='Remove field';remove.onclick=()=>{row.remove();persist();};
+  key.oninput=persist;val.oninput=persist;row.append(key,val,remove);list.append(row);
+ }
+ entries.forEach(([key,value])=>addRow(key,String(value)));
+ add.onclick=()=>{if(list.children.length>=30)return;addRow();};
+}
