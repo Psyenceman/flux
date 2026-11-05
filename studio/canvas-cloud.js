@@ -25,13 +25,27 @@ function drawLibrary(){
 }
 
 const selection = () => rows.find(row => row.id === $('canvas-automation').value);
+const apiPanel=document.createElement('div');apiPanel.className='flux-api-endpoint';
+const apiLabel=document.createElement('strong');apiLabel.textContent='Workflow API · authenticated test';
+const apiInput=document.createElement('input');apiInput.readOnly=true;apiInput.setAttribute('aria-label','Generated workflow API URL');
+const copyApi=document.createElement('button');copyApi.type='button';copyApi.textContent='Copy API URL';copyApi.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(apiInput.value);status('API URL copied. Requires a valid Flux user session token.');}catch{apiInput.select();status('Select and copy the URL.');}});
+const apiHelp=document.createElement('small');apiHelp.textContent='POST JSON with Authorization: Bearer <Flux session token>. Only the owner can run it. Test mode only; 1 FluxCoin per call.';
+apiPanel.append(apiLabel,apiInput,copyApi,apiHelp);
+$('canvas-cloud')?.append(apiPanel);
+function updateApiPanel(){
+ const row=selection();apiPanel.hidden=!user||!row?.action_config?.graph;
+ if(apiPanel.hidden)return;
+ apiInput.value=location.origin+'/.netlify/functions/flux-automation-api?automation='+encodeURIComponent(row.id);
+}
+$('canvas-automation')?.addEventListener('change',updateApiPanel);
+
 async function refresh() {
   const { data: auth, error: authError } = await client.auth.getUser();
   user = auth?.user;
   if (authError || !user) {
     $('canvas-cloud-user').textContent = 'Sign in from Flux Studio to use cloud automations';
     status('Local canvas is still available.');
-    rows=[];drawLibrary();refreshFluxCoins();
+    rows=[];drawLibrary();updateApiPanel();refreshFluxCoins();
     return;
   }
   $('canvas-cloud-user').textContent = user.email;
@@ -46,7 +60,7 @@ async function refresh() {
     const requested = new URLSearchParams(location.search).get('automation');
     if (requested && rows.some(row=>row.id===requested)) $('canvas-automation').value=requested;
   }
-  drawLibrary();
+  drawLibrary();updateApiPanel();
   refreshFluxCoins();
   status(rows.length+' automation(s) available. Select one to load or save its canvas.');
 }
@@ -104,7 +118,7 @@ $('canvas-cloud-save').addEventListener('click',async()=>{
     const {data,error}=await client.from('automations').update({action_config,enabled:false,updated_at:new Date().toISOString()}).eq('id',row.id).select('id').single();
     if(error) throw error;
     row.action_config=action_config;
-    drawLibrary();status('Canvas saved to Supabase. Automation remains disabled.');
+    drawLibrary();updateApiPanel();status('Canvas saved to Supabase. Automation remains disabled.');
   } catch(error){status('Save failed: '+error.message);}
 });
 try {
