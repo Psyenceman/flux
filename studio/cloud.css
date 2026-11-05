@@ -9,3 +9,13 @@
 #flux-account #cloud-list{margin:8px 8px 8px 0}
 #flux-account [hidden]{display:none!important}
 #cloud-message{font-size:13px;color:#a2b1c8;min-height:1em}
+
+#flux-automations{margin-top:22px;padding-top:16px;border-top:1px solid #354761}
+#flux-automations h3,#flux-automations h4{margin:12px 0}
+#flux-automations small{font-weight:400;color:#a2b1c8}
+.automation-designer{margin-top:20px;padding:16px;border:1px solid #354761;border-radius:12px;background:#101827}
+.flow-steps{display:grid;gap:10px;list-style:none;padding:0;margin:12px 0}
+.flow-steps li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px;border:1px solid #354761;border-radius:9px;background:#192940}
+.flow-steps li span{flex:1;min-width:180px}
+#flow-status{font-size:13px;color:#a2b1c8}
+@media(max-width:650px){#flux-account .cloud-form{align-items:stretch;flex-direction:column}#flux-account .cloud-form label,#flux-account .cloud-form input,#flux-account .cloud-form select{width:100%}}
