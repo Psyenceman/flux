@@ -11,6 +11,37 @@ const types=[['trello','Trello','read-only trigger'],['airtable','Airtable','not
 const byId=id=>document.getElementById(id),canvas=byId('canvas'),nodesEl=byId('nodes'),edgesEl=byId('edges'),status=byId('status');
 let nodes=[],edges=[],selected=null,connecting=null,sequence=0,wireDrag=null,suppressPortClick=false;
 const note=message=>{status.textContent=message;};
+/* Move the whole workflow by dragging empty canvas while group mode is enabled. */
+let workflowDrag=null;
+canvas.addEventListener('pointerdown',event=>{
+ if(!window.fluxMoveAll||event.button!==0)return;
+ if(event.target.closest?.('.node,.flux-edge-plus,.port,button'))return;
+ if(!nodes.length)return;
+ event.preventDefault();event.stopPropagation();
+ workflowDrag={pointerId:event.pointerId,x:event.clientX,y:event.clientY,original:nodes.map(n=>({id:n.id,x:n.x,y:n.y}))};
+ canvas.setPointerCapture(event.pointerId);
+});
+canvas.addEventListener('pointermove',event=>{
+ if(!workflowDrag||workflowDrag.pointerId!==event.pointerId)return;
+ event.stopPropagation();
+ const scale=window.fluxCanvasZoom||1;
+ const dx=(event.clientX-workflowDrag.x)/scale,dy=(event.clientY-workflowDrag.y)/scale;
+ const minX=Math.min(...workflowDrag.original.map(n=>n.x)),minY=Math.min(...workflowDrag.original.map(n=>n.y));
+ for(const original of workflowDrag.original){
+  const node=nodes.find(n=>n.id===original.id);if(!node)continue;
+  node.x=original.x+Math.max(-minX,dx);node.y=original.y+Math.max(-minY,dy);
+  const view=[...nodesEl.querySelectorAll('.node')].find(el=>el.dataset.nodeId===node.id);
+  if(view){view.style.left=node.x+'px';view.style.top=node.y+'px';}
+ }
+ resizeWorkspace();drawEdges();
+});
+const finishWorkflowDrag=event=>{
+ if(!workflowDrag||workflowDrag.pointerId!==event.pointerId)return;
+ workflowDrag=null;event.stopPropagation();render();
+};
+canvas.addEventListener('pointerup',finishWorkflowDrag);
+canvas.addEventListener('pointercancel',finishWorkflowDrag);
+
 window.addEventListener('flux:delete-block',event=>deleteNode(event.detail));
 function deleteNode(id){const node=nodes.find(n=>n.id===id);if(!node)return;const linked=edges.filter(e=>e.from===id||e.to===id).length;if(!confirm('Delete '+node.label+' ('+id+') and '+linked+' connected link(s)?'))return;nodes=nodes.filter(n=>n.id!==id);edges=edges.filter(e=>e.from!==id&&e.to!==id);if(selected===id)selected=null;if(connecting===id)connecting=null;wireDrag=null;render();note('Block '+id+' deleted. Save your canvas to keep this change.');}
 
