@@ -10,3 +10,9 @@ function change(back){record();if(back){if(past.length<2)return;future.push(past
 undo.onclick=()=>change(true);redo.onclick=()=>change(false);
 window.addEventListener('flux:canvas-changed',record);
 record();
+
+document.addEventListener('keydown',e=>{
+ if(!(e.metaKey||e.ctrlKey)||e.key.toLowerCase()!=='z')return;
+ if(e.target.closest('input,textarea,select'))return;
+ e.preventDefault();change(!e.shiftKey);
+});
