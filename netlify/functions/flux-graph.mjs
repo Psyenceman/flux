@@ -47,7 +47,7 @@ export async function handler(event){
    credits=await creditResponse.json();
    if(!credits?.ok)return json(402,{ok:false,error:'Insufficient FluxCoins',credits});
   }
-  const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloKey:process.env.FLUX_TRELLO_API_KEY,trelloToken:process.env.FLUX_TRELLO_TOKEN});return json(200,{...result,credits});
+  const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloKey:process.env.FLUX_TRELLO_API_KEY,trelloToken:process.env.FLUX_TRELLO_TOKEN,telegramToken:process.env.FLUX_TELEGRAM_BOT_TOKEN,telegramChatId:process.env.FLUX_TELEGRAM_CHAT_ID,resendApiKey:process.env.FLUX_RESEND_API_KEY,resendFrom:process.env.FLUX_RESEND_FROM});return json(200,{...result,credits});
  }
  catch(error){console.error(JSON.stringify({event:'flux.graph.failed',reason:String(error?.message||error)}));return json(422,{ok:false,error:String(error?.message||'Execution failed').slice(0,240)});}
 }
