@@ -8,6 +8,7 @@ if(output){
   if(!raw.startsWith('HTTP ')){panel.replaceChildren();return;}
   const start=raw.indexOf('{');if(start<0)return;
   let result;try{result=JSON.parse(raw.slice(start));}catch{return;}
+  if(result.ok&&result.outputs&&typeof result.outputs==='object')window.dispatchEvent(new CustomEvent('flux:test-outputs',{detail:{outputs:result.outputs}}));
   panel.replaceChildren();
   const heading=document.createElement('strong');heading.textContent=result.ok?'Test completed':'Test could not finish';panel.append(heading);
   if(result.error){const error=document.createElement('p');error.textContent=result.error;panel.append(error);}
