@@ -30,3 +30,11 @@
 @media (prefers-reduced-motion:no-preference){
  #canvas-shell .flux-automation-card,#canvas-shell .node{transition:outline-color .12s,box-shadow .12s,border-color .12s!important}
 }
+
+/* Private webhook test controls (TEST only). */
+#canvas-shell .flux-webhook-test{flex-basis:100%;display:grid;gap:10px;padding:14px;margin-top:10px;background:#edf8fa;border:1px solid #a9dce5;border-radius:10px;color:#14243a}
+#canvas-shell .flux-webhook-test label{display:grid;gap:6px;font-size:13px;font-weight:700}
+#canvas-shell .flux-webhook-test input{width:100%;min-width:0;padding:10px;border:1px solid #8aafbc;border-radius:7px;background:#fff;color:#14243a}
+#canvas-shell .flux-webhook-test button{justify-self:start;background:#14243a;color:#fff;border:0;border-radius:8px;padding:10px 16px;cursor:pointer}
+#canvas-shell .flux-webhook-test button:disabled{opacity:.55;cursor:wait}
+#canvas-shell .flux-webhook-test pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:240px;overflow:auto}
