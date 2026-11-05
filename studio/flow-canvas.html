@@ -42,6 +42,22 @@ const finishWorkflowDrag=event=>{
 canvas.addEventListener('pointerup',finishWorkflowDrag);
 canvas.addEventListener('pointercancel',finishWorkflowDrag);
 
+/* Keyboard-accessible group positioning: arrow keys move the complete workflow. */
+document.addEventListener('keydown',event=>{
+ if(!window.fluxMoveAll||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;
+ const target=event.target;
+ if(target?.closest?.('input,textarea,select,[contenteditable="true"],[role="textbox"]'))return;
+ if(!nodes.length)return;
+ event.preventDefault();
+ const step=event.shiftKey?40:10;
+ const delta={ArrowLeft:[-step,0],ArrowRight:[step,0],ArrowUp:[0,-step],ArrowDown:[0,step]}[event.key];
+ const minX=Math.min(...nodes.map(node=>node.x)),minY=Math.min(...nodes.map(node=>node.y));
+ const dx=Math.max(-minX,delta[0]),dy=Math.max(-minY,delta[1]);
+ if(dx===0&&dy===0)return;
+ for(const node of nodes){node.x+=dx;node.y+=dy;}
+ render();
+ note('Workflow moved '+Math.abs(dx||dy)+'px. Save to keep the new layout.');
+});
 window.addEventListener('flux:delete-block',event=>deleteNode(event.detail));
 function deleteNode(id){const node=nodes.find(n=>n.id===id);if(!node)return;const linked=edges.filter(e=>e.from===id||e.to===id).length;if(!confirm('Delete '+node.label+' ('+id+') and '+linked+' connected link(s)?'))return;nodes=nodes.filter(n=>n.id!==id);edges=edges.filter(e=>e.from!==id&&e.to!==id);if(selected===id)selected=null;if(connecting===id)connecting=null;wireDrag=null;render();note('Block '+id+' deleted. Save your canvas to keep this change.');}
 
