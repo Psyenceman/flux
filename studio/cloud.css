@@ -1,0 +1,11 @@
+
+/* Flux Cloud account controls */
+#flux-account{margin:18px 0;padding:18px;border:1px solid #354761;border-radius:12px;background:#15243a;color:#e8eef8}
+#flux-account .cloud-bar,#flux-account .cloud-form{display:flex;align-items:end;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+#flux-account .cloud-bar{align-items:center;justify-content:space-between}
+#flux-account label{display:grid;gap:5px;font-size:13px}
+#flux-account input,#flux-account select{min-width:180px;max-width:100%;padding:10px;background:#101827;color:#e8eef8;border:1px solid #52617a;border-radius:8px}
+#flux-account button{padding:10px 14px;cursor:pointer}
+#flux-account #cloud-list{margin:8px 8px 8px 0}
+#flux-account [hidden]{display:none!important}
+#cloud-message{font-size:13px;color:#a2b1c8;min-height:1em}
