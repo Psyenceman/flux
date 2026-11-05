@@ -20,3 +20,11 @@ focus.addEventListener('click',()=>{
   render();
 });
 render();
+
+const floatingInspector=document.getElementById('inspector-panel');
+const closeInspector=document.createElement('button');
+closeInspector.type='button';closeInspector.textContent='× Close';closeInspector.className='inspector-close';
+floatingInspector.prepend(closeInspector);
+closeInspector.onclick=()=>floatingInspector.classList.remove('context-open');
+inspector.addEventListener('click',()=>floatingInspector.classList.toggle('context-open'));
+focus.addEventListener('click',()=>floatingInspector.classList.remove('context-open'));
