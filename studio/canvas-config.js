@@ -1,5 +1,6 @@
 let fluxLatestTestOutputs={};
 window.addEventListener('flux:test-outputs',event=>{fluxLatestTestOutputs=event.detail?.outputs||{};});
+window.addEventListener('flux:canvas-changed',()=>{fluxLatestTestOutputs={};});
 function fluxOutputPaths(value,prefix='',depth=0){
  if(depth>3||value===null||typeof value!=='object')return prefix?[prefix]:[];
  if(Array.isArray(value))return prefix?[prefix]:[];
