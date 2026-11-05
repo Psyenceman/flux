@@ -57,3 +57,19 @@ body>header h1{color:#fff!important}body>header p{color:#b9d3df!important}body>h
 .flux-coins-dialog h3{margin:22px 0 8px}
 .flux-coins-history{list-style:none;margin:0 0 20px;padding:0;max-height:250px;overflow:auto}
 .flux-coins-history li{padding:10px 0;border-bottom:1px solid #e5edf0;font-size:13px}
+
+/* Flux Studio: horizontal block dock below the editor instead of a tall sidebar. */
+#canvas-shell,#canvas-shell.library-closed{display:flex!important;flex-direction:column!important;min-width:0!important}
+#canvas-shell>main,#canvas-shell.library-closed>main{order:1!important;width:100%!important;grid-column:auto!important}
+#canvas-shell>.library-panel{order:2!important;width:100%!important;grid-column:auto!important;border-right:0!important;border-top:1px solid #34445c!important;padding:12px 18px!important}
+#canvas-shell>.library-panel .palette{display:flex!important;gap:8px!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x proximity;padding:8px 0!important}
+#canvas-shell>.library-panel .palette button{flex:0 0 158px!important;min-width:158px!important;width:158px!important;scroll-snap-align:start;margin:0!important}
+#canvas-shell>.library-panel .palette-search-label{display:block!important}
+#canvas-shell>.library-panel #palette-search{max-width:360px!important}
+#canvas-shell>.library-panel .hint{display:none!important}
+#canvas-shell .node{min-width:120px!important;max-width:360px!important}
+#canvas-shell .node .node-head{padding-right:25px!important;overflow:hidden;text-overflow:ellipsis}
+#canvas-shell .flux-node-resize{position:absolute!important;right:5px!important;bottom:4px!important;border-radius:6px!important;padding:1px 5px!important;background:#d9f2f6!important;color:#116c80!important;cursor:ew-resize!important;font-size:13px!important;touch-action:none!important;z-index:5!important}
+#canvas-shell .node.flux-node-success{box-shadow:0 0 0 3px #a4d65e,0 5px 20px #14243a22!important}
+#canvas-shell .node.flux-node-failed{box-shadow:0 0 0 3px #ff6473,0 5px 20px #14243a22!important}
+#canvas-shell .node.flux-node-simulated .block-icon{outline:3px solid #ffba49!important}
