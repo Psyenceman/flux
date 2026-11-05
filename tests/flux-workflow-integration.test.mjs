@@ -26,7 +26,7 @@ test('rejected input skips downstream blocks',async()=>{
 });
 test('HTTP cannot use an unapproved destination',async()=>{
  const unsafe={version:1,nodes:[{id:'n1',type:'http',config:{method:'POST',url:'https://example.invalid'}}],edges:[]};
- await assert.rejects(()=>executeGraph(unsafe,{},{dryRun:false,notificationUrl:'https://approved.invalid'}),/URL must match/);
+ {const result=await executeGraph(unsafe,{},{dryRun:false,notificationUrl:'https://approved.invalid'});assert.equal(result.ok,false);assert.match(result.error,/URL must match/);assert.equal(result.trace.at(-1).status,'failed');}
 });
 test('schedule does not falsely claim to execute',async()=>{
  const result=await executeGraph({version:1,nodes:[{id:'n1',type:'schedule',config:{frequency:'daily'}}],edges:[]},{},{dryRun:true});
