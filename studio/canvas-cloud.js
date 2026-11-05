@@ -219,13 +219,15 @@ window.addEventListener('flux:session-request',async()=>{if(!client){window.disp
 
 /* Persistent per-user execution summaries. No raw inputs, outputs or tokens stored. */
 const runHistory=$('flux-automation-log-list');
+const historyRefresh=document.createElement('button');historyRefresh.type='button';historyRefresh.textContent='Refresh cloud history';historyRefresh.title='Load saved execution records';historyRefresh.addEventListener('click',()=>refreshRunHistory());runHistory?.before(historyRefresh);
 async function refreshRunHistory(){
  const row=selection();if(!client||!user||!row||!runHistory)return;
  const {data,error}=await client.from('automation_runs').select('id,status,started_at,finished_at,result,error_message').eq('automation_id',row.id).order('started_at',{ascending:false}).limit(30);
- if(error){status('History unavailable: '+error.message);return;}
+ if(error){window.dispatchEvent(new CustomEvent('flux:persistent-runs',{detail:{automationId:row.id,runs:[],error:error.message}}));status('History unavailable: '+error.message);return;}
  window.dispatchEvent(new CustomEvent('flux:persistent-runs',{detail:{automationId:row.id,runs:data||[]}}));
 }
 window.addEventListener('flux:automation-opened',refreshRunHistory);
+window.addEventListener('flux:run-completed',()=>{if(selection())refreshRunHistory();});
 $('canvas-automation')?.addEventListener('change',refreshRunHistory);
 window.addEventListener('flux:run-summary',async event=>{
  const row=selection();if(!client||!user||!row)return;
