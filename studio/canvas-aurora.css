@@ -73,3 +73,8 @@ body>header h1{color:#fff!important}body>header p{color:#b9d3df!important}body>h
 #canvas-shell .node.flux-node-success{box-shadow:0 0 0 3px #a4d65e,0 5px 20px #14243a22!important}
 #canvas-shell .node.flux-node-failed{box-shadow:0 0 0 3px #ff6473,0 5px 20px #14243a22!important}
 #canvas-shell .node.flux-node-simulated .block-icon{outline:3px solid #ffba49!important}
+
+#canvas-shell .flux-api-endpoint{display:flex;align-items:center;flex-wrap:wrap;gap:8px;width:100%;padding:10px 0}
+#canvas-shell .flux-api-endpoint[hidden]{display:none!important}
+#canvas-shell .flux-api-endpoint input{flex:1 1 320px;min-width:180px;padding:9px;border:1px solid #b6d1dc;border-radius:8px;background:#fff;color:#14243a}
+#canvas-shell .flux-api-endpoint small{flex-basis:100%;color:#62798a}
