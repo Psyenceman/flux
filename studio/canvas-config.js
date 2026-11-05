@@ -1,3 +1,12 @@
+let fluxLatestTestOutputs={};
+window.addEventListener('flux:test-outputs',event=>{fluxLatestTestOutputs=event.detail?.outputs||{};});
+function fluxOutputPaths(value,prefix='',depth=0){
+ if(depth>3||value===null||typeof value!=='object')return prefix?[prefix]:[];
+ if(Array.isArray(value))return prefix?[prefix]:[];
+ const keys=Object.keys(value).slice(0,40),paths=[];
+ for(const key of keys){if(!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key))continue;const path=prefix?prefix+'.'+key:key;paths.push(path);if(value[key]&&typeof value[key]==='object'&&!Array.isArray(value[key]))paths.push(...fluxOutputPaths(value[key],path,depth+1));}
+ return [...new Set(paths)].slice(0,100);
+}
 const schemas={
  schedule:[['frequency','Frequency','select','hourly,daily,weekly,monthly'],['time','Time (HH:MM)','time'],['days','Days (Mon,Tue,Wed...)','text'],['timezone','Time zone','text']],
  http:[['method','HTTP method','select','GET,POST,PUT,PATCH,DELETE'],['url','Destination URL','url'],['headers','Headers (JSON)','textarea'],['body','Request body (JSON)','textarea']],
@@ -59,8 +68,10 @@ function buildMappingEditor(section,node,upstream=[]){
   const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.title='Remove field';remove.onclick=()=>{row.nextElementSibling?.remove();row.remove();persist();};
   const picker=document.createElement('select');picker.setAttribute('aria-label','Insert data reference');picker.title='Suggested fields from previous blocks (verify actual output)';const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Choose data…';picker.append(placeholder);
   for(const source of [{id:'input',label:'Workflow input'},...upstream.map(item=>({id:item.id,label:item.label+' ('+item.id+')'}))]){
-   for(const field of ['message','status','email','customer.email','items','count']){
-    const option=document.createElement('option');option.value='{{'+source.id+'.'+field+'}}';option.textContent=source.label+' · '+field;picker.append(option);
+   const observed=source.id==='input'?null:fluxLatestTestOutputs[source.id];
+   const paths=observed===undefined?['message','status','email','customer.email','items','count']:fluxOutputPaths(observed);
+   for(const field of paths){
+    const option=document.createElement('option');option.value='{{'+source.id+'.'+field+'}}';option.textContent=source.label+' · '+field+(observed===undefined?' (suggested)':' (tested)');picker.append(option);
    }
   }
   picker.onchange=()=>{if(!picker.value)return;val.value=picker.value;picker.value='';persist();};
