@@ -1,4 +1,4 @@
-/* Keep the visual editor above secondary tools; no functionality is removed. */
+/* Flux Studio: one canvas, one toolbar, one contextual panel at a time. */
 (()=>{
  const main=document.querySelector('#canvas-shell > main');
  const bar=main?.querySelector('.workspace-bar');
@@ -6,26 +6,43 @@
  const cloud=document.getElementById('canvas-cloud');
  const assistant=document.getElementById('flux-assistant-panel');
  const logs=document.getElementById('flux-automation-logs');
- const toolbar=main?.querySelector('.toolbar:not(#canvas-cloud)');
+ const actions=main?.querySelector('.toolbar:not(#canvas-cloud)');
  const runner=document.getElementById('runner');
- const tools=main?.querySelector('.canvas-tools');
+ const navigation=main?.querySelector('.canvas-tools');
  const viewport=document.getElementById('viewport');
- if(!main||!bar||!library||!cloud||!assistant||!logs||!toolbar||!runner||!tools||!viewport)return;
- // Visual hierarchy: workspace > automation > actions > canvas > secondary tools.
- main.insertBefore(library,cloud);
- main.insertBefore(cloud,toolbar);
- main.insertBefore(toolbar,tools);
- main.insertBefore(tools,viewport);
- const drawer=(name,panel)=>{
-  const details=document.createElement('details');details.className='flux-drawer';
-  const summary=document.createElement('summary');summary.textContent=name;
-  details.append(summary,panel);main.append(details);
-  return details;
- };
- drawer('✦ Flux Assistant & Repair',assistant);
- const logsDrawer=drawer('Debug & execution history',logs);
- // Keep logs discoverable immediately after a run without hiding the canvas.
- window.addEventListener('flux:run-summary',()=>{logsDrawer.open=true;});
- // Runner remains available as part of execution workflow.
- main.insertBefore(runner,tools);
+ if(!main||!bar||!library||!cloud||!assistant||!logs||!actions||!navigation||!viewport)return;
+ const nav=document.createElement('nav');nav.className='flux-mode-tabs';nav.setAttribute('aria-label','Studio sections');
+ const tabs=[['editor','Editor'],['automations','Automations'],['assistant','Assistant'],['logs','History']];
+ const views={editor:viewport,automations:library,assistant,logs};
+ const buttons=new Map();
+ for(const [id,label] of tabs){
+  const button=document.createElement('button');button.type='button';button.textContent=label;
+  button.addEventListener('click',()=>activate(id));buttons.set(id,button);nav.append(button);
+ }
+ bar.prepend(nav);
+ const options=document.createElement('details');options.className='flux-settings';
+ const optionsTitle=document.createElement('summary');optionsTitle.textContent='Settings';options.append(optionsTitle,cloud);
+ main.insertBefore(options,actions);
+ const body=document.createElement('div');body.className='flux-main-view';
+ main.insertBefore(body,navigation);
+ for(const view of Object.values(views))body.append(view);
+ const footer=main.querySelector('#status');
+ const logsOpen=()=>activate('logs');
+ window.addEventListener('flux:run-summary',logsOpen);
+ function activate(id){
+  for(const [key,view] of Object.entries(views))view.hidden=key!==id;
+  actions.hidden=id!=='editor';navigation.hidden=id!=='editor';
+  if(runner)runner.hidden=id!=='editor';
+  for(const [key,button] of buttons){button.setAttribute('aria-current',String(key===id));}
+  body.dataset.view=id;
+ }
+ // Remove obsolete stacked drawers, while preserving their content.
+ for(const details of main.querySelectorAll('.flux-drawer'))details.remove();
+ activate('editor');
+ window.addEventListener('flux:automation-opened',()=>activate('editor'));
+ const inspector=document.getElementById('inspector-panel');
+ const libraryPanel=document.getElementById('library-panel');
+ // A closed sidebar is available through the existing toolbar toggle.
+ if(libraryPanel)libraryPanel.classList.add('flux-library-compact');
+ if(inspector)inspector.classList.add('flux-inspector-context');
 })();
