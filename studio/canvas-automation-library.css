@@ -9,3 +9,5 @@
 #flux-automation-log-list details{padding:10px;border-bottom:1px solid #405471}
 #flux-automation-log-list summary{cursor:pointer}
 #flux-automation-log-list pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:200px;overflow:auto}
+
+.flux-log-tools{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.flux-log-tools select,.flux-log-tools button{background:#243a57;border:1px solid #526a8c;color:#eef4fc;padding:8px;border-radius:8px;cursor:pointer}
