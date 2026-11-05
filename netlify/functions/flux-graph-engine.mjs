@@ -3,7 +3,7 @@ export function validateGraph(graph){
  if(!graph||graph.version!==1||!Array.isArray(graph.nodes)||!Array.isArray(graph.edges))throw Error('Invalid graph');
  if(graph.nodes.length>80||graph.edges.length>300)throw Error('Graph exceeds execution limits');
  const ids=new Set();
- const allowed=new Set(['webhook','filter','flux','log','merge','http','airtable','trello','miro','slack','email','database','delay']);
+ const allowed=new Set(['webhook','filter','flux','log','merge','http','airtable','trello','miro','slack','email','database','delay','manual','schedule','router','mapper','loop','sheets','drive','github','wordpress']);
  for(const n of graph.nodes){if(!n||typeof n.id!=='string'||n.id.length>80||ids.has(n.id)||!allowed.has(n.type))throw Error('Invalid or duplicate block');ids.add(n.id);}
  for(const e of graph.edges){if(!e||!ids.has(e.from)||!ids.has(e.to)||e.from===e.to)throw Error('Invalid edge');}
  const indegree=new Map(graph.nodes.map(n=>[n.id,0])),adj=new Map(graph.nodes.map(n=>[n.id,[]]));
@@ -14,16 +14,30 @@ export function validateGraph(graph){
  return {order,adj};
 }
 const get=(value,path)=>{if(!/^[a-zA-Z_][\w]*(\.[a-zA-Z_][\w]*){0,5}$/.test(path))return undefined;return path.split('.').reduce((v,k)=>v&&typeof v==='object'&&Object.hasOwn(v,k)?v[k]:undefined,value);};
+function resolveTemplate(template,outputs,input,allowed){
+ if(typeof template!=='string'||template.length>4000)throw Error('Invalid mapping expression');
+ const exact=template.match(/^\\{\\{(input|[a-zA-Z][\\w]{0,79})\\.([a-zA-Z_][\\w]*(?:\\.[a-zA-Z_][\\w]*){0,5})\\}\\}$/);
+ const resolve=(id,path)=>{if(id!=='input'&&!allowed.has(id))throw Error('Mapping references an unconnected block: '+id);const source=id==='input'?input:outputs[id];return get(source,path)??null;};
+ if(exact)return resolve(exact[1],exact[2]);
+ return template.replace(/\\{\\{(input|[a-zA-Z][\\w]{0,79})\\.([a-zA-Z_][\\w]*(?:\\.[a-zA-Z_][\\w]*){0,5})\\}\\}/g,(_,id,path)=>String(resolve(id,path)??''));
+}
+function applyMapping(mapping,outputs,input,allowed){
+ let spec;try{spec=JSON.parse(mapping);}catch{throw Error('Data Mapper expects a JSON object mapping fields to values');}
+ if(!spec||typeof spec!=='object'||Array.isArray(spec)||Object.keys(spec).length>30)throw Error('Invalid Data Mapper object');
+ const result={};for(const [key,val] of Object.entries(spec)){if(!/^[a-zA-Z_][\\w]{0,63}$/.test(key)||typeof val!=='string')throw Error('Invalid Data Mapper field');result[key]=resolveTemplate(val,outputs,input,allowed);}
+ return result;
+}
 export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloKey,trelloToken}={}){
  const {order,adj}=validateGraph(graph),byId=new Map(graph.nodes.map(n=>[n.id,n]));
- const received=new Map(),trace=[],outputs={};let calls=0;
+ const received=new Map(),trace=[],outputs={};let calls=0;const ancestors=new Map();for(const id of order){const set=new Set();for(const e of graph.edges.filter(e=>e.to===id)){set.add(e.from);for(const a of ancestors.get(e.from)||[])set.add(a);}ancestors.set(id,set);}
  for(const id of order){
   const n=byId.get(id),incoming=received.get(id)||[];
   if(incoming.length===0 && graph.edges.some(e=>e.to===id)){trace.push({id,type:n.type,status:'skipped',reason:'No active incoming branch'});continue;}
   const value=incoming.length>1?{items:incoming}:incoming.length===1?incoming[0]:input;
   const config=n.config||{};let output=value,active=true,status='completed',reason;
   switch(n.type){
-   case 'webhook':break;
+   case 'webhook':case 'manual':break;
+   case 'mapper':output=applyMapping(String(config.mapping||'{}'),outputs,input,ancestors.get(id));break;
    case 'filter':{
     const rule=String(config.operation||'').trim();
     if(rule==='approved'||rule==='rejected')active=get(value,'status')===rule;
