@@ -1,0 +1,32 @@
+/* TEST-only: clear selection and active state; scoped to Flux Studio. */
+#canvas-shell .flux-automation-card[aria-current="true"]{
+ background:#d8f5fa!important;color:#103044!important;border:3px solid #008ca8!important;
+ box-shadow:0 0 0 3px #00b8d933,0 6px 18px #14243a20!important;
+ position:relative;font-weight:700;
+}
+#canvas-shell .flux-automation-card[aria-current="true"]::before{
+ content:"SELECTED";align-self:flex-start;font-size:10px;letter-spacing:.08em;
+ background:#006f88;color:#fff;border-radius:5px;padding:3px 7px;
+}
+#canvas-shell .flux-automation-card[aria-current="true"] small{color:#285568!important}
+#canvas-shell .flux-automation-card:focus-visible,
+#canvas-shell #library-panel .palette button:focus-visible{
+ outline:3px solid #007e99!important;outline-offset:3px!important;
+}
+#canvas-shell .node.selected{
+ outline:4px solid #007e99!important;outline-offset:3px!important;
+ box-shadow:0 0 0 7px #00b8d92e,0 9px 24px #14243a36!important;
+ z-index:5!important;
+}
+#canvas-shell .node.selected .node-head::after{
+ content:" · SELECTED";font-size:10px;letter-spacing:.05em;color:#006e83;font-weight:800;
+}
+#canvas-shell #library-panel .palette button:active{
+ background:#b8edf4!important;border-color:#007e99!important;
+}
+#canvas-shell .flux-mode-tabs button[aria-current="true"]{
+ box-shadow:inset 0 -4px 0 #00b8d9,0 3px 9px #14243a25!important;
+}
+@media (prefers-reduced-motion:no-preference){
+ #canvas-shell .flux-automation-card,#canvas-shell .node{transition:outline-color .12s,box-shadow .12s,border-color .12s!important}
+}
