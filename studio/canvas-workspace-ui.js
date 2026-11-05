@@ -22,7 +22,9 @@
  bar.prepend(nav);
  const options=document.createElement('details');options.className='flux-settings';
  const optionsTitle=document.createElement('summary');optionsTitle.textContent='Settings';options.append(optionsTitle,cloud);
- main.insertBefore(options,actions);
+ const workspaceActions=bar.querySelector('.workspace-actions');
+ if(workspaceActions){workspaceActions.append(options);options.addEventListener('toggle',()=>{if(options.open)workspaceActions.querySelector('#toggle-library')?.blur();});}
+ else main.insertBefore(options,actions);
  const body=document.createElement('div');body.className='flux-main-view';
  main.insertBefore(body,navigation);
  main.insertBefore(navigation,body);
