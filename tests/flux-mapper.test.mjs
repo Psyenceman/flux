@@ -9,7 +9,7 @@ test('mapper resolves actual fields from connected upstream blocks',async()=>{
 });
 test('mapper refuses data from unconnected blocks',async()=>{
  const g=make([['start','manual'],['other','manual'],['map','mapper',{mapping:JSON.stringify({private:'{{other.secret}}'})}]],[['start','map']]);
- await assert.rejects(()=>executeGraph(g,{secret:'private'}),/unconnected block/);
+ {const result=await executeGraph(g,{secret:'private'});assert.equal(result.ok,false);assert.match(result.error,/unconnected block/);assert.equal(result.trace.at(-1).status,'failed');}
 });
 test('mapper preserves structured values in exact references',async()=>{
  const g=make([['start','manual'],['map','mapper',{mapping:JSON.stringify({customer:'{{input.customer}}'})}]],[['start','map']]);
@@ -18,5 +18,5 @@ test('mapper preserves structured values in exact references',async()=>{
 });
 test('mapper refuses malformed JSON',async()=>{
  const g=make([['start','manual'],['map','mapper',{mapping:'{broken'}]],[['start','map']]);
- await assert.rejects(()=>executeGraph(g,{}),/JSON object/);
+ {const result=await executeGraph(g,{});assert.equal(result.ok,false);assert.match(result.error,/JSON object/);assert.equal(result.trace.at(-1).status,'failed');}
 });
