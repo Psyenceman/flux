@@ -24,7 +24,7 @@ export async function handler(event){
   const steps=Array.isArray(run.trace)?run.trace.slice(0,100).map(step=>({id:String(step.id||'').slice(0,80),status:String(step.status||'').slice(0,30)})):[];
   let historySaved=false;
   try{
-   const history=await fetch(BASE+'/rest/v1/automation_runs',{method:'POST',headers:{apikey:serviceKey,authorization:'Bearer '+serviceKey,'content-type':'application/json','prefer':'return=minimal'},body:JSON.stringify({owner_id:result.owner_id,automation_id:result.automation_id,status:run.ok?'completed':'failed',finished_at:new Date().toISOString(),result:{source:'webhook',dryRun:false,steps},error_message:run.ok?null:String(run.error||'Execution failed').slice(0,200)}),signal:AbortSignal.timeout(5000)});
+   const history=await fetch(BASE+'/rest/v1/automation_runs',{method:'POST',headers:{apikey:serviceKey,authorization:'Bearer '+serviceKey,'content-type':'application/json','prefer':'return=minimal'},body:JSON.stringify({owner_id:result.owner_id,automation_id:result.automation_id,status:run.ok?'success':'failed',finished_at:new Date().toISOString(),result:{source:'webhook',dryRun:false,steps},error_message:run.ok?null:String(run.error||'Execution failed').slice(0,200)}),signal:AbortSignal.timeout(5000)});
    historySaved=history.ok;
   }catch{}
   return response(run.ok?200:422,{ok:run.ok,runId:id,trace:steps,error:run.ok?undefined:String(run.error||'Execution failed').slice(0,180),historySaved});
