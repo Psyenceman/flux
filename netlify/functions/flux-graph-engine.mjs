@@ -39,6 +39,21 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
    case 'webhook':case 'manual':break;
    case 'mapper':output=applyMapping(String(config.mapping||'{}'),outputs,input,ancestors.get(id));break;
    case 'filter':{
+    if(config.field){
+      const field=String(config.field),op=String(config.operator||'equals'),expected=String(config.value??'');
+      const actual=get(value,field);
+      if(actual===undefined&&op!=='exists')throw Error('Condition field not found at '+id);
+      if(op==='equals')active=String(actual)===expected;
+      else if(op==='not_equals')active=String(actual)!==expected;
+      else if(op==='contains')active=String(actual).includes(expected);
+      else if(op==='exists')active=actual!==undefined&&actual!==null;
+      else if(op==='greater_than'||op==='less_than'){
+        const a=Number(actual),b=Number(expected);
+        if(!Number.isFinite(a)||!Number.isFinite(b))throw Error('Condition requires numeric values at '+id);
+        active=op==='greater_than'?a>b:a<b;
+      }else throw Error('Unsupported comparison at '+id);
+      output=value;break;
+    }
     const rule=String(config.operation||'').trim();
     if(rule==='approved'||rule==='rejected')active=get(value,'status')===rule;
     else if(rule.startsWith('status='))active=get(value,'status')===rule.slice(7).trim();
@@ -72,10 +87,14 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
     break;
    }
    case 'merge':output={items:incoming};break;
+   case 'schedule':status='simulated';reason='Schedule configuration saved; automatic scheduling requires a server scheduler';break;
+   case 'delay':status='simulated';reason='Delay configuration saved; execution is not paused';break;
    case 'log':break;
    case 'http':{
     // Only a preconfigured server-side destination; never trust URL from graph.
     if(!notificationUrl){status='skipped';reason='Server HTTP destination not configured';break;}
+    if(config.method&&String(config.method).toUpperCase()!=='POST')throw Error('HTTP block '+id+': only POST is supported by the server');
+    if(config.url&&String(config.url)!==notificationUrl)throw Error('HTTP block '+id+': URL must match the server-configured destination');
     if(dryRun){status='simulated';reason='Dry run: HTTP POST not sent';break;}
     if(++calls>3)throw Error('HTTP action limit exceeded');
     const res=await fetch(notificationUrl,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({event:'flux.workflow.http',block:id,data:value}),signal:AbortSignal.timeout(4000),redirect:'error'});
