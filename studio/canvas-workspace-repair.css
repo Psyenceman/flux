@@ -1,0 +1,14 @@
+/* TEST: library is an editor drawer; remove orphaned grid track. */
+#canvas-shell{display:block!important;width:100%!important}
+#canvas-shell > main{display:block!important;grid-column:auto!important;width:100%!important;overflow:visible!important}
+#canvas-shell > .library-panel{display:none!important}
+#flux-block-drawer{background:#14253d;color:#fff;padding:12px 16px;max-height:260px;overflow:auto}
+#flux-block-drawer[hidden],#canvas-cloud[hidden]{display:none!important}
+#flux-block-drawer #library-panel{display:block!important;position:static!important;transform:none!important;width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;overflow:visible!important;padding:0!important;background:transparent!important;color:inherit!important;box-shadow:none!important;border:0!important}
+#flux-block-drawer .palette{display:flex!important;flex-wrap:wrap!important;gap:8px!important;max-height:155px;overflow:auto}
+#flux-block-drawer .palette button{width:auto!important;min-width:145px!important;flex:0 1 170px!important}
+#flux-automation-library #canvas-cloud{display:flex!important;flex-wrap:wrap!important;gap:10px;padding:16px;margin-top:16px;border:1px solid #cbd9ea;border-radius:12px}
+#flux-automation-library #canvas-cloud[hidden]{display:none!important}
+#flux-automation-library .flux-webhook-panel{flex-basis:100%;min-width:0}
+#flux-automation-library .flux-webhook-panel[hidden]{display:none!important}
+@media(max-width:650px){#flux-block-drawer{max-height:300px}#flux-block-drawer .palette button{flex:1 1 135px!important}}
