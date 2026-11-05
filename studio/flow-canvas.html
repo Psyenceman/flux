@@ -16,11 +16,12 @@ function deleteNode(id){const node=nodes.find(n=>n.id===id);if(!node)return;cons
 
 function add(type,x=100,y=100,config={}){const n={id:'n'+(++sequence),type,x:Math.max(0,x),y:Math.max(0,y),label:types.find(t=>t[0]===type)?.[1]||type,config};nodes.push(n);selected=n.id;render();return n;}
 window.addEventListener('flux:insert-between',event=>{const {from,to,type}=event.detail;const edge=edges.find(e=>e.from===from&&e.to===to);const a=nodes.find(n=>n.id===from),b=nodes.find(n=>n.id===to);if(!edge||!a||!b||!types.some(t=>t[0]===type))return;edges=edges.filter(e=>e!==edge);const node=add(type,(a.x+b.x)/2,(a.y+b.y)/2+110);connect(from,node.id);connect(node.id,to);note('Block inserted between '+from+' and '+to+'. Save your changes.');});
-function path(a,b){const sx=a.x+204,sy=a.y+52,tx=b.x,ty=b.y+52;const dx=Math.max(65,Math.abs(tx-sx)*.5);return 'M'+sx+' '+sy+' C'+(sx+dx)+' '+sy+','+(tx-dx)+' '+ty+','+tx+' '+ty;}
+const nodeWidth=type=>({manual:166,schedule:180,webhook:180,filter:176,router:176,mapper:218,flux:226,http:228,email:220,slack:220,trello:220,airtable:220,sheets:220,drive:220,github:220,wordpress:220,miro:220,database:220,log:172,delay:166,merge:174,loop:174})[type]||204;
+function path(a,b){const sx=a.x+nodeWidth(a.type),sy=a.y+52,tx=b.x,ty=b.y+52;const dx=Math.max(65,Math.abs(tx-sx)*.5);return 'M'+sx+' '+sy+' C'+(sx+dx)+' '+sy+','+(tx-dx)+' '+ty+','+tx+' '+ty;}
 function reaches(from,to,visited=new Set()){if(from===to)return true;if(visited.has(from))return false;visited.add(from);return edges.some(e=>e.from===from&&reaches(e.to,to,visited));}
 function connect(from,to){if(from===to){note('Cannot connect a block to itself');return;}if(edges.some(e=>e.from===from&&e.to===to)){note('Connection already exists');return;}if(reaches(to,from)){note('Cycles are disabled until controlled loops are implemented');return;}edges.push({from,to});note('Connected '+from+' → '+to);render();}
 function resizeWorkspace(){
- const width=Math.max(1600,...nodes.map(n=>n.x+450));
+ const width=Math.max(1600,...nodes.map(n=>n.x+nodeWidth(n.type)+240));
  const height=Math.max(1050,...nodes.map(n=>n.y+300));
  canvas.style.width=width+'px';canvas.style.height=height+'px';
  edgesEl.style.width=width+'px';edgesEl.style.height=height+'px';
@@ -70,7 +71,7 @@ function drawEdges(){edgesEl.replaceChildren();for(const e of edges){const a=nod
 function previewWire(){
  if(!wireDrag||!wireDrag.moved)return;
  const from=nodes.find(n=>n.id===wireDrag.from);if(!from)return;
- const rect=canvas.getBoundingClientRect(),sx=from.x+204,sy=from.y+52,tx=(wireDrag.x-rect.left)/(window.fluxCanvasZoom||1),ty=(wireDrag.y-rect.top)/(window.fluxCanvasZoom||1);
+ const rect=canvas.getBoundingClientRect(),sx=from.x+nodeWidth(from.type),sy=from.y+52,tx=(wireDrag.x-rect.left)/(window.fluxCanvasZoom||1),ty=(wireDrag.y-rect.top)/(window.fluxCanvasZoom||1);
  const p=document.createElementNS('http://www.w3.org/2000/svg','path');
  p.setAttribute('d','M'+sx+' '+sy+' C'+(sx+90)+' '+sy+','+(tx-90)+' '+ty+','+tx+' '+ty);
  p.setAttribute('stroke','#f6ce7b');p.setAttribute('stroke-width','3');p.setAttribute('stroke-dasharray','7 5');p.setAttribute('fill','none');edgesEl.append(p);
