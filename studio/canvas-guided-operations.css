@@ -1,0 +1,9 @@
+/* TEST: clearer, task-oriented configuration inspired by established workflow editors. */
+.flux-guided{padding:14px;border:1px solid #455b79;border-radius:12px;background:linear-gradient(160deg,#233752,#18283f);margin:12px 0}
+.flux-guided h3{font-size:14px;margin:0 0 12px}
+.flux-guided>select,.flux-guided>label>input{display:block;width:100%;min-width:0;background:#101d30;color:#edf3fa;border:1px solid #647d9d;border-radius:9px;padding:11px;margin:8px 0 12px}
+.flux-guided>select:focus-visible,.flux-guided input:focus-visible{outline:2px solid #8bbaff;outline-offset:2px}
+.flux-guided .field{display:block;font-size:12px;color:#d8e5f5}
+.flux-guided .inspector-help{border-left:3px solid #83b7ff;padding-left:10px;margin:12px 0;line-height:1.5}
+.edge-block-options button{width:100%;text-align:left}
+@media(max-width:600px){.flux-guided{padding:12px}.flux-guided>select{font-size:16px}}
