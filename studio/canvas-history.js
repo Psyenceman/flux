@@ -1,1 +1,1 @@
-// Canvas history controller
+const undo=document.createElement('button');undo.textContent='Undo';document.querySelector('.compact-actions')?.prepend(undo);
