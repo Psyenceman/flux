@@ -55,3 +55,30 @@ body>header p{font-size:11px!important;color:#796d91!important}
 #flux-assistant-suggest{background:#7928f5!important;border-color:#7928f5!important;color:#fff!important}
 #flux-automation-library h2,#flux-assistant-panel h2,#flux-automation-logs h2{color:#382054!important}
 @media(max-width:780px){#canvas-shell .workspace-bar{flex-wrap:wrap!important}#canvas-shell .flux-mode-tabs{overflow-x:auto!important}#canvas-shell .flux-main-view[data-view=automations],#canvas-shell .flux-main-view[data-view=assistant],#canvas-shell .flux-main-view[data-view=logs]{padding:12px!important}}
+
+/* Spectrum canvas contrast: unmistakably different from the previous white UI. */
+html,body{background:#eee6ff!important}
+#canvas-shell{background:#eee6ff!important}
+#canvas-shell main,#canvas-shell .flux-main-view{background:#f0eaff!important}
+#canvas-shell .canvas-wrap,#canvas-shell #viewport{
+ background-color:#eee6ff!important;
+ background-image:radial-gradient(circle,#c9afe9 1.25px,transparent 1.6px),linear-gradient(145deg,#f6eeff 0%,#eee4ff 48%,#e8f2ff 100%)!important;
+ background-size:26px 26px,100% 100%!important;
+ background-position:0 0,0 0!important;
+}
+#canvas-shell #library-panel{
+ background:linear-gradient(180deg,#5520b6 0%,#7928f5 55%,#9437e9 100%)!important;
+ color:#fff!important;border-right:1px solid #6b26d4!important;
+}
+#canvas-shell #library-panel h2,#canvas-shell #library-panel label,#canvas-shell #library-panel p,#canvas-shell #library-panel .palette-count{color:#fff!important}
+#canvas-shell #library-panel .palette-search-label{color:#f1e7ff!important}
+#canvas-shell #library-panel #palette-search{background:#fff!important;color:#30204d!important;border:1px solid #e4d6ff!important;border-radius:10px!important}
+#canvas-shell #library-panel .palette-filters button{background:#7135d1!important;color:#fff!important;border-color:#a783f4!important}
+#canvas-shell #library-panel .palette-filters button[aria-pressed=true]{background:#fff!important;color:#6321c5!important}
+#canvas-shell #library-panel .palette button{background:#fff!important;color:#35234f!important;border:1px solid #d9c8f3!important;box-shadow:0 2px 7px #36126b24!important}
+#canvas-shell #library-panel .palette button:hover{background:#f3eaff!important;border-color:#f5b9ef!important}
+#canvas-shell .canvas-tools{background:#fff!important;border-bottom:1px solid #e7d8f7!important}
+#canvas-shell .compact-actions{background:#fff!important}
+#canvas-shell .node{box-shadow:0 5px 16px #5d32962c!important}
+#canvas-shell .flux-edge-plus{z-index:5!important}
+@media(max-width:780px){#canvas-shell #library-panel{background:#6723d1!important}}
