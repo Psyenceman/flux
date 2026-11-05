@@ -9,7 +9,8 @@ export async function handler(event){
  const id=event.queryStringParameters?.id,secret=event.headers?.['x-flux-webhook-key']||event.headers?.['X-Flux-Webhook-Key'];
  if(!uuid.test(id||'')||typeof secret!=='string'||!/^fw_[a-f0-9]{64}$/.test(secret))return response(401,{ok:false,error:'Invalid webhook credentials'});
  let input;try{input=JSON.parse(event.body||'{}');if(!input||typeof input!=='object'||Array.isArray(input))throw Error();}catch{return response(400,{ok:false,error:'Expected JSON object'});}
- const serviceKey=process.env.FLUX_SUPABASE_SERVICE_ROLE_KEY;
+ // TEST compatibility: existing Netlify Deploy Preview secret was saved with a missing initial F.
+ const serviceKey=process.env.FLUX_SUPABASE_SERVICE_ROLE_KEY || process.env.LUX_SUPABASE_SERVICE_ROLE_KEY;
  if(!serviceKey)return response(503,{ok:false,error:'Webhook execution not configured'});
  const hash=createHash('sha256').update(secret).digest('hex');
  try{
