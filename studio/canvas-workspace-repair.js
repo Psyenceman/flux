@@ -1,4 +1,4 @@
-/* TEST-only workspace repair: make block library and webhook controls discoverable. */
+/* TEST-only: side block drawer confined to Editor; webhook controls in Automations. */
 (()=>{
  const shell=document.getElementById('canvas-shell');
  const main=shell?.querySelector(':scope > main');
@@ -6,26 +6,31 @@
  const cloud=document.getElementById('canvas-cloud');
  const automations=document.getElementById('flux-automation-library');
  const tabs=main?.querySelector('.flux-mode-tabs');
- if(!main||!library||!cloud||!automations||!tabs)return;
- // Move the library into the editor area, not after the entire workspace.
- const editor=main.querySelector('.flux-main-view');
- const blockDrawer=document.createElement('section');
- blockDrawer.id='flux-block-drawer';
- blockDrawer.setAttribute('aria-label','Block library');
- blockDrawer.append(library);
- main.insertBefore(blockDrawer,editor);
+ const editor=main?.querySelector('.flux-main-view');
+ if(!main||!library||!cloud||!automations||!tabs||!editor)return;
+ const drawer=document.createElement('aside');
+ drawer.id='flux-block-drawer';
+ drawer.setAttribute('aria-label','Block library');
+ drawer.append(library);
+ main.insertBefore(drawer,editor);
  const toggle=document.getElementById('toggle-library');
- const update=()=>{const hidden=blockDrawer.hidden; if(toggle){toggle.textContent=hidden?'Show blocks':'Hide blocks';toggle.setAttribute('aria-expanded',String(!hidden));}};
- blockDrawer.hidden=false;
- if(toggle){toggle.addEventListener('click',e=>{e.stopImmediatePropagation();blockDrawer.hidden=!blockDrawer.hidden;update();},true);}
- update();
- // Cloud controls, including webhook management, belong to Automations.
+ const tabButtons=[...tabs.querySelectorAll('button')];
+ let editorOpen=true;
+ const current=()=>tabButtons.find(b=>b.getAttribute('aria-current')==='true')?.textContent?.trim()||'Editor';
+ function sync(){
+  const mode=current();
+  drawer.hidden=mode!=='Editor'||!editorOpen;
+  cloud.hidden=mode!=='Automations';
+  if(toggle){
+   toggle.hidden=mode!=='Editor';
+   toggle.textContent=editorOpen?'Hide blocks':'Show blocks';
+   toggle.setAttribute('aria-expanded',String(mode==='Editor'&&editorOpen));
+  }
+ }
+ if(toggle)toggle.addEventListener('click',event=>{event.stopImmediatePropagation();editorOpen=!editorOpen;sync();},true);
  const settings=cloud.closest('.flux-settings');
  if(settings)settings.open=false;
  automations.append(cloud);
- cloud.hidden=false;
- const tabButtons=[...tabs.querySelectorAll('button')];
- const showCloud=()=>{const active=tabButtons.find(b=>b.getAttribute('aria-current')==='true');cloud.hidden=active?.textContent?.trim()!=='Automations';blockDrawer.hidden=active?.textContent?.trim()!=='Editor';update();};
- for(const b of tabButtons)b.addEventListener('click',()=>queueMicrotask(showCloud));
- showCloud();
+ for(const button of tabButtons)button.addEventListener('click',()=>queueMicrotask(sync));
+ sync();
 })();
