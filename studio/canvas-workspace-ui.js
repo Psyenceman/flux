@@ -35,6 +35,7 @@
  for(const id of ['export','import','reset']){const button=document.getElementById(id);if(button)overflow.append(button);}
  const labels={save:'Save',load:'Open',validate:'Validate',execute:'Test workflow'};
  for(const id of primaryIds){const button=document.getElementById(id);if(button)button.textContent=labels[id];}
+ overflow.append(options);
  actions.append(overflow);
  actions.classList.add('compact-actions');
  for(const view of Object.values(views))body.append(view);
