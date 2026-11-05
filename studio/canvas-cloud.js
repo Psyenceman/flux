@@ -159,7 +159,7 @@ async function refreshFluxCoins(){
   client.from('flux_credit_ledger').select('delta,action,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(20)
  ]);
  window.dispatchEvent(new CustomEvent('flux:coins-loaded',{detail:{
-  signedIn:true,unlimited:!profileError&&profile?.role==='super_admin',
+  signedIn:true,userId:user.id,unlimited:!profileError&&profile?.role==='super_admin',
   balance:walletError?null:(wallet?.balance??100),used:wallet?.lifetime_used??0,
   entries:ledgerError?[]:(ledger||[]),error:walletError?.message||ledgerError?.message||null
  }}));
