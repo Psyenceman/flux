@@ -56,5 +56,6 @@ function buildMappingEditor(section,node){
   key.oninput=persist;val.oninput=persist;row.append(key,val,remove);list.append(row);
  }
  entries.forEach(([key,value])=>addRow(key,String(value)));
+ if(!node.config.mapping)persist();
  add.onclick=()=>{if(list.children.length>=30)return;addRow();};
 }
