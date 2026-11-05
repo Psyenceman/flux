@@ -4,7 +4,7 @@ export function validateGraph(graph){
  if(graph.nodes.length>80||graph.edges.length>300)throw Error('Workflow exceeds execution limits');
  if(JSON.stringify(graph).length>120000)throw Error('Workflow payload exceeds execution limits');
  const ids=new Set();
- const allowed=new Set(['webhook','filter','flux','log','merge','http','airtable','trello','miro','slack','email','database','delay','manual','schedule','router','mapper','loop','sheets','drive','github','wordpress']);
+ const allowed=new Set(['webhook','filter','flux','log','merge','http','airtable','trello','miro','slack','email','database','delay','manual','schedule','router','mapper','loop','sheets','drive','github','wordpress','telegram','resend','discord','whatsapp','notion','calendar','stripe','hubspot','shopify','openai','supabase','cloudflare']);
  for(const n of graph.nodes){if(!n||typeof n.id!=='string'||n.id.length>80||ids.has(n.id)||!allowed.has(n.type))throw Error('Invalid or duplicate block');if(n.config!==undefined&&(!n.config||typeof n.config!=='object'||Array.isArray(n.config)))throw Error('Invalid configuration at '+n.id);ids.add(n.id);}
  for(const e of graph.edges){if(!e||!ids.has(e.from)||!ids.has(e.to)||e.from===e.to)throw Error('Invalid edge');}
  const indegree=new Map(graph.nodes.map(n=>[n.id,0])),adj=new Map(graph.nodes.map(n=>[n.id,[]]));
@@ -28,7 +28,7 @@ function applyMapping(mapping,outputs,input,allowed){
  const result={};for(const [key,val] of Object.entries(spec)){if(!/^[a-zA-Z_][\w]{0,63}$/.test(key)||typeof val!=='string')throw Error('Invalid Data Mapper field');result[key]=resolveTemplate(val,outputs,input,allowed);}
  return result;
 }
-export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloKey,trelloToken}={}){
+export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloKey,trelloToken,telegramToken,telegramChatId,resendApiKey,resendFrom}={}){
  const {order,adj}=validateGraph(graph),byId=new Map(graph.nodes.map(n=>[n.id,n]));
  const received=new Map(),trace=[],outputs={};let calls=0;const ancestors=new Map();for(const id of order){const set=new Set();for(const e of graph.edges.filter(e=>e.to===id)){set.add(e.from);for(const a of ancestors.get(e.from)||[])set.add(a);}ancestors.set(id,set);}
  for(const id of order){
@@ -86,6 +86,38 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
     if(!Array.isArray(cards))throw Error('Unexpected Trello response at '+id);
     output={source:'trello',listId,count:cards.length,items:cards.map(c=>({id:c.id,name:c.name,url:c.url,due:c.due,idList:c.idList}))};
     break;
+   }
+   case 'telegram':{
+    const chatId=String(config.chatId||telegramChatId||'').trim();
+    const message=String(config.message||'').trim();
+    if(!message||message.length>4000)throw Error('Telegram: message must contain 1–4000 characters');
+    if(!chatId||!/^-?[0-9]{5,20}$/.test(chatId))throw Error('Telegram: valid numeric chat ID required');
+    if(!telegramChatId||chatId!==String(telegramChatId))throw Error('Telegram: chat ID must match the server-approved destination');
+    if(dryRun){status='simulated';reason='Dry run: Telegram message not sent';break;}
+    if(!telegramToken){status='skipped';reason='Telegram bot token not configured on server';break;}
+    if(++calls>3)throw Error('External action limit exceeded');
+    const response=await fetch('https://api.telegram.org/bot'+encodeURIComponent(telegramToken)+'/sendMessage',{
+      method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({chat_id:chatId,text:message}),
+      redirect:'error',signal:AbortSignal.timeout(5000)
+    });
+    if(!response.ok)throw Error('Telegram send failed (HTTP '+response.status+')');
+    const result=await response.json();if(!result.ok)throw Error('Telegram rejected the message');
+    output={delivered:true,provider:'telegram'};break;
+   }
+   case 'resend':{
+    const recipient=String(config.recipient||'').trim(),subject=String(config.subject||'').trim(),message=String(config.message||'').trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)||recipient.length>254)throw Error('Resend: valid recipient email required');
+    if(!subject||subject.length>200||!message||message.length>12000)throw Error('Resend: subject (1–200) and message (1–12000) required');
+    if(dryRun){status='simulated';reason='Dry run: email not sent';break;}
+    if(!resendApiKey||!resendFrom){status='skipped';reason='Resend credentials not configured on server';break;}
+    if(++calls>3)throw Error('External action limit exceeded');
+    const response=await fetch('https://api.resend.com/emails',{
+      method:'POST',headers:{authorization:'Bearer '+resendApiKey,'content-type':'application/json'},
+      body:JSON.stringify({from:resendFrom,to:[recipient],subject,text:message}),
+      redirect:'error',signal:AbortSignal.timeout(5000)
+    });
+    if(!response.ok)throw Error('Resend send failed (HTTP '+response.status+')');
+    output={delivered:true,provider:'resend'};break;
    }
    case 'merge':output={items:incoming};break;
    case 'schedule':status='skipped';reason='Automatic scheduling requires a server scheduler';break;
