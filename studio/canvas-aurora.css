@@ -78,3 +78,10 @@ body>header h1{color:#fff!important}body>header p{color:#b9d3df!important}body>h
 #canvas-shell .flux-api-endpoint[hidden]{display:none!important}
 #canvas-shell .flux-api-endpoint input{flex:1 1 320px;min-width:180px;padding:9px;border:1px solid #b6d1dc;border-radius:8px;background:#fff;color:#14243a}
 #canvas-shell .flux-api-endpoint small{flex-basis:100%;color:#62798a}
+
+#canvas-shell .flux-webhook-panel{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px;border:1px solid #b8d7e0;border-radius:12px;background:#eff9fc;color:#14243a;width:100%}
+#canvas-shell .flux-webhook-panel[hidden]{display:none!important}
+#canvas-shell .flux-webhook-panel strong,#canvas-shell .flux-webhook-panel p,#canvas-shell .flux-webhook-history{flex-basis:100%}
+#canvas-shell .flux-webhook-panel input{flex:1 1 240px;min-width:180px;padding:9px;border:1px solid #b8d7e0;border-radius:8px;background:white;color:#14243a}
+#canvas-shell .flux-webhook-panel button{border:1px solid #91bac6;border-radius:8px;padding:8px 12px;background:white;color:#126a80;cursor:pointer}
+#canvas-shell .flux-webhook-history{max-height:140px;overflow:auto}
