@@ -88,7 +88,13 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
    }
    case 'merge':output={items:incoming};break;
    case 'schedule':status='skipped';reason='Automatic scheduling requires a server scheduler';break;
-   case 'delay':status='skipped';reason='Delay execution is not implemented';break;
+   case 'delay':{
+    const ms=Number(config.milliseconds??config.duration??0);
+    if(!Number.isInteger(ms)||ms<0||ms>2000)throw Error('Delay block '+id+': duration must be 0–2000 milliseconds');
+    if(dryRun){status='simulated';reason='Dry run: would wait '+ms+' ms';}
+    else {await new Promise(resolve=>setTimeout(resolve,ms));reason='Waited '+ms+' ms';}
+    break;
+   }
    case 'log':{
     const message=String(config.message||'').slice(0,500);
     output={...((value&&typeof value==='object'&&!Array.isArray(value))?value:{value}),logMessage:message};
