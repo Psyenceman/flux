@@ -15,7 +15,7 @@ export async function handler(event){
  const hash=createHash('sha256').update(secret).digest('hex');
  try{
   const claim=await fetch(BASE+'/rest/v1/rpc/flux_claim_webhook',{method:'POST',headers:{apikey:serviceKey,authorization:'Bearer '+serviceKey,'content-type':'application/json'},body:JSON.stringify({p_webhook_id:id,p_secret_hash:hash}),signal:AbortSignal.timeout(6000)});
-  if(!claim.ok)return response(503,{ok:false,error:'Webhook authorization unavailable'});
+  if(!claim.ok){let upstreamCode='unknown';try{const payload=await claim.json();if(typeof payload?.code==='string'&&/^[A-Za-z0-9_]{1,30}$/.test(payload.code))upstreamCode=payload.code;}catch{}return response(503,{ok:false,error:'Webhook authorization unavailable',upstreamStatus:claim.status,upstreamCode});}
   const result=await claim.json();
   if(!result.ok){const status=result.reason==='rate_limited'?429:result.reason==='insufficient_credits'?402:result.reason==='disabled'?403:404;return response(status,{ok:false,error:result.reason});}
   try{validateGraph(result.graph);}catch{return response(422,{ok:false,error:'Saved workflow invalid'});}
