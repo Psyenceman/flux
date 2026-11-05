@@ -14,13 +14,11 @@
  outline:3px solid #007e99!important;outline-offset:3px!important;
 }
 #canvas-shell .node.selected{
- outline:4px solid #007e99!important;outline-offset:3px!important;
- box-shadow:0 0 0 7px #00b8d92e,0 9px 24px #14243a36!important;
+ outline:2px solid #007e99!important;outline-offset:1px!important;
+ box-shadow:0 3px 12px #14243a25!important;
  z-index:5!important;
 }
-#canvas-shell .node.selected .node-head::after{
- content:" · SELECTED";font-size:10px;letter-spacing:.05em;color:#006e83;font-weight:800;
-}
+#canvas-shell .node.selected .node-head::after{content:none!important;display:none!important}
 #canvas-shell #library-panel .palette button:active{
  background:#b8edf4!important;border-color:#007e99!important;
 }
@@ -38,3 +36,13 @@
 #canvas-shell .flux-webhook-test button{justify-self:start;background:#14243a;color:#fff;border:0;border-radius:8px;padding:10px 16px;cursor:pointer}
 #canvas-shell .flux-webhook-test button:disabled{opacity:.55;cursor:wait}
 #canvas-shell .flux-webhook-test pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:240px;overflow:auto}
+
+/* Compact, legible canvas blocks without selection badges. */
+#canvas-shell .node{min-height:60px!important}
+#canvas-shell .node .node-head{min-height:32px!important;padding:7px 24px 2px 8px!important;font-size:12px!important}
+#canvas-shell .node .node-meta{padding:0 8px 7px!important;font-size:10px!important}
+#canvas-shell .node .port{width:16px!important;height:16px!important;top:24px!important}
+#canvas-shell .node .port.in{left:-9px!important}
+#canvas-shell .node .port.out{right:-9px!important}
+#canvas-shell .node[data-type="webhook"],#canvas-shell .node[data-type="schedule"]{width:136px!important}
+#canvas-shell .node[data-type="log"],#canvas-shell .node[data-type="delay"]{width:126px!important}
