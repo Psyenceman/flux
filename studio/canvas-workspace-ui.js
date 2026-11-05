@@ -23,8 +23,7 @@
  const options=document.createElement('details');options.className='flux-settings';
  const optionsTitle=document.createElement('summary');optionsTitle.textContent='Settings';options.append(optionsTitle,cloud);
  const workspaceActions=bar.querySelector('.workspace-actions');
- if(workspaceActions){workspaceActions.append(options);options.addEventListener('toggle',()=>{if(options.open)workspaceActions.querySelector('#toggle-library')?.blur();});}
- else main.insertBefore(options,actions);
+ // Keep Settings exclusively inside the More actions menu.
  const body=document.createElement('div');body.className='flux-main-view';
  main.insertBefore(body,navigation);
  main.insertBefore(navigation,body);
@@ -35,20 +34,21 @@
  for(const id of ['export','import','reset']){const button=document.getElementById(id);if(button)overflow.append(button);}
  const labels={save:'Save',load:'Open',validate:'Validate',execute:'Test workflow'};
  for(const id of primaryIds){const button=document.getElementById(id);if(button)button.textContent=labels[id];}
+ const inspectorToggle=workspaceActions?.querySelector('#toggle-inspector');
  if(inspectorToggle)overflow.append(inspectorToggle);
  overflow.append(options);
  actions.append(overflow);
  actions.classList.add('compact-actions');
  for(const view of Object.values(views))body.append(view);
  const footer=main.querySelector('#status');
- const logsOpen=()=>activate('logs');
- window.addEventListener('flux:run-summary',logsOpen);
+ // Running a test should not unexpectedly switch away from the editor.
  function activate(id){
-  for(const [key,view] of Object.entries(views))view.hidden=key!==id;
+  for(const [key,view] of Object.entries(views)){view.hidden=key!==id;view.style.display=key===id?'':'none';}
   actions.hidden=id!=='editor';navigation.hidden=id!=='editor';
   if(runner)runner.hidden=id!=='editor';
   for(const [key,button] of buttons){button.setAttribute('aria-current',String(key===id));}
   body.dataset.view=id;
+  if(id==='editor')window.dispatchEvent(new Event('resize'));
  }
  // Remove obsolete stacked drawers, while preserving their content.
  for(const details of main.querySelectorAll('.flux-drawer'))details.remove();
