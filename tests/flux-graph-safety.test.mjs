@@ -30,3 +30,12 @@ test('mapper blocks references outside its upstream ancestry',async()=>{
  assert.equal(result.failedBlock,'c');
  assert.match(result.error,/unconnected block/);
 });
+
+test('rejects malformed block configuration before execution',()=>{
+ const invalid={version:1,nodes:[{id:'a',type:'manual',config:[]}],edges:[]};
+ assert.throws(()=>validateGraph(invalid),/Invalid configuration/);
+});
+test('rejects oversized workflow payload',()=>{
+ const invalid={version:1,nodes:[{id:'a',type:'manual',config:{description:'x'.repeat(121000)}}],edges:[]};
+ assert.throws(()=>validateGraph(invalid),/payload exceeds/);
+});
