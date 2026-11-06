@@ -59,3 +59,66 @@
  new MutationObserver(()=>queueMicrotask(sync)).observe(body,{attributes:true,attributeFilter:['data-view']});
  sync();
 })();
+/* TEST: searchable, categorized Add block dialog. Reuse original palette handlers. */
+(()=>{
+ const stage=document.getElementById('flux-editor-stage');
+ const drawer=document.getElementById('flux-block-drawer');
+ const palette=document.getElementById('palette');
+ const main=document.querySelector('#canvas-shell > main');
+ if(!stage||!drawer||!palette||!main)return;
+ const style=document.createElement('style');
+ style.textContent=`
+ #flux-editor-stage{display:block!important;min-width:0}
+ #flux-block-drawer{display:none!important}
+ #flux-add-block{border:0;border-radius:9px;background:#1674b9;color:#fff;padding:10px 16px;font-weight:700;cursor:pointer}
+ #flux-block-dialog{border:1px solid #66819e;border-radius:16px;background:#f7fafd;color:#152943;width:min(650px,calc(100vw - 24px));max-height:85dvh;padding:20px;box-shadow:0 20px 80px #0008}
+ #flux-block-dialog::backdrop{background:#071525a8}
+ #flux-block-dialog input{width:100%;padding:13px;border:1px solid #94a8bc;border-radius:9px;margin:12px 0;background:white;color:#13263e}
+ #flux-block-categories{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 14px}
+ #flux-block-categories button{border:1px solid #a1b3c7;background:white;border-radius:20px;padding:8px 11px;cursor:pointer;color:#20354c}
+ #flux-block-categories button[aria-pressed=true]{background:#173452;color:white}
+ #flux-block-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;max-height:45dvh;overflow:auto}
+ #flux-block-results button{display:flex;align-items:center;gap:10px;text-align:left;background:white;border:1px solid #c6d2df;border-radius:10px;padding:12px;color:#18304a;cursor:pointer}
+ #flux-block-results button:hover{border-color:#1674b9;background:#eaf4ff}
+ #flux-block-results .palette-icon{font-size:23px}
+ #flux-block-results small{display:none}
+ @media(max-width:550px){#flux-block-dialog{padding:14px}#flux-block-results{grid-template-columns:1fr}}
+ `;
+ document.head.append(style);
+ const bar=main.querySelector('.toolbar:not(#canvas-cloud)');
+ const trigger=document.createElement('button');trigger.type='button';trigger.id='flux-add-block';trigger.textContent='+ Add block';
+ if(bar)bar.prepend(trigger);
+ const dialog=document.createElement('dialog');dialog.id='flux-block-dialog';dialog.setAttribute('aria-label','Add block');
+ dialog.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h2 style="margin:0;color:#152943">Add a block</h2><button type="button" id="flux-block-close" style="border:0;background:transparent;font-size:26px;cursor:pointer" aria-label="Close">×</button></div><input type="search" id="flux-block-query" placeholder="Search apps or actions…" aria-label="Search blocks"><div id="flux-block-categories" role="group" aria-label="Block categories"></div><div id="flux-block-results"></div><p id="flux-block-empty" role="status" style="color:#50657c"></p>';
+ document.body.append(dialog);
+ const search=dialog.querySelector('#flux-block-query'),results=dialog.querySelector('#flux-block-results'),categories=dialog.querySelector('#flux-block-categories'),empty=dialog.querySelector('#flux-block-empty');
+ const groups=['All','Triggers','Logic','Communication','Data','Apps'];
+ const classify=type=>{
+  if(['manual','schedule','webhook'].includes(type))return 'Triggers';
+  if(['router','mapper','loop','filter','condition','delay','merge','log','flux'].includes(type))return 'Logic';
+  if(['slack','email','whatsapp','telegram','discord','resend'].includes(type))return 'Communication';
+  if(['airtable','sheets','database','supabase','http'].includes(type))return 'Data';
+  return 'Apps';
+ };
+ let active='All';
+ for(const name of groups){const b=document.createElement('button');b.type='button';b.textContent=name;b.addEventListener('click',()=>{active=name;render();});categories.append(b);}
+ function render(){
+  results.replaceChildren();let count=0;
+  for(const b of palette.querySelectorAll('button[data-search]')){
+   const type=b.dataset.search?.split(' ')[0]||'';
+   const category=classify(type);
+   if(active!=='All'&&active!==category)continue;
+   if(!b.dataset.search.includes(search.value.trim().toLowerCase()))continue;
+   const item=document.createElement('button');item.type='button';
+   const icon=b.querySelector('.palette-icon');if(icon)item.append(icon.cloneNode(true));
+   const label=document.createElement('span');label.textContent=b.querySelector('span:not(.palette-icon)')?.textContent||type;item.append(label);
+   item.addEventListener('click',()=>{b.click();dialog.close();});results.append(item);count++;
+  }
+  for(const b of categories.children)b.setAttribute('aria-pressed',String(b.textContent===active));
+  empty.textContent=count?'': 'No matching blocks.';
+ }
+ trigger.addEventListener('click',()=>{active='All';search.value='';render();dialog.showModal();search.focus();});
+ dialog.querySelector('#flux-block-close').addEventListener('click',()=>dialog.close());
+ search.addEventListener('input',render);
+ dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
+})();
