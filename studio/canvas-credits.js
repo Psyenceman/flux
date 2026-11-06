@@ -26,12 +26,30 @@
  const close=document.createElement('button');close.type='button';close.textContent='Close';close.addEventListener('click',()=>details.close());
  header.append(title,close);
  const balance=document.createElement('strong');balance.className='flux-coins-total';balance.textContent='—';
- const subtitle=document.createElement('p');subtitle.textContent='1 FluxCoin per workflow test · Super Admin: unlimited';
+ const subtitle=document.createElement('p');subtitle.textContent='Current TEST billing: 1 FluxCoin per workflow test · Super Admin: unlimited. Future operation-based pricing is a proposal, not yet active.';
+ const pricing=document.createElement('section');pricing.className='flux-coin-pricing';pricing.setAttribute('aria-label','FluxCoins pricing preview');
+ const pricingHeading=document.createElement('h3');pricingHeading.textContent='Pricing preview · not yet for sale';
+ const pricingIntro=document.createElement('p');pricingIntro.textContent='Proposed package: €10 = 5,000 FluxCoins. Purchases are not enabled.';
+ const pricingUnit=document.createElement('p');pricingUnit.textContent='Example rate: 1 FCX per completed standard operation. Failed, skipped and filtered operations need explicit billing rules before launch.';
+ const estimateLabel=document.createElement('label');estimateLabel.textContent='Estimate standard operations';
+ const estimateInput=document.createElement('input');estimateInput.type='number';estimateInput.min='1';estimateInput.max='1000000';estimateInput.step='1';estimateInput.value='1000';estimateInput.setAttribute('aria-label','Number of standard operations');
+ const estimateOutput=document.createElement('output');estimateOutput.className='flux-coin-estimate';estimateOutput.setAttribute('aria-live','polite');
+ const format=new Intl.NumberFormat('en-US');
+ const updateEstimate=()=>{
+  const amount=Number(estimateInput.value);
+  if(!Number.isSafeInteger(amount)||amount<1||amount>1000000){estimateOutput.textContent='Enter between 1 and 1,000,000 operations.';return;}
+  const coins=amount;const euro=coins/500;
+  estimateOutput.textContent=format.format(coins)+' FCX · €'+euro.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' equivalent at the proposed rate';
+ };
+ estimateInput.addEventListener('input',updateEstimate);updateEstimate();
+ const pricingDisclaimer=document.createElement('small');pricingDisclaimer.textContent='Illustrative only. No credits are deducted by this calculator. Final tariffs, taxes, refunds, failed-operation rules and payment integration are not configured.';
+ pricing.append(pricingHeading,pricingIntro,pricingUnit,estimateLabel,estimateInput,estimateOutput,pricingDisclaimer);
  const historyTitle=document.createElement('h3');historyTitle.textContent='Recent activity';
  const history=document.createElement('ul');history.className='flux-coins-history';
  const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Refresh balance';refresh.addEventListener('click',()=>window.dispatchEvent(new Event('flux:coins-refresh')));
- const topup=document.createElement('p');topup.textContent='Add FCX is coming soon. No payments are enabled. Credits are managed on the server.';details.append(header,balance,subtitle,topup,historyTitle,history,refresh);
+ const topup=document.createElement('p');topup.textContent='Add FCX is coming soon. No payments are enabled. Credits are managed on the server.';details.append(header,balance,subtitle,pricing,topup,historyTitle,history,refresh);
  document.body.append(details);
+ const pricingStyle=document.createElement('style');pricingStyle.textContent='.flux-coin-pricing{margin:14px 0;padding:16px;border:1px solid #ddd2ef;border-radius:14px;background:#faf8ff;color:#302647}.flux-coin-pricing h3{margin:0 0 9px;color:#5636ad}.flux-coin-pricing p{font-size:13px;line-height:1.5;color:#4f4760}.flux-coin-pricing label{display:block;font-size:12px;font-weight:700;margin:12px 0 5px}.flux-coin-pricing input{display:block;width:100%;padding:10px;border:1px solid #bfaee5;border-radius:9px;background:#fff;color:#29213e}.flux-coin-pricing output{display:block;margin:10px 0;font-weight:750;color:#5636ad}.flux-coin-pricing small{font-size:11px;color:#655b74;line-height:1.5}';document.head.append(pricingStyle);
  badge.addEventListener('click',()=>{details.showModal();window.dispatchEvent(new Event('flux:coins-refresh'));});
  window.addEventListener('flux:coins-loaded',event=>{
   const data=event.detail||{};const next='fcx-position-'+(data.userId||'guest');if(next!==key){key=next;dock.style.left='12px';dock.style.top='';dock.style.bottom='12px';restore();}dock.style.visibility='visible';
@@ -52,3 +70,4 @@
   if(event.detail?.credits?.reason==='insufficient_credits'){badge.textContent='◈ FluxCoins · 0';}
  });
 })();
+/* FluxCoins preview styles are attached by the wallet script to preserve TEST-only scope. */
