@@ -227,7 +227,7 @@
  };
  const actions={
  manual:[['start','Start manually']],trello:[['read_list','Read list cards']],airtable:[['find_records','Find records'],['create_record','Create record'],['update_record','Update record']],miro:[['create_card','Create card'],['find_items','Find items'],['update_item','Update item']],
- filter:[['always','Always'],['approved','Only approved'],['rejected','Only rejected'],['status=approved','Status approved']],
+ filter:[['always','Always'],['compare','Compare incoming data'],['approved','Only approved'],['rejected','Only rejected'],['status=approved','Status approved']],
  flux:[['pass','Pass through'],['pick','Pick field'],['count','Count items']],database:[['select','Read rows'],['insert','Create row'],['update','Update row'],['delete','Delete row']],
  router:[['branch','Choose branch']],loop:[['iterate','For each item']],mapper:[['map','Map fields']],merge:[['combine','Combine']],delay:[['wait','Wait']],log:[['record','Record event']],
  http:[['post','Send POST']],webhook:[['receive','Receive event']],email:[['send','Send email']],slack:[['send','Send message']],
@@ -306,6 +306,24 @@
    }
    if(action){draft.operation=action.el.value;action.el.addEventListener('change',()=>{draft.operation=action.el.value;drawFields();});}
    drawFields();
+   if(node.type==='filter'){
+    const conditionFields=document.createElement('div');conditionFields.className='fm-condition-fields';body.append(conditionFields);
+    const updateConditionFields=()=>{
+     conditionFields.replaceChildren();
+     if(action?.el.value!=='compare')return;
+     const hint=document.createElement('p');hint.className='fm-help';hint.textContent='Compare a field received from the previous block. Example: count greater than 5.';conditionFields.append(hint);
+     const fieldRow=field(conditionFields,'Incoming field','',draft.field||'count');
+     const operatorRow=field(conditionFields,'Comparison','',draft.operator||'greater_than',[['greater_than','Greater than (>)'],['less_than','Less than (<)'],['equals','Equals (=)'],['not_equals','Does not equal'],['contains','Contains'],['exists','Exists']]);
+     const valueRow=field(conditionFields,'Compare with','',draft.value??'5');
+     valueRow.el.placeholder='e.g. 5';
+     const sync=()=>{draft.field=fieldRow.el.value.trim();draft.operator=operatorRow.el.value;draft.value=valueRow.el.value;};
+     for(const el of [fieldRow.el,operatorRow.el,valueRow.el])el.addEventListener('input',sync);
+     sync();
+    };
+    action?.el.addEventListener('change',updateConditionFields);
+    updateConditionFields();
+    validate.push(()=>{if(action?.el.value==='compare'&&!draft.field?.trim())return 'Choose an incoming field';return '';});
+   }
    if(node.type==='trello'){
     const picker=document.createElement('div');picker.className='fm-trello-picker';
     const boardLabel=document.createElement('label');boardLabel.className='fm-row';boardLabel.textContent='Board';
