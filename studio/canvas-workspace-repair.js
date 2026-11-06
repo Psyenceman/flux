@@ -238,6 +238,27 @@
  const close=()=>{if(modal.open)modal.close();};
  modal.addEventListener('click',event=>{if(event.target===modal)close();});
  window.addEventListener('flux:automation-opened',close);
+ // Capture the interaction before canvas redraw destroys the clicked DOM element.
+ const graphNodes=document.getElementById('nodes');
+ let down=null;
+ graphNodes?.addEventListener('pointerdown',event=>{
+  const element=event.target.closest('.node');
+  if(!element||event.target.closest('button,.port')){down=null;return;}
+  down={id:element.dataset.nodeId,x:event.clientX,y:event.clientY};
+ },true);
+ graphNodes?.addEventListener('pointerup',event=>{
+  if(!down)return;
+  const saved=down;down=null;
+  if(Math.hypot(event.clientX-saved.x,event.clientY-saved.y)>7)return;
+  queueMicrotask(()=>window.fluxOpenBlockConfig?.(saved.id));
+ },true);
+ graphNodes?.addEventListener('pointercancel',()=>{down=null;},true);
+ graphNodes?.addEventListener('keydown',event=>{
+  if(event.key!=='Enter'&&event.key!==' ')return;
+  const element=event.target.closest('.node');
+  if(!element||event.target.closest('button,.port'))return;
+  event.preventDefault();window.fluxOpenBlockConfig?.(element.dataset.nodeId);
+ },true);
  let lastOpenId=null,lastOpenAt=0;
  window.addEventListener('flux:open-block-config',event=>{
   const {node,id}=event.detail||{};if(!node||!id)return;
@@ -317,7 +338,7 @@
   modal.style.setProperty('right','auto','important');
   modal.style.setProperty('bottom','auto','important');
   modal.style.setProperty('transform','translate(-50%,-50%)','important');
-  modal.showModal();
+  if(!modal.open){try{modal.showModal();}catch(error){console.error('Flux module dialog:',error);modal.setAttribute('open','');}}
  });
 })();
 
