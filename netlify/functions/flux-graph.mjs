@@ -1,3 +1,4 @@
+import {db,decrypt} from './trello-shared.mjs';
 import {createHash,timingSafeEqual} from 'node:crypto';
 import {executeGraph,validateGraph} from './flux-graph-engine.mjs';
 const json=(statusCode,data)=>({statusCode,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'},body:JSON.stringify(data)});
@@ -13,6 +14,7 @@ export async function handler(event){
  const token=process.env.FLUX_WEBHOOK_TOKEN;
  const legacy=typeof supplied==='string'&&token?.length>=24&&equal(supplied,token);
  let sessionToken='';
+ let sessionOwner='';
  if(!legacy){
   const authorization=event.headers?.authorization||event.headers?.Authorization||'';
   const bearer=authorization.match(/^Bearer ([A-Za-z0-9._-]+)$/);
@@ -23,7 +25,7 @@ export async function handler(event){
     headers:{apikey:'sb_publishable_vcqHLVzTy3u1Ozk9N1YBiQ_iuIhsOHu',authorization:'Bearer '+bearer[1]},
     signal:AbortSignal.timeout(5000)
    });
-   if(response.ok){const identity=await response.json();authenticated=Boolean(identity?.id&&identity?.aud==='authenticated');}
+   if(response.ok){const identity=await response.json();authenticated=Boolean(identity?.id&&identity?.aud==='authenticated');if(authenticated)sessionOwner=identity.id;}
   }catch{return json(503,{ok:false,error:'Authentication service unavailable'});}
   if(!authenticated)return json(401,{ok:false,error:'Flux Studio session expired. Sign in again.'});
   sessionToken=bearer[1];
@@ -47,7 +49,14 @@ export async function handler(event){
    credits=await creditResponse.json();
    if(!credits?.ok)return json(402,{ok:false,error:'Insufficient FluxCoins',credits});
   }
-  const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloKey:process.env.FLUX_TRELLO_API_KEY,trelloToken:process.env.FLUX_TRELLO_TOKEN,telegramToken:process.env.FLUX_TELEGRAM_BOT_TOKEN,telegramChatId:process.env.FLUX_TELEGRAM_CHAT_ID,resendApiKey:process.env.FLUX_RESEND_API_KEY,resendFrom:process.env.FLUX_RESEND_FROM});return json(200,{...result,credits});
+  let trelloAccessToken;
+  if(sessionOwner&&body.graph.nodes.some(n=>n.type==='trello')){
+   const records=await db('flux_trello_credentials?owner_id=eq.'+encodeURIComponent(sessionOwner)+'&select=access_token_ciphertext,expires_at');
+   if(!records?.length)return json(409,{ok:false,error:'Connect Trello before testing this workflow'});
+   if(records[0].expires_at&&Date.parse(records[0].expires_at)<Date.now())return json(409,{ok:false,error:'Trello connection expired. Reconnect your account.'});
+   trelloAccessToken=decrypt(records[0].access_token_ciphertext);
+  }
+  const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloAccessToken,telegramToken:process.env.FLUX_TELEGRAM_BOT_TOKEN,telegramChatId:process.env.FLUX_TELEGRAM_CHAT_ID,resendApiKey:process.env.FLUX_RESEND_API_KEY,resendFrom:process.env.FLUX_RESEND_FROM});return json(200,{...result,credits});
  }
  catch(error){console.error(JSON.stringify({event:'flux.graph.failed',reason:String(error?.message||error)}));return json(422,{ok:false,error:String(error?.message||'Execution failed').slice(0,240)});}
 }
