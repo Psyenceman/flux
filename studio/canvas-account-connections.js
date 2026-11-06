@@ -1,0 +1,27 @@
+(()=>{
+ const bar=document.querySelector('.workspace-bar');if(!bar)return;
+ const button=document.createElement('button');button.type='button';button.textContent='My connections';button.style.cssText='padding:9px;border-radius:8px;border:1px solid #9279cf;background:#35265c;color:#fff;cursor:pointer';bar.append(button);
+ const dialog=document.createElement('dialog');dialog.style.cssText='width:min(480px,calc(100vw - 24px));border:1px solid #7466a2;border-radius:14px;padding:22px;background:#1d1a33;color:white';
+ const heading=document.createElement('h2');heading.textContent='My connections';
+ const info=document.createElement('p');info.textContent='TEST only. Credentials are encrypted server-side and scoped to your account. Saving does not verify access. Use test-only restricted tokens.';
+ const status=document.createElement('p');status.setAttribute('role','status');
+ const list=document.createElement('div'),close=document.createElement('button');close.textContent='Close';close.addEventListener('click',()=>dialog.close());dialog.append(heading,info,list,status,close);document.body.append(dialog);
+ const providers=[['airtable','Airtable'],['hubspot','HubSpot'],['notion','Notion (storage only)']];
+ async function call(method,body){if(typeof window.fluxExecutionHeaders!=='function')throw Error('Sign in first');const h=await window.fluxExecutionHeaders('');const r=await fetch('/.netlify/functions/flux-connector-connections',{method,headers:{...h,...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});const data=await r.json();if(!r.ok)throw Error(data.error||'Request failed');return data;}
+ async function refresh(){
+  list.replaceChildren();status.textContent='Loading…';
+  try{const result=await call('GET');const connected=new Map(result.connections.map(c=>[c.provider,c]));
+   for(const [provider,name] of providers){
+    const existing=connected.get(provider),row=document.createElement('section');row.style.cssText='padding:12px 0;border-top:1px solid #655d80';
+    const label=document.createElement('strong');label.textContent=name+' · '+(existing?'Saved, not verified':'Not connected');row.append(label);
+    const form=document.createElement('form');form.style.cssText='display:grid;gap:8px;margin:8px 0';
+    const input=document.createElement('input');input.type='password';input.autocomplete='off';input.required=true;input.minLength=12;input.placeholder='Personal access token';input.style.cssText='padding:10px;border-radius:7px';
+    const save=document.createElement('button');save.type='submit';save.textContent=existing?'Replace token':'Save token';form.append(input,save);
+    form.addEventListener('submit',async e=>{e.preventDefault();save.disabled=true;try{await call('POST',{provider,token:input.value,label:name});input.value='';await refresh();}catch(error){status.textContent=error.message;}finally{save.disabled=false;}});row.append(form);
+    if(existing){const remove=document.createElement('button');remove.type='button';remove.textContent='Disconnect';remove.addEventListener('click',async()=>{if(!confirm('Disconnect '+name+'?'))return;try{await call('DELETE',{provider});await refresh();}catch(error){status.textContent=error.message;}});row.append(remove);}
+    list.append(row);
+   }status.textContent='Live writes remain disabled.';
+  }catch(error){status.textContent=error.message;}
+ }
+ button.addEventListener('click',()=>{dialog.showModal();refresh();});
+})();
