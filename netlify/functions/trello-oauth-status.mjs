@@ -4,5 +4,6 @@ export async function handler(event){
  const clientId=process.env.TRELLO_CLIENT_ID;
  const clientSecret=process.env.TRELLO_CLIENT_SECRET;
  const configured=Boolean(clientId&&clientSecret);
- return json(200,{ok:true,provider:'trello',environment:'test',credentialsConfigured:configured,oauthAvailable:false,message:configured?'Trello application configured; secure OAuth flow is being implemented.':'Trello OAuth credentials missing on TEST.'});
+ const encryptionConfigured=Boolean(process.env.FLUX_CONNECTION_ENCRYPTION_KEY?.length>=32);
+ return json(200,{ok:true,provider:'trello',environment:'test',credentialsConfigured:configured,oauthAvailable:configured&&encryptionConfigured,encryptionConfigured,message:configured&&encryptionConfigured?'Trello OAuth backend configured; authorize from signed-in Flux Studio TEST.':'Trello OAuth needs a dedicated connection encryption key.'});
 }
