@@ -356,6 +356,19 @@ byId('viewport').addEventListener('dragover',e=>e.preventDefault());byId('viewpo
 const key='flux-flow-canvas-v1';
 window.addEventListener('flux:canvas-snapshot-request',()=>window.dispatchEvent(new CustomEvent('flux:canvas-snapshot',{detail:snapshot()})));
 window.addEventListener('flux:canvas-restore-request',event=>{try{restore(event.detail);window.dispatchEvent(new CustomEvent('flux:canvas-restored'));}catch(error){window.dispatchEvent(new CustomEvent('flux:canvas-restore-error',{detail:error.message}));}});
+window.addEventListener('flux:guided-build',event=>{
+ const detail=event.detail||{};
+ const action=detail.action;
+ if(!['trello_create','log'].includes(action))return;
+ const includeCondition=detail.condition===true;
+ const items=[{type:'trello',label:'Trello',config:{operation:'read_list'}}];
+ if(includeCondition)items.push({type:'filter',label:'Condition',config:{operation:'compare_incoming',field:'count',comparison:'greater_than',value:'0'}});
+ items.push(action==='trello_create'?{type:'trello',label:'Trello',config:{operation:'create_card'}}:{type:'log',label:'Log',config:{}});
+ if(!confirm('Create this workflow? Unsaved changes on the canvas will be replaced.'))return;
+ const generated={version:1,nodes:items.map((item,index)=>({id:'n'+(index+1),type:item.type,label:item.label,x:160+index*320,y:280,config:item.config})),edges:items.slice(1).map((_,index)=>({from:'n'+(index+1),to:'n'+(index+2)}))};
+ try{restore(generated);window.dispatchEvent(new Event('flux:guided-build-complete'));note('Guided workflow created. Configure each block and save.');}
+ catch(error){alert('Unable to create workflow: '+error.message);}
+});
 function snapshot(){return {version:1,nodes:nodes.map(n=>({...n,config:{...n.config}})),edges:edges.map(e=>({...e}))};}
 function restore(data){if(!data||data.version!==1||!Array.isArray(data.nodes)||!Array.isArray(data.edges)||data.nodes.length>500||data.edges.length>5000)throw Error('Invalid graph size or format');
  const ids=new Set();for(const n of data.nodes){if(typeof n.id!=='string'||ids.has(n.id)||!types.some(t=>t[0]===n.type)||!Number.isFinite(n.x)||!Number.isFinite(n.y)||typeof n.label!=='string'||n.label.length>80||!n.config||typeof n.config!=='object'||Array.isArray(n.config))throw Error('Invalid block');ids.add(n.id);}
