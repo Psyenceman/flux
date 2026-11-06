@@ -251,7 +251,16 @@ newScenarioButton.addEventListener('click',async()=>{
  scenarioBusy=true;newScenarioButton.disabled=true;
  try{
   const graph={version:1,nodes:[],edges:[]};
-  const payload={name,owner_id:user.id,action_config:{graph,version:2},enabled:false};
+  // Every automation requires a project_id (NOT NULL in Flux TEST).
+  let {data:projects,error:projectsError}=await client.from('projects').select('id,name').eq('owner_id',user.id).order('created_at',{ascending:true}).limit(1);
+  if(projectsError)throw projectsError;
+  let projectId=projects?.[0]?.id;
+  if(!projectId){
+   const created=await client.from('projects').insert({owner_id:user.id,name:'My scenarios'}).select('id').single();
+   if(created.error)throw created.error;
+   projectId=created.data.id;
+  }
+  const payload={name,owner_id:user.id,project_id:projectId,trigger_type:'manual',action_config:{graph,version:2},enabled:false};
   const {data,error}=await client.from('automations').insert(payload).select('id,name,action_config,project_id').single();
   if(error)throw error;
   // Persist first; only replace the canvas after the database confirms creation.
