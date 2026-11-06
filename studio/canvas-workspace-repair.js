@@ -141,6 +141,8 @@
  css.textContent=`
  #flux-module-config{position:fixed!important;inset:auto!important;margin:0!important;width:min(408px,calc(100vw - 20px))!important;max-height:min(76dvh,650px)!important;overflow:auto!important;border:1px solid #d6e0ed!important;border-radius:15px!important;background:#fff!important;color:#142b45!important;padding:0!important;box-shadow:0 18px 55px #0a243d44!important;z-index:9999!important}
  #flux-module-config::backdrop{background:rgba(14,30,48,.17)!important}
+ #canvas-shell > #inspector-panel,#canvas-shell > #inspector-panel.context-open{display:none!important;visibility:hidden!important;pointer-events:none!important}
+ #flux-module-config:not([open]){display:none!important}
  #flux-module-config .fm-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 17px;border-bottom:1px solid #e1e8ef}
  #flux-module-config h2{color:#19344f;font-size:18px;line-height:1.2;margin:0}
  #flux-module-config .fm-close{background:transparent;border:0;font-size:24px;color:#506782;cursor:pointer;padding:0 5px}
@@ -157,6 +159,14 @@
  @media(max-width:600px){#flux-module-config{left:10px!important;top:auto!important;bottom:10px!important;max-height:82dvh!important}}
  `;
  document.head.append(css);
+ // The retired sidebar must never compete with this dialog.
+ const legacy=document.getElementById('inspector-panel');
+ if(legacy){legacy.classList.remove('context-open');legacy.setAttribute('aria-hidden','true');legacy.style.setProperty('display','none','important');legacy.style.setProperty('pointer-events','none','important');}
+ const legacyToggle=document.getElementById('toggle-inspector');
+ if(legacyToggle){legacyToggle.hidden=true;legacyToggle.style.setProperty('display','none','important');}
+ const hideLegacy=()=>{legacy?.classList.remove('context-open');legacy?.style.setProperty('display','none','important');};
+ const shell=document.getElementById('canvas-shell');
+ shell?.addEventListener('click',hideLegacy);
  const labelize=value=>String(value).replace(/[_-]/g,' ').replace(/\b\w/g,char=>char.toUpperCase());
  const field=(parent,label,type,value,options)=>{
   const row=document.createElement('label');row.className='fm-row';row.textContent=label;
@@ -181,6 +191,7 @@
  window.addEventListener('flux:open-block-config',event=>{
   const {node,options=[],availability,id}=event.detail||{};
   if(!node||!id)return;
+  hideLegacy();
   const draft={...node.config,schedule:{...(node.config.schedule||{})}};
   modal.replaceChildren();
   const header=document.createElement('div');header.className='fm-head';
@@ -248,4 +259,15 @@
  #nodes .node .flux-next-plus:hover{background:#e5f4fd!important}
  `;
  document.head.append(css);
+})();
+/* TEST: distinguish add-next from insert-between controls. */
+(()=>{
+ const style=document.createElement('style');
+ style.textContent=`
+ #nodes .node .flux-next-plus{width:26px!important;height:26px!important;top:37px!important;right:-46px!important;background:#7853ce!important;color:#fff!important;border:2px solid #fff!important;box-shadow:0 0 0 1px #7853ce!important;font-size:17px!important;line-height:1!important}
+ #nodes .node .flux-next-plus:hover{background:#5f36b8!important}
+ #nodes .flux-edge-plus{width:20px!important;height:20px!important;min-width:20px!important;min-height:20px!important;border-radius:6px!important;background:#e6f5fb!important;color:#11799c!important;border:1px solid #8bd0e4!important;font-size:14px!important;box-shadow:none!important}
+ #nodes .flux-edge-plus:hover{background:#c9edf9!important}
+ `;
+ document.head.append(style);
 })();
