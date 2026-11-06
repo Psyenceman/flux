@@ -67,11 +67,37 @@
  picker.addEventListener('close',()=>addBlock.setAttribute('aria-expanded','false'));
  actions.prepend(addBlock);
  const pickerStyle=document.createElement('style');pickerStyle.textContent='#flux-add-block{background:#176baf!important;color:#fff!important;border-radius:10px!important;font-weight:700!important}#flux-block-picker{width:min(540px,calc(100vw - 24px));max-height:85vh;border:1px solid #b9cce3;border-radius:16px;padding:22px;background:#fff;color:#17324f;box-shadow:0 18px 70px #10213a55}#flux-block-picker::backdrop{background:#0d1c30a8}#flux-block-picker h3{margin:0 0 10px}#flux-block-picker input{width:100%;padding:12px;border:1px solid #b9cce3;border-radius:8px;margin:10px 0;color:#17324f;background:#fff}#flux-block-picker .flux-picker-items{max-height:45vh;overflow:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:14px}#flux-block-picker .flux-picker-item{text-align:left;display:flex;flex-direction:column;gap:5px;padding:12px;border:1px solid #cbd9ea;border-radius:10px;background:#f6f9fd;color:#17324f;cursor:pointer}#flux-block-picker .flux-picker-item:hover{border-color:#176baf;background:#eaf3ff}#flux-block-picker small{font-size:11px;color:#566b82}';document.head.append(pickerStyle);
+
+ // Prototype: human-readable execution overview, never infer a successful remote action.
+ const overview=document.createElement('section');overview.id='flux-flow-overview';overview.setAttribute('aria-label','Workflow overview');
+ const overviewTitle=document.createElement('strong');overviewTitle.textContent='Workflow overview';
+ const overviewStats=document.createElement('span');overviewStats.id='flux-flow-stats';overviewStats.textContent='No blocks yet';
+ const overviewHelp=document.createElement('span');overviewHelp.className='flux-flow-help';overviewHelp.textContent='Select a block to configure · Connect output to input';
+ overview.append(overviewTitle,overviewStats,overviewHelp);
+ main.insertBefore(overview,navigation);
+ const updateOverview=()=>{
+  const nodes=document.querySelectorAll('#nodes .node');
+  const links=document.querySelectorAll('#edges path');
+  const completed=document.querySelectorAll('#nodes .node.flux-run-completed').length;
+  const failed=document.querySelectorAll('#nodes .node.flux-run-error,#nodes .node.flux-run-failed').length;
+  overviewStats.textContent=nodes.length+' block'+(nodes.length===1?'':'s')+' · '+links.length+' connection'+(links.length===1?'':'s')+(completed?' · '+completed+' completed':'')+(failed?' · '+failed+' failed':'');
+ };
+ const nodesContainer=document.getElementById('nodes'),edgesContainer=document.getElementById('edges');
+ if(nodesContainer){const observer=new MutationObserver(updateOverview);observer.observe(nodesContainer,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});}
+ if(edgesContainer){const observer=new MutationObserver(updateOverview);observer.observe(edgesContainer,{childList:true,subtree:true});}
+ updateOverview();
+ const shortcuts=document.createElement('span');shortcuts.className='flux-shortcut-hint';shortcuts.textContent='Tip: press / to find a block';
+ overview.append(shortcuts);
+ document.addEventListener('keydown',event=>{
+  if(event.key!=='/'||event.metaKey||event.ctrlKey||event.altKey||event.target?.closest?.('input,textarea,select,[contenteditable="true"],[role="textbox"]'))return;
+  if(body.dataset.view!=='editor'||picker.open)return;
+  event.preventDefault();addBlock.click();
+ });
  const footer=main.querySelector('#status');
  // Running a test should not unexpectedly switch away from the editor.
  function activate(id){
   for(const [key,view] of Object.entries(views)){view.hidden=key!==id;view.style.display=key===id?'':'none';}
-  actions.hidden=id!=='editor';navigation.hidden=id!=='editor';
+  actions.hidden=id!=='editor';navigation.hidden=id!=='editor';overview.hidden=id!=='editor';
   if(runner)runner.hidden=id!=='editor';
   for(const [key,button] of buttons){button.setAttribute('aria-current',String(key===id));}
   body.dataset.view=id;
