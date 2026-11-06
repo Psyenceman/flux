@@ -12,7 +12,7 @@
  const viewport=document.getElementById('viewport');
  if(!main||!bar||!library||!cloud||!assistant||!logs||!actions||!navigation||!viewport)return;
  const nav=document.createElement('nav');nav.className='flux-mode-tabs';nav.setAttribute('aria-label','Studio sections');
- const tabs=[['editor','Editor'],['automations','Automations'],['assistant','Assistant'],['logs','History']];
+ const tabs=[['automations','My automations'],['editor','Advanced editor'],['logs','Activity'],['assistant','Assistant']];
  const views={editor:viewport,automations:library,assistant,logs};
  const buttons=new Map();
  for(const [id,label] of tabs){
@@ -53,9 +53,15 @@
   body.dataset.view=id;
   if(id==='editor')window.dispatchEvent(new Event('resize'));
  }
+ const homeHeader=document.createElement('div');homeHeader.className='flux-home-header';
+ const homeIntro=document.createElement('p');homeIntro.textContent='Create and manage automations. Open one to edit its workflow.';
+ const start=document.createElement('button');start.type='button';start.className='primary';start.textContent='+ Create automation';
+ start.addEventListener('click',()=>{activate('editor');const candidate=[...document.querySelectorAll('button')].find(button=>button.textContent.trim()==='+ New Flux');if(candidate)candidate.click();else window.dispatchEvent(new Event('flux:new-automation-requested'));});
+ homeHeader.append(homeIntro,start);library.prepend(homeHeader);
+ const style=document.createElement('style');style.textContent='.flux-home-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 0 18px}.flux-home-header p{margin:0}.flux-home-header button{background:#176baf;color:#fff;border:0;border-radius:9px;padding:12px 16px;font-weight:700;cursor:pointer}@media(max-width:600px){.flux-home-header{align-items:stretch;flex-direction:column}.flux-home-header button{width:100%}}';document.head.append(style);
  // Remove obsolete stacked drawers, while preserving their content.
  for(const details of main.querySelectorAll('.flux-drawer'))details.remove();
- activate('editor');
+ activate('automations');
  window.addEventListener('flux:automation-opened',()=>activate('editor'));
  const inspector=document.getElementById('inspector-panel');
  const libraryPanel=document.getElementById('library-panel');
