@@ -136,6 +136,11 @@ if(output){
   const detailsButton=document.createElement('button');detailsButton.type='button';detailsButton.className='flux-explain-details';detailsButton.textContent='View technical execution log';
   detailsButton.addEventListener('click',()=>{logArea.open=true;logArea.scrollIntoView({block:'nearest',behavior:'smooth'});});
   explain.append(detailsButton);panel.append(explain);
+  if(result.metering){
+   const metering=document.createElement('p');metering.className='flux-metering-preview';
+   metering.textContent='FluxCoins estimate · '+result.metering.estimatedFluxCoins+' FCX for '+result.metering.billableOperations+' completed operations · '+result.metering.simulatedOperations+' simulated · '+result.metering.excludedOperations+' excluded. Preview only: existing billing remains unchanged.';
+   panel.append(metering);
+  }
   const heading=document.createElement('strong');heading.textContent=result.ok?(result.dryRun?'Safe test completed — no external changes made':'Execution completed'):'Test could not finish';panel.append(heading);
   if(result.error){const error=document.createElement('p');error.textContent=result.error;panel.append(error);}
   if(Array.isArray(result.trace)){
