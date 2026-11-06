@@ -38,6 +38,9 @@
  if(inspectorToggle)overflow.append(inspectorToggle);
  overflow.append(options);
  actions.append(overflow);
+ // The workspace replaces the legacy toolbar: explicitly move the live-run control.
+ const liveRun=document.getElementById('flux-run-live');
+ if(liveRun){actions.insertBefore(liveRun,overflow);liveRun.hidden=false;liveRun.style.display='inline-flex';}
  actions.classList.add('compact-actions');
  for(const view of Object.values(views))body.append(view);
  const footer=main.querySelector('#status');
