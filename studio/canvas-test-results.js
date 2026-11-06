@@ -46,6 +46,9 @@ if(output){
       }
       item.append(cards);
      }
+     if(step.type==='trello'&&stepOutput?.created===true&&typeof stepOutput.url==='string'&&/^https:\/\/trello\.com\/c\//.test(stepOutput.url)){
+      const link=document.createElement('a');link.href=stepOutput.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open created Trello card';link.style.cssText='display:inline-block;margin:8px 0;font-weight:700';item.append(link);
+     }
      const details=document.createElement('details');details.className='flux-step-raw';const summary=document.createElement('summary');summary.textContent='View output';
      const data=document.createElement('pre');data.textContent=JSON.stringify(result.outputs[step.id],null,2);details.append(summary,data);logBody.append(details);
     }
