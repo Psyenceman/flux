@@ -366,6 +366,15 @@ byId('save').addEventListener('click',()=>{try{localStorage.setItem(key,JSON.str
 byId('load').addEventListener('click',()=>{try{const raw=localStorage.getItem(key);if(!raw){note('No saved graph');return;}restore(JSON.parse(raw));note('Graph loaded');}catch(e){note('Load failed: '+e.message);}});
 byId('export').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(snapshot(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='flux-workflow.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 byId('import').addEventListener('click',()=>byId('file').click());byId('file').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;if(file.size>250000){note('File too large');return;}try{restore(JSON.parse(await file.text()));note('Graph imported');}catch(error){note('Import failed: '+error.message);}e.target.value='';});
+const liveTrelloButton=document.createElement('button');
+liveTrelloButton.type='button';liveTrelloButton.id='flux-trello-live';liveTrelloButton.textContent='Create real Trello card';
+liveTrelloButton.style.cssText='margin:10px 0;padding:11px 16px;background:#a83a23;color:white;border:0;border-radius:9px;font-weight:700;cursor:pointer';
+liveTrelloButton.addEventListener('click',()=>{
+ const graph=snapshot(),writes=graph.nodes.filter(n=>n.type==='trello'&&n.config?.operation==='create_card');
+ if(writes.length!==1||graph.nodes.length!==1||graph.edges.length!==0){fluxFeedback('To create a real card, use a workflow with one Trello Create card block only.','error');return;}
+ byId('run-dry').checked=false;byId('runner').style.display='block';byId('run-now').click();
+});
+byId('execute').insertAdjacentElement('afterend',liveTrelloButton);
 byId('execute').addEventListener('click',()=>{byId('run-dry').checked=true;byId('runner').style.display='block';fluxFeedback('Testing workflow… Trello will be read without changing cards.');byId('run-now').click();});
 byId('run-now').addEventListener('click',async()=>{
  const token=byId('run-token').value,output=byId('run-output'),dryRun=byId('run-dry').checked;
@@ -378,7 +387,7 @@ byId('run-now').addEventListener('click',async()=>{
  if(!confirm('Create a REAL Trello card?\\n\\nTitle: '+String(cfg.title||'')+'\\nDestination list: '+String(cfg.list||'')+'\\n\\nThis changes Trello and cannot be undone automatically.'))return;
 }
  const button=byId('run-now'),primary=byId('execute');if(button.disabled||primary.disabled)return;button.disabled=true;primary.disabled=true;primary.textContent='Testing…';output.textContent='Executing…';note('Testing workflow…');
- try{const response=await fetch('/.netlify/functions/flux-graph',{method:'POST',headers:await window.fluxExecutionHeaders(token),body:JSON.stringify({graph:snapshot(),input,dryRun})});const data=await response.json();output.textContent='HTTP '+response.status+'\n'+JSON.stringify(data,null,2);note(data.ok?'Test complete: '+(data.trace?.filter(item=>item.status==='completed'||item.status==='simulated').length||0)+' blocks executed.':('Test failed: '+(data.error||'Check execution results.')));fluxFeedback(data.ok?'Workflow test complete. '+(data.trace?.length||0)+' blocks processed. Open the results below for details.':'Test failed: '+(data.error||'Check execution results.'),data.ok?'success':'error');window.dispatchEvent(new CustomEvent('flux:run-completed',{detail:{...data,httpStatus:response.status}}));if(response.ok&&data.credits?.ok)window.dispatchEvent(new CustomEvent('flux:run-summary',{detail:data}));}
+ try{const response=await fetch('/.netlify/functions/flux-graph',{method:'POST',headers:await window.fluxExecutionHeaders(token),body:JSON.stringify({graph:snapshot(),input,dryRun,confirmLiveTrello:!dryRun})});const data=await response.json();output.textContent='HTTP '+response.status+'\n'+JSON.stringify(data,null,2);note(data.ok?'Test complete: '+(data.trace?.filter(item=>item.status==='completed'||item.status==='simulated').length||0)+' blocks executed.':('Test failed: '+(data.error||'Check execution results.')));fluxFeedback(data.ok?'Workflow test complete. '+(data.trace?.length||0)+' blocks processed. Open the results below for details.':'Test failed: '+(data.error||'Check execution results.'),data.ok?'success':'error');window.dispatchEvent(new CustomEvent('flux:run-completed',{detail:{...data,httpStatus:response.status}}));if(response.ok&&data.credits?.ok)window.dispatchEvent(new CustomEvent('flux:run-summary',{detail:data}));}
  catch(e){output.textContent='Execution error: '+e.message;note('Test failed: '+e.message);fluxFeedback('Test failed: '+e.message,'error');}
  finally{button.disabled=false;primary.disabled=false;primary.textContent='Test workflow';byId('run-token').value='';}
 });
