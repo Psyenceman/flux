@@ -72,7 +72,20 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
    }
    case 'hubspot':{
     const operation=String(config.operation||'search_contacts');
-    if(operation!=='search_contacts')throw Error('HubSpot: only contact search is currently enabled');
+    if(!['search_contacts','create_contact'].includes(operation))throw Error('HubSpot: unsupported operation');
+    if(operation==='create_contact'){
+     let properties;
+     try{properties=JSON.parse(String(config.properties||'{}'));}catch{throw Error('HubSpot: properties must be a JSON object');}
+     if(!properties||Array.isArray(properties)||typeof properties!=='object'||Object.keys(properties).length>20||Object.values(properties).some(v=>typeof v!=='string'||v.length>500))throw Error('HubSpot: invalid properties');
+     const email=String(properties.email||'');
+     if(!email.includes('@')||email.length>254||email.includes(' '))throw Error('HubSpot: valid contact email required');
+     if(dryRun){status='simulated';reason='Safe preview: HubSpot contact not created';output={source:'hubspot',operation,properties,simulated:true};break;}
+     if(!hubspotToken){status='skipped';reason='HubSpot server connection is not configured';break;}
+     if(++calls>3)throw Error('External request limit exceeded');
+     const response=await fetch('https://api.hubapi.com/crm/v3/objects/contacts',{method:'POST',headers:{authorization:'Bearer '+hubspotToken,'content-type':'application/json'},body:JSON.stringify({properties}),redirect:'error',signal:AbortSignal.timeout(10000)});
+     if(!response.ok)throw Error('HubSpot create failed (HTTP '+response.status+')');
+     const data=await response.json();output={source:'hubspot',operation,id:String(data.id||''),properties:data.properties||{}};reason='HubSpot contact created';break;
+    }
     const query=String(config.query||'').trim();
     if(!query||query.length>200)throw Error('HubSpot: enter an email to search');
     if(!hubspotToken){status='skipped';reason='HubSpot server connection is not configured';break;}
