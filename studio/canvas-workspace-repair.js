@@ -165,3 +165,22 @@
  modal.addEventListener('click',event=>{if(event.target===modal||event.target.closest('.inspector-close'))modal.close();});
  window.addEventListener('flux:automation-opened',()=>{if(modal.open)modal.close();});
 })();
+
+/* TEST: minimal round app nodes, names below. Connection endpoints remain unchanged. */
+(()=>{
+ const css=document.createElement('style');
+ css.textContent=`
+ #nodes .node{width:112px!important;height:112px!important;min-height:112px!important;border:2px solid #a7c3da!important;border-radius:50%!important;background:#fff!important;box-shadow:0 3px 14px #12385818!important;overflow:visible!important;padding:0!important}
+ #nodes .node.selected{border-color:#1775ab!important;box-shadow:0 0 0 4px #1775ab24!important}
+ #nodes .node .node-head{position:relative!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important;padding:0!important;background:transparent!important;border:0!important;border-radius:50%!important}
+ #nodes .node .node-head .block-icon{width:62px!important;height:62px!important;min-width:62px!important;max-width:62px!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:34px!important;color:#176da0!important}
+ #nodes .node .node-head .block-icon img{display:block!important;width:42px!important;height:42px!important;max-width:42px!important;object-fit:contain!important;filter:none!important}
+ #nodes .node .node-head span:not(.block-icon){position:absolute!important;left:-35px!important;right:-35px!important;top:calc(100% + 11px)!important;max-width:none!important;font-size:14px!important;font-weight:700!important;color:#1c324a!important;line-height:1.3!important;text-align:center!important;white-space:normal!important}
+ #nodes .node .node-meta,#nodes .node .flux-node-resize{display:none!important}
+ #nodes .node .port{top:39px!important}
+ #nodes .node .node-delete{opacity:0!important;right:-5px!important;top:-5px!important}
+ #nodes .node:hover .node-delete,#nodes .node:focus-within .node-delete{opacity:1!important}
+ @media(max-width:600px){#nodes .node .node-head span:not(.block-icon){font-size:13px!important}}
+ `;
+ document.head.append(css);
+})();
