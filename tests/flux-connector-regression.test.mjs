@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {executeGraph,validateGraph} from '../netlify/functions/flux-graph-engine.mjs';
+
+const graph=(type,config)=>({version:1,nodes:[{id:'step',type,config}],edges:[]});
+test('dry-run Airtable create never writes',async()=>{
+ const result=await executeGraph(graph('airtable',{operation:'create_record',baseId:'app12345678901234',tableId:'tbl12345678901234',fields:'{"Name":"Test"}'}),{},{dryRun:true});
+ assert.equal(result.ok,true);assert.equal(result.trace[0].status,'simulated');
+});
+test('dry-run Airtable update never writes',async()=>{
+ const result=await executeGraph(graph('airtable',{operation:'update_record',baseId:'app12345678901234',tableId:'tbl12345678901234',recordId:'rec12345678901234',fields:'{"Name":"Test"}'}),{},{dryRun:true});
+ assert.equal(result.ok,true);assert.equal(result.trace[0].status,'simulated');
+});
+test('dry-run Google Sheets append never writes',async()=>{
+ const result=await executeGraph(graph('sheets',{operation:'append_row',spreadsheetId:'1234567890123456789012345',range:'Sheet1!A1:B2',values:'["Test",1]'}),{},{dryRun:true});
+ assert.equal(result.trace[0].status,'simulated');
+});
+test('dry-run Supabase insert never writes',async()=>{
+ const result=await executeGraph(graph('supabase',{operation:'insert_row',table:'test_items',fields:'{"name":"Test"}'}),{},{dryRun:true});
+ assert.equal(result.trace[0].status,'simulated');
+});
+test('missing connector tokens produce skipped, not success',async()=>{
+ for(const [type,config] of [['airtable',{operation:'find_records',baseId:'app12345678901234',tableId:'tbl12345678901234'}],['sheets',{operation:'read_rows',spreadsheetId:'1234567890123456789012345',range:'Sheet1!A1:B2'}],['supabase',{operation:'select_rows',table:'test_items'}]]){
+  const result=await executeGraph(graph(type,config),{},{dryRun:true});
+  assert.equal(result.trace[0].status,'skipped');
+ }
+});
+test('condition traces show executed, filtered and skipped paths',async()=>{
+ const g={version:1,nodes:[{id:'start',type:'manual'},{id:'condition',type:'filter',config:{field:'status',operator:'equals',value:'approved'}},{id:'end',type:'log'}],edges:[{from:'start',to:'condition'},{from:'condition',to:'end'}]};
+ const yes=await executeGraph(g,{status:'approved'},{dryRun:true});
+ const no=await executeGraph(g,{status:'rejected'},{dryRun:true});
+ assert.deepEqual(yes.trace.map(x=>x.status),['completed','completed','completed']);
+ assert.deepEqual(no.trace.map(x=>x.status),['completed','filtered','skipped']);
+});
+test('cycles are rejected',()=>assert.throws(()=>validateGraph({version:1,nodes:[{id:'a',type:'manual'},{id:'b',type:'log'}],edges:[{from:'a',to:'b'},{from:'b',to:'a'}]}),/Cycles/));
