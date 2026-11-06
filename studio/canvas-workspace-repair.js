@@ -88,6 +88,15 @@
  const bar=main.querySelector('.toolbar:not(#canvas-cloud)');
  const trigger=document.createElement('button');trigger.type='button';trigger.id='flux-add-block';trigger.textContent='+ Add block';
  if(bar)bar.prepend(trigger);
+ const newScenario=document.createElement('button');newScenario.type='button';newScenario.id='flux-new-scenario';newScenario.textContent='+ New scenario';newScenario.style.cssText='border:1px solid #9ab2ca;border-radius:9px;background:#fff;color:#173452;padding:10px 14px;font-weight:700;cursor:pointer';
+ trigger.after(newScenario);
+ newScenario.addEventListener('click',()=>{
+  const name=prompt('Name your new scenario:','My new scenario');
+  if(name===null)return;
+  if(!name.trim()||name.trim().length>100){alert('Enter a name up to 100 characters.');return;}
+  if(!confirm('Create a new blank scenario? Save any changes to your current workflow first.'))return;
+  window.dispatchEvent(new CustomEvent('flux:create-scenario',{detail:{name:name.trim()}}));
+ });
  const dialog=document.createElement('dialog');dialog.id='flux-block-dialog';dialog.setAttribute('aria-label','Add block');
  dialog.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h2 style="margin:0;color:#152943">Add a block</h2><button type="button" id="flux-block-close" style="border:0;background:transparent;font-size:26px;cursor:pointer" aria-label="Close">×</button></div><input type="search" id="flux-block-query" placeholder="Search apps or actions…" aria-label="Search blocks"><div id="flux-block-categories" role="group" aria-label="Block categories"></div><div id="flux-block-results"></div><p id="flux-block-empty" role="status" style="color:#50657c"></p>';
  document.body.append(dialog);
