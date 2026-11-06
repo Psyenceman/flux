@@ -28,7 +28,7 @@ function applyMapping(mapping,outputs,input,allowed){
  const result={};for(const [key,val] of Object.entries(spec)){if(!/^[a-zA-Z_][\w]{0,63}$/.test(key)||typeof val!=='string')throw Error('Invalid Data Mapper field');result[key]=resolveTemplate(val,outputs,input,allowed);}
  return result;
 }
-export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloKey,trelloToken,telegramToken,telegramChatId,resendApiKey,resendFrom}={}){
+export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom}={}){
  const {order,adj}=validateGraph(graph),byId=new Map(graph.nodes.map(n=>[n.id,n]));
  const received=new Map(),trace=[],outputs={};let calls=0;const ancestors=new Map();for(const id of order){const set=new Set();for(const e of graph.edges.filter(e=>e.to===id)){set.add(e.from);for(const a of ancestors.get(e.from)||[])set.add(a);}ancestors.set(id,set);}
  for(const id of order){
@@ -71,20 +71,19 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
     break;
    }
    case 'trello':{
-    const listId=String(config.connection||'').trim();
-    if(!/^[a-f0-9]{24}$/i.test(listId))throw Error('Trello block '+id+': enter a valid Trello list ID in Connection reference');
-    if(dryRun){output={source:'trello',listId,items:[],count:0,simulated:true};status='simulated';reason='Dry run: Trello was not contacted';break;}
-    if(!trelloKey||!trelloToken){status='skipped';reason='Trello credentials not configured on server';break;}
-    if(++calls>3)throw Error('External action limit exceeded');
+    const listId=String(config.list||config.connection||'').trim();
+    if(!/^[a-f0-9]{24}$/i.test(listId))throw Error('Trello block '+id+': choose a Trello list first');
+    if(!trelloAccessToken){status='skipped';reason='Connect your Trello account to read cards';output={source:'trello',listId,items:[],count:0,simulated:true};break;}
+    if(++calls>3)throw Error('External read limit exceeded');
     const url=new URL('https://api.trello.com/1/lists/'+listId+'/cards');
     url.searchParams.set('fields','id,name,url,closed,due,idList');
     url.searchParams.set('limit','20');
-    url.searchParams.set('key',trelloKey);url.searchParams.set('token',trelloToken);
-    const response=await fetch(url,{method:'GET',signal:AbortSignal.timeout(5000),redirect:'error'});
+    const response=await fetch(url,{method:'GET',headers:{authorization:'Bearer '+trelloAccessToken},signal:AbortSignal.timeout(10000),redirect:'error'});
     if(!response.ok)throw Error('Trello read failed at '+id+' (HTTP '+response.status+')');
     const cards=await response.json();
     if(!Array.isArray(cards))throw Error('Unexpected Trello response at '+id);
     output={source:'trello',listId,count:cards.length,items:cards.map(c=>({id:c.id,name:c.name,url:c.url,due:c.due,idList:c.idList}))};
+    reason=dryRun?'Read-only TEST: Trello cards fetched; no external changes made':'';
     break;
    }
    case 'telegram':{
