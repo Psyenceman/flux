@@ -62,7 +62,7 @@ export async function handler(event){
    if(records[0].expires_at&&Date.parse(records[0].expires_at)<Date.now())return json(409,{ok:false,error:'Trello connection expired. Reconnect your account.'});
    trelloAccessToken=decrypt(records[0].access_token_ciphertext);
   }
-  const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloAccessToken,telegramToken:process.env.FLUX_TELEGRAM_BOT_TOKEN,telegramChatId:process.env.FLUX_TELEGRAM_CHAT_ID,resendApiKey:process.env.FLUX_RESEND_API_KEY,resendFrom:process.env.FLUX_RESEND_FROM});return json(200,{...result,credits});
+  const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloAccessToken,airtableToken:process.env.FLUX_AIRTABLE_READ_TOKEN,telegramToken:process.env.FLUX_TELEGRAM_BOT_TOKEN,telegramChatId:process.env.FLUX_TELEGRAM_CHAT_ID,resendApiKey:process.env.FLUX_RESEND_API_KEY,resendFrom:process.env.FLUX_RESEND_FROM});return json(200,{...result,credits});
  }
  catch(error){console.error(JSON.stringify({event:'flux.graph.failed',reason:String(error?.message||error)}));return json(422,{ok:false,error:String(error?.message||'Execution failed').slice(0,240)});}
 }
