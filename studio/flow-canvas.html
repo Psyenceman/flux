@@ -117,8 +117,26 @@ function add(type,x=100,y=100,config={}){const n={id:'n'+(++sequence),type,x:Mat
 window.addEventListener('flux:disconnect-edge',event=>{const {from,to}=event.detail||{};const count=edges.length;edges=edges.filter(edge=>!(edge.from===from&&edge.to===to));if(edges.length!==count){render();note('Connection removed. Both blocks are kept. Save your changes.');}});
 window.addEventListener('flux:insert-between',event=>{const {from,to,type}=event.detail;const edge=edges.find(e=>e.from===from&&e.to===to);const a=nodes.find(n=>n.id===from),b=nodes.find(n=>n.id===to);if(!edge||!a||!b||!types.some(t=>t[0]===type))return;edges=edges.filter(e=>e!==edge);const width=nodeWidth(type);const start=a.x+nodeWidth(a),end=b.x;const gap=32;const required=width+gap*2;const available=end-start;
  if(available<required){const shift=required-available;for(const other of nodes){if(other.id!==a.id&&other.x>=end-1)other.x+=shift;}}
- const x=Math.max(20,Math.round(start+gap));const y=Math.max(20,Math.round((a.y+b.y)/2));const node=add(type,x,y);edges.push({from,to:node.id},{from:node.id,to});render();note('Block inserted and automatically connected. Save your changes.');});
-window.addEventListener('flux:append-connected-block',event=>{const {from,type}=event.detail||{};const parent=nodes.find(n=>n.id===from);if(!parent||!types.some(t=>t[0]===type))return;const width=nodeWidth(parent);const children=edges.filter(e=>e.from===from).length;const x=parent.x+width+165;const y=Math.max(30,parent.y+(children===0?0:children%2?145:-145));const next=add(type,x,y);connect(parent.id,next.id);note('Block added and connected. Save your Flux to keep the change.');});
+ const position=freeNodePosition(Math.max(20,Math.round(start+gap)),Math.max(20,Math.round((a.y+b.y)/2)),[a.id,b.id]);const node=add(type,position.x,position.y);edges.push({from,to:node.id},{from:node.id,to});render();note('Block inserted and automatically connected. Save your changes.');});
+function freeNodePosition(x,y,excluded=[]){
+ const blocked=new Set(excluded);
+ const clear=(px,py)=>nodes.every(n=>blocked.has(n.id)||px+136<n.x||n.x+136<px||py+120<n.y||n.y+120<py);
+ for(let ring=0;ring<24;ring++)for(const offset of ring===0?[0]:[ring*155,-ring*155]){
+  const px=Math.max(20,x),py=Math.max(20,y+offset);
+  if(clear(px,py))return {x:px,y:py};
+ }
+ return {x:Math.max(20,x+160),y:Math.max(20,y+160)};
+}
+window.addEventListener('flux:append-connected-block',event=>{
+ const {from,type}=event.detail||{};
+ const parent=nodes.find(n=>n.id===from);
+ if(!parent||!types.some(t=>t[0]===type))return;
+ const siblings=edges.filter(e=>e.from===from).length;
+ const position=freeNodePosition(parent.x+nodeWidth(parent)+165,parent.y+(siblings%2===0?0:150));
+ const next=add(type,position.x,position.y);
+ connect(parent.id,next.id);
+ fluxFeedback(next.label+' added and connected. Save your changes.','success');
+});
 const nodeWidth=()=>112;
 function path(a,b){const sx=a.x+nodeWidth(a),sy=a.y+52,tx=b.x,ty=b.y+52;const dx=Math.max(65,Math.abs(tx-sx)*.5);return 'M'+sx+' '+sy+' C'+(sx+dx)+' '+sy+','+(tx-dx)+' '+ty+','+tx+' '+ty;}
 function reaches(from,to,visited=new Set()){if(from===to)return true;if(visited.has(from))return false;visited.add(from);return edges.some(e=>e.from===from&&reaches(e.to,to,visited));}
