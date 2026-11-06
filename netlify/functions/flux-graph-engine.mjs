@@ -28,7 +28,7 @@ function applyMapping(mapping,outputs,input,allowed){
  const result={};for(const [key,val] of Object.entries(spec)){if(!/^[a-zA-Z_][\w]{0,63}$/.test(key)||typeof val!=='string')throw Error('Invalid Data Mapper field');result[key]=resolveTemplate(val,outputs,input,allowed);}
  return result;
 }
-export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom,airtableToken}={}){
+export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom,airtableToken,googleSheetsToken,supabaseUrl,supabaseServiceToken}={}){
  const {order,adj}=validateGraph(graph),byId=new Map(graph.nodes.map(n=>[n.id,n]));
  const received=new Map(),trace=[],outputs={};let calls=0;const ancestors=new Map();for(const id of order){const set=new Set();for(const e of graph.edges.filter(e=>e.to===id)){set.add(e.from);for(const a of ancestors.get(e.from)||[])set.add(a);}ancestors.set(id,set);}
  for(const id of order){
@@ -71,23 +71,71 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
     break;
    }
    case 'airtable':{
-    // TEST-only adapter: token must be injected server-side by the trusted caller.
     const operation=String(config.operation||'find_records');
-    if(operation!=='find_records')throw Error('Airtable: only find_records is supported by this adapter');
+    if(!['find_records','create_record','update_record'].includes(operation))throw Error('Airtable: unsupported operation');
     const base=String(config.baseId||'').trim(),table=String(config.tableId||'').trim();
-    if(!/^app[a-zA-Z0-9]{14}$/.test(base))throw Error('Airtable: enter a valid base ID');
-    if(!/^tbl[a-zA-Z0-9]{14}$/.test(table))throw Error('Airtable: enter a valid table ID');
-    if(!airtableToken){status='skipped';reason='Airtable server connection is not configured; no records were read';break;}
-    if(++calls>3)throw Error('External read limit exceeded');
-    const url=new URL('https://api.airtable.com/v0/'+base+'/'+table);
-    url.searchParams.set('maxRecords','20');url.searchParams.set('pageSize','20');
-    const response=await fetch(url,{headers:{authorization:'Bearer '+airtableToken},redirect:'error',signal:AbortSignal.timeout(10000)});
-    if(!response.ok)throw Error('Airtable read failed (HTTP '+response.status+')');
+    if(!/^app[a-zA-Z0-9]{14}$/.test(base)||!/^tbl[a-zA-Z0-9]{14}$/.test(table))throw Error('Airtable: valid base ID and table ID required');
+    const endpoint='https://api.airtable.com/v0/'+base+'/'+table;
+    const writing=operation!=='find_records';
+    let fields,recordId;
+    if(writing){
+     try{fields=JSON.parse(String(config.fields||'{}'));}catch{throw Error('Airtable: fields must be a JSON object');}
+     if(!fields||typeof fields!=='object'||Array.isArray(fields)||Object.keys(fields).length>30)throw Error('Airtable: invalid fields');
+     if(operation==='update_record'){recordId=String(config.recordId||'');if(!/^rec[a-zA-Z0-9]{14}$/.test(recordId))throw Error('Airtable: valid record ID required');}
+     if(dryRun){status='simulated';reason='Safe preview: Airtable record not modified';output={source:'airtable',operation,fields,recordId,simulated:true};break;}
+    }
+    if(!airtableToken){status='skipped';reason='Airtable server connection is not configured';break;}
+    if(++calls>3)throw Error('External Airtable request limit exceeded');
+    const url=new URL(endpoint+(recordId?'/'+recordId:''));
+    if(!writing){url.searchParams.set('maxRecords','20');url.searchParams.set('pageSize','20');}
+    const response=await fetch(url,{method:operation==='create_record'?'POST':operation==='update_record'?'PATCH':'GET',
+     headers:{authorization:'Bearer '+airtableToken,...(writing?{'content-type':'application/json'}:{})},
+     ...(writing?{body:JSON.stringify({fields})}:{}),redirect:'error',signal:AbortSignal.timeout(10000)});
+    if(!response.ok)throw Error('Airtable '+operation+' failed (HTTP '+response.status+')');
     const payload=await response.json();
-    if(!Array.isArray(payload.records))throw Error('Airtable returned an invalid record list');
-    output={source:'airtable',operation,count:payload.records.length,items:payload.records.map(record=>({id:String(record.id||''),fields:record.fields&&typeof record.fields==='object'?record.fields:{}}))};
-    reason='Read '+payload.records.length+' Airtable records'+(dryRun?' in safe test':'');
-    break;
+    if(!writing){
+     if(!Array.isArray(payload.records))throw Error('Airtable returned an invalid record list');
+     output={source:'airtable',operation,count:payload.records.length,items:payload.records.map(record=>({id:String(record.id||''),fields:record.fields&&typeof record.fields==='object'?record.fields:{}}))};
+    }else output={source:'airtable',operation,id:String(payload.id||''),fields:payload.fields||{},updated:true};
+    reason='Airtable '+operation+' completed';break;
+   }
+   case 'sheets':{
+    const operation=String(config.operation||'read_rows');
+    if(!['read_rows','append_row'].includes(operation))throw Error('Google Sheets: unsupported operation');
+    const spreadsheet=String(config.spreadsheetId||''),range=String(config.range||'Sheet1!A1:Z20');
+    if(!/^[a-zA-Z0-9_-]{20,120}$/.test(spreadsheet)||range.length>120||!/^['\w\s!-]+![A-Z]{1,3}[1-9][0-9]*(?::[A-Z]{1,3}[1-9][0-9]*)?$/.test(range))throw Error('Google Sheets: valid spreadsheet ID and A1 range required');
+    let values;
+    if(operation==='append_row'){
+     try{values=JSON.parse(String(config.values||'[]'));}catch{throw Error('Google Sheets: values must be a JSON array');}
+     if(!Array.isArray(values)||values.length>30||values.some(v=>typeof v!=='string'&&typeof v!=='number'&&typeof v!=='boolean'))throw Error('Google Sheets: invalid row values');
+     if(dryRun){status='simulated';reason='Safe preview: row not appended';output={source:'sheets',operation,values,simulated:true};break;}
+    }
+    if(!googleSheetsToken){status='skipped';reason='Google Sheets server connection is not configured';break;}
+    if(++calls>3)throw Error('External Google Sheets request limit exceeded');
+    const url=new URL('https://sheets.googleapis.com/v4/spreadsheets/'+spreadsheet+'/values/'+encodeURIComponent(range)+(operation==='append_row'?':append':''));
+    if(operation==='append_row'){url.searchParams.set('valueInputOption','RAW');url.searchParams.set('insertDataOption','INSERT_ROWS');}
+    const response=await fetch(url,{method:operation==='append_row'?'POST':'GET',headers:{authorization:'Bearer '+googleSheetsToken,...(operation==='append_row'?{'content-type':'application/json'}:{})},...(operation==='append_row'?{body:JSON.stringify({values:[values]})}:{}),signal:AbortSignal.timeout(10000),redirect:'error'});
+    if(!response.ok)throw Error('Google Sheets '+operation+' failed (HTTP '+response.status+')');
+    const payload=await response.json();output=operation==='read_rows'?{source:'sheets',operation,range,values:Array.isArray(payload.values)?payload.values:[]}:{source:'sheets',operation,updatedRange:payload.updates?.updatedRange||'',updatedRows:payload.updates?.updatedRows||0};
+    reason='Google Sheets '+operation+' completed';break;
+   }
+   case 'supabase':{
+    const operation=String(config.operation||'select_rows'),table=String(config.table||'');
+    if(!['select_rows','insert_row'].includes(operation)||!/^[a-zA-Z_][a-zA-Z0-9_]{0,62}$/.test(table))throw Error('Supabase: valid table and operation required');
+    let fields;
+    if(operation==='insert_row'){
+     try{fields=JSON.parse(String(config.fields||'{}'));}catch{throw Error('Supabase: fields must be JSON');}
+     if(!fields||typeof fields!=='object'||Array.isArray(fields)||Object.keys(fields).length>30)throw Error('Supabase: invalid row');
+     if(dryRun){status='simulated';reason='Safe preview: Supabase row not inserted';output={source:'supabase',operation,fields,simulated:true};break;}
+    }
+    if(!supabaseUrl||!supabaseServiceToken){status='skipped';reason='Supabase server connection is not configured';break;}
+    const origin=new URL(supabaseUrl);if(origin.protocol!=='https:'||origin.username||origin.password||!origin.hostname.endsWith('.supabase.co'))throw Error('Supabase: invalid server URL');
+    if(++calls>3)throw Error('External Supabase request limit exceeded');
+    const url=new URL('/rest/v1/'+table,origin);if(operation==='select_rows'){url.searchParams.set('select','*');url.searchParams.set('limit','20');}
+    const response=await fetch(url,{method:operation==='insert_row'?'POST':'GET',headers:{apikey:supabaseServiceToken,authorization:'Bearer '+supabaseServiceToken,...(operation==='insert_row'?{'content-type':'application/json',prefer:'return=representation'}:{})},...(operation==='insert_row'?{body:JSON.stringify(fields)}:{}),redirect:'error',signal:AbortSignal.timeout(10000)});
+    if(!response.ok)throw Error('Supabase '+operation+' failed (HTTP '+response.status+')');
+    const payload=await response.json();if(!Array.isArray(payload))throw Error('Supabase: unexpected response');
+    output={source:'supabase',operation,count:payload.length,items:payload};reason='Supabase '+operation+' completed';break;
    }
    case 'trello':{
     const trelloOperation=String(config.operation||'read_list').trim();
