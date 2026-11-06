@@ -65,11 +65,11 @@
  const drawer=document.getElementById('flux-block-drawer');
  const palette=document.getElementById('palette');
  const main=document.querySelector('#canvas-shell > main');
- if(!stage||!drawer||!palette||!main)return;
- const style=document.createElement('style');
+ if(!palette||!main)return;
+ document.getElementById('toggle-library')?.remove();\n const style=document.createElement('style');
  style.textContent=`
  #flux-editor-stage{display:block!important;min-width:0}
- #flux-block-drawer{display:none!important}
+ #flux-block-drawer{display:none!important}\n #flux-editor-stage{position:relative}\n #flux-first-block{position:absolute;left:50%;top:35%;transform:translate(-50%,-50%);border:2px dashed #7da8c7;border-radius:16px;background:#fff;color:#163956;padding:25px 35px;font-weight:750;font-size:18px;cursor:pointer;z-index:3;box-shadow:0 6px 28px #133d531b}\n #flux-first-block[hidden]{display:none!important}
  #flux-add-block{border:0;border-radius:9px;background:#1674b9;color:#fff;padding:10px 16px;font-weight:700;cursor:pointer}
  #flux-block-dialog{border:1px solid #66819e;border-radius:16px;background:#f7fafd;color:#152943;width:min(650px,calc(100vw - 24px));max-height:85dvh;padding:20px;box-shadow:0 20px 80px #0008}
  #flux-block-dialog::backdrop{background:#071525a8}
@@ -85,18 +85,9 @@
  @media(max-width:550px){#flux-block-dialog{padding:14px}#flux-block-results{grid-template-columns:1fr}}
  `;
  document.head.append(style);
- const bar=main.querySelector('.toolbar:not(#canvas-cloud)');
+ const bar=document.getElementById('save')?.parentElement;
  const trigger=document.createElement('button');trigger.type='button';trigger.id='flux-add-block';trigger.textContent='+ Add block';
- if(bar)bar.prepend(trigger);
- const newScenario=document.createElement('button');newScenario.type='button';newScenario.id='flux-new-scenario';newScenario.textContent='+ New scenario';newScenario.style.cssText='border:1px solid #9ab2ca;border-radius:9px;background:#fff;color:#173452;padding:10px 14px;font-weight:700;cursor:pointer';
- trigger.after(newScenario);
- newScenario.addEventListener('click',()=>{
-  const name=prompt('Name your new scenario:','My new scenario');
-  if(name===null)return;
-  if(!name.trim()||name.trim().length>100){alert('Enter a name up to 100 characters.');return;}
-  if(!confirm('Create a new blank scenario? Save any changes to your current workflow first.'))return;
-  window.dispatchEvent(new CustomEvent('flux:create-scenario',{detail:{name:name.trim()}}));
- });
+ if(bar)bar.prepend(trigger);else main.prepend(trigger);
  const dialog=document.createElement('dialog');dialog.id='flux-block-dialog';dialog.setAttribute('aria-label','Add block');
  dialog.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h2 style="margin:0;color:#152943">Add a block</h2><button type="button" id="flux-block-close" style="border:0;background:transparent;font-size:26px;cursor:pointer" aria-label="Close">×</button></div><input type="search" id="flux-block-query" placeholder="Search apps or actions…" aria-label="Search blocks"><div id="flux-block-categories" role="group" aria-label="Block categories"></div><div id="flux-block-results"></div><p id="flux-block-empty" role="status" style="color:#50657c"></p>';
  document.body.append(dialog);
@@ -114,7 +105,7 @@
  function render(){
   results.replaceChildren();let count=0;
   for(const b of palette.querySelectorAll('button[data-search]')){
-   const type=['manual','schedule','webhook','router','mapper','loop','filter','condition','delay','merge','log','flux','slack','email','whatsapp','telegram','discord','resend','airtable','sheets','database','supabase','http'].find(t=>(' '+b.dataset.search+' ').includes(' '+t+' '))||'';
+   const type=b.querySelector('span:not(.palette-icon)')?.textContent?.trim().toLowerCase().replace(/\\s+/g,'-')||'';
    const category=classify(type);
    if(active!=='All'&&active!==category)continue;
    if(!b.dataset.search.includes(search.value.trim().toLowerCase()))continue;
@@ -126,7 +117,11 @@
   for(const b of categories.children)b.setAttribute('aria-pressed',String(b.textContent===active));
   empty.textContent=count?'': 'No matching blocks.';
  }
- trigger.addEventListener('click',()=>{active='All';search.value='';render();dialog.showModal();search.focus();});
+ const emptyButton=document.createElement('button');emptyButton.type='button';emptyButton.id='flux-first-block';emptyButton.textContent='+ Add your first block';document.getElementById('flux-editor-stage')?.append(emptyButton);
+ emptyButton.addEventListener('click',()=>trigger.click());
+ const updateEmpty=()=>{const count=document.querySelectorAll('#nodes .node').length;emptyButton.hidden=count>0;};
+ window.addEventListener('flux:canvas-changed',updateEmpty);window.addEventListener('flux:automation-opened',updateEmpty);updateEmpty();
+  trigger.addEventListener('click',()=>{active='All';search.value='';render();dialog.showModal();search.focus();});
  dialog.querySelector('#flux-block-close').addEventListener('click',()=>dialog.close());
  search.addEventListener('input',render);
  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
