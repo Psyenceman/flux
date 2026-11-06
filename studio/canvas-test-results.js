@@ -19,7 +19,7 @@ if(output){
   window.dispatchEvent(new CustomEvent('flux:test-outputs',{detail:{outputs:result.ok&&result.outputs&&typeof result.outputs==='object'?result.outputs:{}}}));
   for(const node of document.querySelectorAll('#nodes .node')){node.classList.remove('flux-run-completed','flux-run-filtered','flux-run-skipped','flux-run-simulated');}
   if(Array.isArray(result.trace))for(const step of result.trace){const node=[...document.querySelectorAll('#nodes .node')].find(el=>el.dataset.nodeId===step.id);if(node&&['completed','filtered','skipped','simulated'].includes(step.status))node.classList.add('flux-run-'+step.status);}
-  panel.replaceChildren();
+  panel.replaceChildren();for(const stepLog of logBody.querySelectorAll('.flux-step-raw'))stepLog.remove();
   const heading=document.createElement('strong');heading.textContent=result.ok?(result.dryRun?'Safe test completed — no external changes made':'Execution completed'):'Test could not finish';panel.append(heading);
   if(result.error){const error=document.createElement('p');error.textContent=result.error;panel.append(error);}
   if(Array.isArray(result.trace)){
@@ -47,7 +47,7 @@ if(output){
       item.append(cards);
      }
      const details=document.createElement('details');details.className='flux-step-raw';const summary=document.createElement('summary');summary.textContent='View output';
-     const data=document.createElement('pre');data.textContent=JSON.stringify(result.outputs[step.id],null,2);details.append(summary,data);item.append(details);
+     const data=document.createElement('pre');data.textContent=JSON.stringify(result.outputs[step.id],null,2);details.append(summary,data);logBody.append(details);
     }
     list.append(item);
    }
