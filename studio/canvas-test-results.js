@@ -3,11 +3,12 @@ const output=document.getElementById('run-output');
 if(output){
  const panel=document.createElement('div');panel.id='flux-test-results';panel.setAttribute('aria-live','polite');
  output.before(panel);
- const technical=document.createElement('details');technical.className='flux-technical-toggle';
- const technicalSummary=document.createElement('summary');technicalSummary.textContent='Technical response (advanced)';
- technical.append(technicalSummary);
- output.after(technical);technical.append(output);
- output.style.display='block';
+ const logArea=document.createElement('details');logArea.id='flux-execution-log';logArea.className='flux-technical-toggle';
+ const logHeading=document.createElement('summary');logHeading.textContent='Execution log · technical details';
+ logArea.append(logHeading);
+ const logBody=document.createElement('div');logBody.className='flux-log-body';logArea.append(logBody);
+ output.before(logArea);
+ logBody.append(output);
 
  const observer=new MutationObserver(()=>{
   const raw=output.textContent||'';
@@ -45,7 +46,7 @@ if(output){
       }
       item.append(cards);
      }
-     const details=document.createElement('details');const summary=document.createElement('summary');summary.textContent='View output';
+     const details=document.createElement('details');details.className='flux-step-raw';const summary=document.createElement('summary');summary.textContent='View output';
      const data=document.createElement('pre');data.textContent=JSON.stringify(result.outputs[step.id],null,2);details.append(summary,data);item.append(details);
     }
     list.append(item);
@@ -55,6 +56,4 @@ if(output){
   }
  });
  observer.observe(output,{childList:true,characterData:true,subtree:true});
- const advanced=document.createElement('details');advanced.className='flux-raw-result';const label=document.createElement('summary');label.textContent='Technical response (advanced)';advanced.append(label);
- output.before(advanced);advanced.append(output);
 }
