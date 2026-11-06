@@ -316,7 +316,15 @@
   else if(internal.has(node.type)){cTitle.textContent='Execution not enabled';cText.textContent='You can design the module now; automatic execution is still in development.';}
   else{cTitle.textContent='Account not connected';cText.textContent='Secure OAuth / server authorization for '+node.label+' is not yet available in Flux Studio.';}
   connection.append(cTitle,cText);
-  if(!internal.has(node.type)){const btn=document.createElement('button');btn.type='button';btn.textContent='Connect account · coming soon';btn.disabled=true;connection.append(btn);}
+  if(node.type==='trello'){
+   cTitle.textContent='Trello account · TEST';
+   cText.textContent='Connect once, then reuse your account in your automations.';
+   const btn=document.createElement('button');btn.type='button';btn.textContent='Connect Trello';
+   const getToken=()=>new Promise(resolve=>{const handler=e=>{window.removeEventListener('flux:session-response',handler);clearTimeout(timer);resolve(e.detail);};const timer=setTimeout(()=>{window.removeEventListener('flux:session-response',handler);resolve(null);},5000);window.addEventListener('flux:session-response',handler);window.dispatchEvent(new Event('flux:session-request'));});
+   const check=async()=>{const token=await getToken();if(!token){cText.textContent='Sign in to Flux Studio first.';return null;}try{const res=await fetch('/.netlify/functions/trello-connections',{headers:{authorization:'Bearer '+token}});const data=await res.json();const connected=data.connections?.find(c=>c.status==='connected');if(connected){cTitle.textContent='Trello connected';cText.textContent=connected.provider_account_label||'Account connected';btn.textContent='Reconnect Trello';}return token;}catch{cText.textContent='Connection status unavailable.';return token;}};
+   btn.addEventListener('click',async()=>{btn.disabled=true;btn.textContent='Connecting…';try{const token=await getToken();if(!token)throw Error('Sign in to Flux Studio first.');const res=await fetch('/.netlify/functions/trello-oauth-start',{method:'POST',headers:{authorization:'Bearer '+token}});const data=await res.json();if(!res.ok||!data.authorizeUrl)throw Error(data.error||'Authorization unavailable');window.location.assign(data.authorizeUrl);}catch(error){cText.textContent=error.message;btn.disabled=false;btn.textContent='Connect Trello';}});
+   connection.append(btn);check();
+  }else if(!internal.has(node.type)){const btn=document.createElement('button');btn.type='button';btn.textContent='Connect account · coming soon';btn.disabled=true;connection.append(btn);}
   body.append(connection);
   const more=document.createElement('details');const summary=document.createElement('summary');summary.textContent='Advanced information';more.append(summary);
   const detail=document.createElement('p');detail.className='fm-help';detail.textContent='Module type: '+node.type+'. Never paste account passwords or API tokens into this form. Settings are saved with the Flux graph; provider authorization is managed separately.';more.append(detail);body.append(more);
