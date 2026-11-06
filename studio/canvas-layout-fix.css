@@ -1,0 +1,16 @@
+/* Fix collapsed grid tracks when side panels are hidden. */
+#canvas-shell{display:grid!important;grid-template-columns:176px minmax(0,1fr)!important;width:100%;min-width:0}
+#canvas-shell.library-closed{grid-template-columns:minmax(0,1fr)!important}
+#canvas-shell > main{grid-column:2;min-width:0!important;width:100%;max-width:100%;overflow:hidden}
+#canvas-shell.library-closed > main{grid-column:1}
+#canvas-shell > .library-panel{grid-column:1;min-width:0}
+#canvas-shell.library-closed > .library-panel{display:none!important}
+#canvas-shell > .inspector-panel{display:none!important}
+#canvas-shell > .inspector-panel.context-open{display:block!important}
+#canvas-shell .workspace-bar{min-width:0;width:100%;flex-wrap:wrap}
+#canvas-shell .workspace-actions{display:flex;flex-direction:row;flex-wrap:wrap}
+#canvas-shell .workspace-actions button{width:auto;min-width:0;white-space:nowrap}
+#canvas-shell #canvas-cloud{display:flex;flex-wrap:wrap;min-width:0;max-width:100%}
+#canvas-shell #canvas-cloud-user{overflow-wrap:normal;word-break:normal;max-width:100%}
+#canvas-shell .canvas-wrap{min-width:0;width:100%}
+@media(max-width:950px){#canvas-shell,#canvas-shell.library-closed{display:flex!important;flex-direction:column}#canvas-shell > main{width:100%}}

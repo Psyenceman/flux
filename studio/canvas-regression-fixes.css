@@ -1,0 +1,15 @@
+/* Regression fixes: one toolbar menu, compact node dimensions, group-move affordance. */
+#canvas-shell .workspace-actions{position:relative!important;display:flex!important;align-items:center!important;gap:8px!important}
+#canvas-shell .workspace-actions #toggle-library{position:static!important;inset:auto!important;margin:0!important}
+#canvas-shell .compact-actions .more-actions{position:relative!important;z-index:120!important}
+#canvas-shell .compact-actions .more-actions>.flux-settings{position:relative!important;inset:auto!important;height:auto!important;min-height:36px!important;margin:4px 0!important;overflow:visible!important;display:block!important}
+#canvas-shell .compact-actions .more-actions>.flux-settings>summary{position:static!important;inset:auto!important;display:block!important;white-space:nowrap!important;padding:8px 10px!important}
+#canvas-shell .compact-actions .more-actions>#toggle-inspector{display:block!important;position:static!important;min-width:140px!important}
+#canvas-shell .compact-actions .more-actions>.flux-settings[open]>#canvas-cloud{position:absolute!important;top:100%!important;right:0!important;left:auto!important;width:340px!important;z-index:200!important}
+#canvas-shell .node{min-height:64px!important;padding:9px 12px!important;box-sizing:border-box!important}
+#canvas-shell .node .node-head{gap:6px!important;line-height:1.2!important;font-size:12px!important}
+#canvas-shell .node .block-icon{width:25px!important;height:25px!important;min-width:25px!important;font-size:13px!important}
+#canvas-shell .node .node-meta{font-size:10px!important;line-height:1.2!important;margin-top:3px!important}
+#canvas-shell .node .node-delete{top:3px!important;right:3px!important}
+#canvas-shell .flux-select-all{display:inline-flex!important;align-items:center!important;min-height:34px!important;margin-right:4px!important}
+#canvas-shell.flux-group-mode .node{outline:2px dashed #7563c5!important;outline-offset:2px!important}

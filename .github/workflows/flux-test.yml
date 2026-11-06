@@ -1,0 +1,21 @@
+name: Flux TEST checks
+on:
+  push:
+    branches: [develop-supabase-auth]
+  pull_request:
+    branches: [main]
+jobs:
+  graph-engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify graph execution
+        run: node --test tests/*.test.mjs
+      - name: Verify Studio scripts
+        run: |
+          node --check studio/canvas-guided-operations.js
+          node --check studio/canvas-config.js
+          node --check studio/canvas-context.js

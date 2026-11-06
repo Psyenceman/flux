@@ -1,0 +1,41 @@
+/* Minimal Flux Studio shell. Only the active workspace is displayed. */
+#canvas-shell main{background:#f6f8fc!important}
+#canvas-shell main [hidden]{display:none!important}
+#canvas-shell .workspace-bar{min-height:62px;padding:10px 20px!important;border-bottom:1px solid #e5eaf2!important}
+#canvas-shell .workspace-bar>strong{display:none!important}
+.flux-mode-tabs{display:flex;align-items:center;gap:5px}
+.flux-mode-tabs button{border:0;background:transparent;color:#66758a;font-size:13px;font-weight:700;padding:11px 16px;border-radius:9px;cursor:pointer}
+.flux-mode-tabs button[aria-current=true]{background:#e9f0ff;color:#1f5ac7}
+.flux-mode-tabs button:hover{background:#eef3fc}
+#canvas-shell .workspace-actions{margin-left:auto}
+#canvas-shell .workspace-actions #toggle-inspector{display:none!important}
+#canvas-shell .workspace-actions #focus-canvas{display:none!important}
+#canvas-shell .workspace-actions button{border:0;background:#f0f4fa;font-size:12px;padding:9px 12px}
+#canvas-shell .compact-actions{border-bottom:0!important;box-shadow:none!important;padding:8px 18px!important;gap:10px!important}
+#canvas-shell .compact-actions .more-actions{margin-left:auto}
+#canvas-shell .canvas-tools{padding:6px 18px!important;border-bottom:1px solid #e2e8f0!important;gap:7px!important}
+#canvas-shell .canvas-tools span{display:none!important}
+#canvas-shell .canvas-tools button{font-size:12px;padding:6px 10px}
+#canvas-shell .canvas-tools output{font-size:12px}
+#canvas-shell .flux-main-view{flex:1;min-height:0;display:flex;flex-direction:column}
+#canvas-shell .flux-main-view[data-view=editor]{min-height:calc(100vh - 200px)}
+#canvas-shell .flux-main-view .canvas-wrap{flex:1!important;min-height:calc(100vh - 240px)!important}
+#canvas-shell .flux-main-view[data-view=automations],#canvas-shell .flux-main-view[data-view=assistant],#canvas-shell .flux-main-view[data-view=logs]{padding:24px;min-height:calc(100vh - 160px)}
+#canvas-shell #flux-automation-library,#canvas-shell #flux-assistant-panel,#canvas-shell #flux-automation-logs{margin:0!important;border:1px solid #e1e7f0!important;border-radius:14px!important;box-shadow:0 2px 8px #20375b0b!important;padding:24px!important;max-width:1100px;width:100%;align-self:center}
+#canvas-shell #flux-automation-cards{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));max-height:none!important}
+#canvas-shell #flux-automation-library h2,#canvas-shell #flux-assistant-panel h2,#canvas-shell #flux-automation-logs h2{font-size:21px!important;margin:0 0 12px!important}
+#canvas-shell #flux-automation-library>p:first-of-type{display:block}
+#canvas-shell .flux-settings{position:relative;align-self:flex-end;margin:0 18px;z-index:15}
+#canvas-shell .flux-settings>summary{cursor:pointer;list-style:none;font-size:12px;color:#526a87;padding:8px 12px}
+#canvas-shell .flux-settings[open]>#canvas-cloud{display:flex!important;position:absolute;right:0;top:34px;min-width:320px;max-width:90vw;z-index:20;border:1px solid #d8e3f1;border-radius:12px;box-shadow:0 10px 30px #1c35552b;background:#fff!important;padding:14px}
+#canvas-shell .flux-settings:not([open])>#canvas-cloud{display:none!important}
+#canvas-shell .flux-settings:not([open]){height:0;overflow:visible}
+#canvas-shell .flux-settings:not([open])>summary{position:absolute;right:0;top:-43px}
+#canvas-shell .flux-settings[open]>summary{position:absolute;right:0;top:-43px}
+#canvas-shell .flux-library-compact>p:not(.palette-count),#canvas-shell .flux-library-compact .hint{display:none!important}
+#canvas-shell .flux-library-compact{padding:14px 9px!important}
+#canvas-shell .flux-library-compact h2{font-size:13px!important;margin-bottom:10px!important}
+#canvas-shell .flux-library-compact .palette button{min-height:39px!important}
+#canvas-shell #runner{background:#fff}
+#canvas-shell #status{font-size:11px;padding:7px 14px}
+@media(max-width:800px){#canvas-shell .workspace-bar{padding:8px!important}.flux-mode-tabs button{padding:9px;font-size:12px}#canvas-shell .flux-main-view[data-view=automations],#canvas-shell .flux-main-view[data-view=assistant],#canvas-shell .flux-main-view[data-view=logs]{padding:12px}#canvas-shell .flux-main-view .canvas-wrap{min-height:65vh!important}}

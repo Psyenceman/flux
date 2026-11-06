@@ -1,0 +1,13 @@
+#flux-automation-library,#flux-automation-logs{margin:12px;padding:14px;border:1px solid #405471;border-radius:12px;background:#17263b}
+#flux-automation-library h2,#flux-automation-logs h2{margin:0 0 6px;font-size:15px}
+#flux-automation-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:10px;max-height:260px;overflow:auto}
+.flux-automation-card{background:#223752;color:#eaf2fc;border:1px solid #526a8c;border-radius:10px;padding:12px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:6px}
+.flux-automation-card:hover,.flux-automation-card:focus-visible{border-color:#a0c9ff;outline:2px solid #80b5ff;outline-offset:1px}
+.flux-automation-card[aria-current=true]{border-color:#8fbaff;background:#2a4668}
+.flux-automation-card small{color:#c6d7e9}
+#flux-automation-log-list{max-height:260px;overflow:auto}
+#flux-automation-log-list details{padding:10px;border-bottom:1px solid #405471}
+#flux-automation-log-list summary{cursor:pointer}
+#flux-automation-log-list pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:200px;overflow:auto}
+
+.flux-log-tools{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.flux-log-tools select,.flux-log-tools button{background:#243a57;border:1px solid #526a8c;color:#eef4fc;padding:8px;border-radius:8px;cursor:pointer}

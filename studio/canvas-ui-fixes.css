@@ -1,0 +1,19 @@
+/* Focused corrections: header controls, drag affordance and distinct block silhouettes. */
+#canvas-shell .workspace-bar{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important}
+#canvas-shell .workspace-actions{display:flex!important;align-items:center!important;gap:8px!important;position:relative!important;flex-shrink:0}
+#canvas-shell .flux-settings{position:static!important;margin:0!important;height:auto!important;align-self:auto!important;overflow:visible!important;z-index:50!important}
+#canvas-shell .flux-settings>summary,#canvas-shell .flux-settings[open]>summary,#canvas-shell .flux-settings:not([open])>summary{position:static!important;top:auto!important;right:auto!important;display:block!important;border:1px solid #d9dfeb!important;border-radius:8px!important;background:#fff!important;color:#44516d!important;padding:8px 12px!important;white-space:nowrap!important;font-weight:600!important;cursor:pointer}
+#canvas-shell .flux-settings[open]>#canvas-cloud{position:absolute!important;top:calc(100% + 9px)!important;right:0!important;left:auto!important;width:350px!important;max-width:calc(100vw - 32px)!important;z-index:100!important}
+#canvas-shell .workspace-actions #toggle-library{white-space:nowrap!important;min-width:108px!important}
+#canvas-shell.flux-group-mode .canvas-wrap,#canvas-shell.flux-group-mode #canvas{cursor:grab!important;touch-action:none}
+#canvas-shell.flux-group-mode #canvas:active{cursor:grabbing!important}
+#canvas-shell .node{border-radius:18px!important;border-width:2px!important;min-height:74px}
+#canvas-shell .node[data-type=filter],#canvas-shell .node[data-type=router]{border-radius:11px 26px 11px 26px!important;background:#fff5df!important;border-color:#dba75b!important}
+#canvas-shell .node[data-type=webhook],#canvas-shell .node[data-type=manual],#canvas-shell .node[data-type=schedule]{border-radius:30px!important;background:#fce9f1!important;border-color:#d27a9d!important}
+#canvas-shell .node[data-type=mapper],#canvas-shell .node[data-type=flux]{border-radius:13px!important;background:#f1ecff!important;border-color:#9785d2!important}
+#canvas-shell .node[data-type=log],#canvas-shell .node[data-type=delay],#canvas-shell .node[data-type=merge]{border-radius:9px!important;background:#f1f3f7!important;border-color:#a0adbf!important}
+#canvas-shell .node[data-type=trello],#canvas-shell .node[data-type=airtable],#canvas-shell .node[data-type=miro],#canvas-shell .node[data-type=slack],#canvas-shell .node[data-type=email],#canvas-shell .node[data-type=http]{border-radius:16px!important;border-left-width:5px!important}
+#canvas-shell .node .block-icon{width:34px!important;height:34px!important;border-radius:12px!important}
+#canvas-shell .node[data-type=webhook] .block-icon,#canvas-shell .node[data-type=manual] .block-icon,#canvas-shell .node[data-type=schedule] .block-icon{border-radius:50%!important}
+#canvas-shell .node[data-type=filter] .block-icon,#canvas-shell .node[data-type=router] .block-icon{transform:rotate(-8deg)}
+@media(max-width:760px){#canvas-shell .workspace-bar{flex-wrap:wrap!important}.flux-mode-tabs{overflow-x:auto}.workspace-actions{margin-left:0!important}}

@@ -1,0 +1,15 @@
+/* Workflow canvas — cleaner visual hierarchy inspired by visual automation builders. */
+#canvas-shell .flux-select-all{border:1px solid #c8cce0;border-radius:9px;background:#fff;color:#424c75;font-weight:700;padding:9px 12px;cursor:pointer;white-space:nowrap}
+#canvas-shell .flux-select-all[aria-pressed=true]{background:#5646bd;color:#fff;border-color:#5646bd}
+#canvas-shell.flux-group-mode .node{outline:2px dashed #8c7be2!important;outline-offset:4px;cursor:grab!important}
+#canvas-shell.flux-group-mode .node:active{cursor:grabbing!important}
+#canvas-shell .node{border-radius:16px!important;box-shadow:0 5px 16px #24304b13!important}
+#canvas-shell .node .block-icon{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#fff!important;color:#5447b6!important;border:1px solid #d9d8ee;font-size:16px;font-weight:800;flex-shrink:0}
+#canvas-shell .node .node-head{display:flex;align-items:center;gap:8px}
+#canvas-shell .flux-edge-plus{border-color:#aa9ce3!important;color:#5b48b8!important}
+#canvas-shell .flux-edge-plus:hover{background:#5b48b8!important;color:#fff!important}
+#canvas-shell .node[data-type=filter],#canvas-shell .node[data-type=router]{background:#fff8ed!important;border-color:#e6ba72!important}
+#canvas-shell .node[data-type=webhook],#canvas-shell .node[data-type=manual],#canvas-shell .node[data-type=schedule]{background:#fff0f5!important;border-color:#d77d9c!important}
+#canvas-shell .node[data-type=mapper],#canvas-shell .node[data-type=flux]{background:#f4efff!important;border-color:#a998df!important}
+#canvas-shell .node[data-type=airtable],#canvas-shell .node[data-type=trello],#canvas-shell .node[data-type=miro],#canvas-shell .node[data-type=slack],#canvas-shell .node[data-type=email],#canvas-shell .node[data-type=http]{background:#f0f8ff!important;border-color:#87b7df!important}
+#canvas-shell .canvas-wrap{background-color:#f8f9fc!important;background-image:radial-gradient(#dfe3ec 1px,transparent 1px)!important;background-size:26px 26px!important}

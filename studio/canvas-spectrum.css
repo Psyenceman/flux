@@ -1,0 +1,84 @@
+/* Flux Spectrum: colorful, focused automation editor — final layer. */
+:root{color-scheme:light!important;--flux-purple:#7928f5;--flux-pink:#f43f87;--flux-blue:#168bff;--flux-orange:#ff982a;--flux-teal:#00bfa6;--flux-yellow:#ffc83d;--flux-ink:#251a42;--flux-line:#e9e3f5;--flux-canvas:#fbf9ff}
+body{background:#f8f5ff!important;color:#251a42!important;font-family:Inter,system-ui,sans-serif}
+body>header{background:#fff!important;border-bottom:1px solid #eee8fa!important;padding:10px 18px!important}
+body>header h1{font-size:16px!important;color:#33204e!important}
+body>header p{font-size:11px!important;color:#796d91!important}
+#canvas-shell{background:#f8f5ff!important}
+#canvas-shell main{background:#fbf9ff!important;min-width:0!important}
+#canvas-shell .workspace-bar{background:#fff!important;border-bottom:1px solid #eee7fa!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;min-height:54px!important;padding:8px 16px!important}
+#canvas-shell .workspace-actions{position:static!important;display:flex!important;align-items:center!important;gap:8px!important;flex-shrink:0!important;margin-left:auto!important}
+#canvas-shell .workspace-actions #toggle-library{position:static!important;top:auto!important;right:auto!important;margin:0!important;min-width:94px!important;background:#f4edff!important;color:#6e2ad0!important;border:1px solid #eadcff!important;border-radius:9px!important;padding:8px 11px!important}
+#canvas-shell .flux-mode-tabs{display:flex!important;gap:6px!important;align-items:center!important;flex-wrap:wrap!important}
+#canvas-shell .flux-mode-tabs button{color:#796b94!important;background:transparent!important;border-radius:10px!important;padding:10px 13px!important;font-size:12px!important;font-weight:750!important}
+#canvas-shell .flux-mode-tabs button[aria-current=true]{background:#7928f5!important;color:#fff!important;box-shadow:0 3px 9px #7928f52e!important}
+#canvas-shell .flux-main-view{background:#fbf9ff!important;min-width:0!important}
+#canvas-shell .flux-main-view [hidden],#canvas-shell main [hidden]{display:none!important}
+#canvas-shell .flux-main-view[data-view=editor]{padding:0!important;max-width:none!important}
+#canvas-shell .flux-main-view[data-view=automations],#canvas-shell .flux-main-view[data-view=assistant],#canvas-shell .flux-main-view[data-view=logs]{padding:24px!important;max-width:1050px!important;margin:0 auto!important}
+#canvas-shell .flux-main-view[data-view=automations]>#flux-automation-library,#canvas-shell .flux-main-view[data-view=assistant]>#flux-assistant-panel,#canvas-shell .flux-main-view[data-view=logs]>#flux-automation-logs{margin:0!important;max-height:none!important;min-height:320px!important;border-radius:18px!important;box-shadow:0 8px 26px #4b1f8610!important;padding:24px!important}
+#canvas-shell .compact-actions{background:#fff!important;padding:9px 15px!important;border-bottom:1px solid #eee8fa!important;gap:8px!important;align-items:center!important}
+#canvas-shell .compact-actions button{border-radius:10px!important}
+#canvas-shell .compact-actions #execute,#canvas-shell .compact-actions #save{background:#7928f5!important;color:#fff!important;border-color:#7928f5!important}
+#canvas-shell .compact-actions .more-actions{margin-left:auto!important;position:relative!important}
+#canvas-shell .compact-actions .more-actions>summary{background:#f5efff!important;color:#6a2fc1!important;border:1px solid #e6d8ff!important;border-radius:10px!important;padding:9px 12px!important;cursor:pointer!important}
+#canvas-shell .compact-actions .more-actions[open]{z-index:200!important}
+#canvas-shell .compact-actions .more-actions>.flux-settings{position:relative!important;display:block!important;height:auto!important;margin:4px 0!important;overflow:visible!important}
+#canvas-shell .compact-actions .more-actions>.flux-settings>summary{position:static!important;inset:auto!important;padding:8px 10px!important;background:#f8f3ff!important;color:#6427bf!important;border:1px solid #e5d8fb!important}
+#canvas-shell .compact-actions .more-actions>.flux-settings[open]>#canvas-cloud{position:absolute!important;top:100%!important;right:0!important;z-index:300!important}
+#canvas-shell .canvas-wrap{background-color:#fbf9ff!important;background-image:radial-gradient(#e6d9f8 1.2px,transparent 1.2px)!important;background-size:25px 25px!important;min-height:70vh!important}
+#canvas-shell .node{box-sizing:border-box!important;min-height:58px!important;padding:8px 10px!important;border-width:2px!important;border-style:solid!important;border-radius:15px!important;box-shadow:0 4px 13px #39206317!important;background:#fff!important;user-select:none!important}
+#canvas-shell .node .node-head{font-size:12px!important;font-weight:800!important;color:#281a44!important;gap:7px!important}
+#canvas-shell .node .node-meta{font-size:10px!important;color:#6e6184!important;margin-top:3px!important}
+#canvas-shell .node .block-icon{width:27px!important;height:27px!important;min-width:27px!important;display:inline-grid!important;place-items:center!important;font-size:15px!important;font-weight:850!important;border-radius:9px!important;background:#fff!important;color:inherit!important;border:1px solid #ffffffa8!important}
+#canvas-shell .node[data-type=manual],#canvas-shell .node[data-type=schedule],#canvas-shell .node[data-type=webhook]{background:#fff0f7!important;border-color:#f43f87!important;border-radius:30px!important}
+#canvas-shell .node[data-type=manual] .block-icon,#canvas-shell .node[data-type=schedule] .block-icon,#canvas-shell .node[data-type=webhook] .block-icon{background:#f43f87!important;color:#fff!important;border-radius:50%!important}
+#canvas-shell .node[data-type=filter],#canvas-shell .node[data-type=router]{background:#fff4e4!important;border-color:#ff982a!important;border-radius:8px 23px 8px 23px!important}
+#canvas-shell .node[data-type=filter] .block-icon,#canvas-shell .node[data-type=router] .block-icon{background:#ff982a!important;color:#fff!important;transform:none!important}
+#canvas-shell .node[data-type=mapper],#canvas-shell .node[data-type=flux]{background:#f2eaff!important;border-color:#7928f5!important}
+#canvas-shell .node[data-type=mapper] .block-icon,#canvas-shell .node[data-type=flux] .block-icon{background:#7928f5!important;color:#fff!important}
+#canvas-shell .node[data-type=log],#canvas-shell .node[data-type=delay],#canvas-shell .node[data-type=merge],#canvas-shell .node[data-type=loop]{background:#e8fff9!important;border-color:#00bfa6!important;border-radius:10px!important}
+#canvas-shell .node[data-type=log] .block-icon,#canvas-shell .node[data-type=delay] .block-icon,#canvas-shell .node[data-type=merge] .block-icon,#canvas-shell .node[data-type=loop] .block-icon{background:#00bfa6!important;color:#fff!important}
+#canvas-shell .node[data-type=airtable],#canvas-shell .node[data-type=trello],#canvas-shell .node[data-type=slack],#canvas-shell .node[data-type=miro],#canvas-shell .node[data-type=email],#canvas-shell .node[data-type=http],#canvas-shell .node[data-type=sheets],#canvas-shell .node[data-type=drive],#canvas-shell .node[data-type=github],#canvas-shell .node[data-type=wordpress],#canvas-shell .node[data-type=database]{background:#eaf6ff!important;border-color:#168bff!important;border-left-width:4px!important}
+#canvas-shell .node.selected{outline:3px solid #7928f5!important;outline-offset:3px!important}
+#canvas-shell .node .port.in{background:#7928f5!important;border-color:#fff!important}
+#canvas-shell .node .port.out{background:#00bfa6!important;border-color:#fff!important}
+#canvas-shell .flux-connection-path{stroke:#b48bed!important;stroke-width:3!important;stroke-linecap:round!important;transition:stroke .18s}
+#canvas-shell .flux-connection-path:hover{stroke:#7928f5!important;stroke-width:5!important}
+#canvas-shell .flux-edge-plus{background:#fff!important;color:#7928f5!important;border:2px solid #a77af1!important;border-radius:50%!important;box-shadow:0 3px 12px #7928f52b!important}
+#canvas-shell .flux-edge-plus:hover{background:#7928f5!important;color:#fff!important}
+#canvas-shell .flux-select-all{background:#f2eaff!important;color:#6c29d3!important;border:1px solid #d8bffa!important}
+#canvas-shell .flux-select-all[aria-pressed=true]{background:#7928f5!important;color:#fff!important}
+#canvas-shell.flux-group-mode .node{outline:2px dashed #7928f5!important;outline-offset:4px!important}
+#canvas-shell .palette button{border-radius:11px!important}
+#canvas-shell .palette button:hover{background:#f2eaff!important;border-color:#bd9ff2!important}
+#flux-assistant-suggest{background:#7928f5!important;border-color:#7928f5!important;color:#fff!important}
+#flux-automation-library h2,#flux-assistant-panel h2,#flux-automation-logs h2{color:#382054!important}
+@media(max-width:780px){#canvas-shell .workspace-bar{flex-wrap:wrap!important}#canvas-shell .flux-mode-tabs{overflow-x:auto!important}#canvas-shell .flux-main-view[data-view=automations],#canvas-shell .flux-main-view[data-view=assistant],#canvas-shell .flux-main-view[data-view=logs]{padding:12px!important}}
+
+/* Spectrum canvas contrast: unmistakably different from the previous white UI. */
+html,body{background:#eee6ff!important}
+#canvas-shell{background:#eee6ff!important}
+#canvas-shell main,#canvas-shell .flux-main-view{background:#f0eaff!important}
+#canvas-shell .canvas-wrap,#canvas-shell #viewport{
+ background-color:#eee6ff!important;
+ background-image:radial-gradient(circle,#c9afe9 1.25px,transparent 1.6px),linear-gradient(145deg,#f6eeff 0%,#eee4ff 48%,#e8f2ff 100%)!important;
+ background-size:26px 26px,100% 100%!important;
+ background-position:0 0,0 0!important;
+}
+#canvas-shell #library-panel{
+ background:linear-gradient(180deg,#5520b6 0%,#7928f5 55%,#9437e9 100%)!important;
+ color:#fff!important;border-right:1px solid #6b26d4!important;
+}
+#canvas-shell #library-panel h2,#canvas-shell #library-panel label,#canvas-shell #library-panel p,#canvas-shell #library-panel .palette-count{color:#fff!important}
+#canvas-shell #library-panel .palette-search-label{color:#f1e7ff!important}
+#canvas-shell #library-panel #palette-search{background:#fff!important;color:#30204d!important;border:1px solid #e4d6ff!important;border-radius:10px!important}
+#canvas-shell #library-panel .palette-filters button{background:#7135d1!important;color:#fff!important;border-color:#a783f4!important}
+#canvas-shell #library-panel .palette-filters button[aria-pressed=true]{background:#fff!important;color:#6321c5!important}
+#canvas-shell #library-panel .palette button{background:#fff!important;color:#35234f!important;border:1px solid #d9c8f3!important;box-shadow:0 2px 7px #36126b24!important}
+#canvas-shell #library-panel .palette button:hover{background:#f3eaff!important;border-color:#f5b9ef!important}
+#canvas-shell .canvas-tools{background:#fff!important;border-bottom:1px solid #e7d8f7!important}
+#canvas-shell .compact-actions{background:#fff!important}
+#canvas-shell .node{box-shadow:0 5px 16px #5d32962c!important}
+#canvas-shell .flux-edge-plus{z-index:5!important}
+@media(max-width:780px){#canvas-shell #library-panel{background:#6723d1!important}}

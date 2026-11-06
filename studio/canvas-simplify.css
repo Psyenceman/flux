@@ -1,0 +1,18 @@
+/* Flux Studio: simpler hierarchy and readable controls */
+#library-panel .hint{display:none}
+#library-panel{padding:12px}
+#palette-search{font-size:14px;min-height:42px}
+.palette button{min-height:44px;display:flex;align-items:center;gap:10px}
+.palette .app-logo,.block-icon img{width:25px;height:25px;object-fit:contain;flex-shrink:0}
+#runner{border:1px solid #465b79;border-radius:14px;margin:12px;padding:18px!important;background:#17253a}
+#runner h2{font-size:19px}
+#run-now{font-weight:700;font-size:15px;min-height:44px}
+#run-output{line-height:1.55}
+.workspace-actions button,.compact-actions button{min-height:38px}
+#inspector-panel .inspector-help{line-height:1.6}
+@media(max-width:950px){
+ .shell{display:flex;flex-direction:column}
+ #library-panel{max-height:245px;overflow:auto}
+ .canvas-wrap{min-height:60vh}
+ #inspector-panel{max-height:55vh;overflow:auto}
+}

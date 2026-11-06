@@ -1,0 +1,44 @@
+/* Flux Studio TEST — unified light design system, 2026-11-05 */
+:root{color-scheme:light!important;--flux-ink:#152941;--flux-muted:#5c6d83;--flux-line:#dbe4ef;--flux-blue:#245ed2;--flux-surface:#fff;--flux-canvas:#f5f8fd}
+body{background:#f5f8fd!important;color:var(--flux-ink)!important}
+#canvas-shell main{background:#f5f8fd}
+#flux-automation-library,#flux-automation-logs,#flux-assistant-panel{background:#fff!important;color:var(--flux-ink)!important;border:1px solid var(--flux-line)!important;border-radius:14px!important;box-shadow:0 2px 10px #1a345408!important;margin:10px 14px!important;padding:14px!important}
+#flux-automation-library h2,#flux-automation-logs h2,#flux-assistant-panel h2{color:#182f4e!important;font-size:15px!important}
+#flux-automation-library p,#flux-automation-logs p,#flux-assistant-panel p,#flux-automation-library-status{color:var(--flux-muted)!important}
+#flux-automation-cards{display:flex!important;gap:9px!important;max-height:135px!important}
+.flux-automation-card{background:#f5f8ff!important;color:#1b3456!important;border:1px solid #cbdaf0!important;border-radius:12px!important;min-width:205px;max-width:340px;box-shadow:none!important}
+.flux-automation-card strong{color:#1c3760!important}
+.flux-automation-card small{color:#59718e!important}
+.flux-automation-card[aria-current=true]{background:#eaf1ff!important;border-color:#326bd6!important}
+.flux-automation-card:hover{background:#edf4ff!important}
+#flux-assistant-panel textarea{background:#fff;color:#172b48;border:1px solid #c8d7e8;border-radius:10px;padding:11px;font:inherit;resize:vertical}
+#flux-assistant-panel button,.flux-log-tools button,.flux-log-tools select{font:inherit;font-size:12px;font-weight:650;border:1px solid #cbd8ea;border-radius:9px;padding:9px 12px;background:#f5f8ff;color:#20456f;cursor:pointer;margin:6px 6px 0 0}
+#flux-assistant-suggest{background:#245ed2!important;color:white!important;border-color:#245ed2!important}
+#flux-assistant-feedback{color:#284562;background:#f5f8fd;padding:10px;border-radius:8px;overflow-wrap:anywhere;white-space:pre-wrap}
+#flux-automation-log-list details{color:#243e5d;border-bottom:1px solid #e0e7f1}
+#flux-automation-log-list pre{color:#314a66;background:#f5f8fd;border-radius:8px;padding:10px}
+.flux-log-tools select,.flux-log-tools button{background:#fff!important;color:#25456b!important;border-color:#cbd8ea!important}
+.flux-drawer{margin:10px 14px;background:#fff;border:1px solid var(--flux-line);border-radius:12px;overflow:hidden}
+.flux-drawer>summary{padding:12px 15px;cursor:pointer;font-size:13px;font-weight:750;color:#243f60;list-style-position:inside}
+.flux-drawer>summary:hover{background:#f1f6ff}
+.flux-drawer[open]>summary{border-bottom:1px solid var(--flux-line)}
+.flux-drawer>#flux-assistant-panel,.flux-drawer>#flux-automation-logs{margin:0!important;border:0!important;box-shadow:none!important}
+#canvas-shell .canvas-wrap{min-height:65vh!important;background-color:#f7f9fd}
+#canvas-shell .node{color:#152941!important}
+#canvas-shell .node[data-type="manual"],#canvas-shell .node[data-type="schedule"],#canvas-shell .node[data-type="webhook"]{background:#dbeafe!important;border-color:#3974d0!important}
+#canvas-shell .node[data-type="filter"],#canvas-shell .node[data-type="router"]{background:#fff0ce!important;border-color:#d69b2b!important}
+#canvas-shell .node[data-type="mapper"],#canvas-shell .node[data-type="flux"]{background:#eee5ff!important;border-color:#9264d1!important}
+#canvas-shell .node[data-type="log"],#canvas-shell .node[data-type="delay"],#canvas-shell .node[data-type="merge"],#canvas-shell .node[data-type="loop"]{background:#e9eff8!important;border-color:#7b91af!important}
+#canvas-shell .node .node-head{color:#152941!important;font-weight:750!important}
+#canvas-shell .node .node-meta,#canvas-shell .node small{color:#425976!important}
+#canvas-shell .node .port.in{background:#286ad0!important}#canvas-shell .node .port.out{background:#0b887f!important}
+#canvas-shell .node.selected{outline:3px solid #286ad0!important}
+#canvas-cloud{gap:8px!important}
+#canvas-cloud-user{order:5;flex-basis:100%}
+#canvas-cloud-status{order:6;flex-basis:100%}
+#flux-automation-library>p:first-of-type{display:none}
+#flux-automation-library-status{margin:7px 0 0}
+#flux-automation-library{padding:11px 14px!important}
+#flux-automation-library h2{margin:0 0 9px!important}
+#flux-automation-logs>p{font-size:12px}
+@media(max-width:720px){#flux-automation-cards{overflow-x:auto}#flux-automation-library,.flux-drawer{margin:8px!important}#canvas-shell .canvas-wrap{min-height:480px!important}}
