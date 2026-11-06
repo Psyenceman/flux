@@ -33,3 +33,16 @@ test('condition traces show executed, filtered and skipped paths',async()=>{
  assert.deepEqual(no.trace.map(x=>x.status),['completed','filtered','skipped']);
 });
 test('cycles are rejected',()=>assert.throws(()=>validateGraph({version:1,nodes:[{id:'a',type:'manual'},{id:'b',type:'log'}],edges:[{from:'a',to:'b'},{from:'b',to:'a'}]}),/Cycles/));
+
+test('HubSpot create contact is simulated without credentials',async()=>{
+ const result=await executeGraph(graph('hubspot',{operation:'create_contact',properties:'{"email":"demo@example.com","firstname":"Demo"}'}),{},{dryRun:true});
+ assert.equal(result.ok,true);assert.equal(result.trace[0].status,'simulated');
+});
+test('HubSpot create contact rejects missing email',async()=>{
+ const result=await executeGraph(graph('hubspot',{operation:'create_contact',properties:'{"firstname":"Demo"}'}),{},{dryRun:true});
+ assert.equal(result.ok,false);assert.equal(result.trace[0].status,'failed');
+});
+test('HubSpot search without credentials is skipped',async()=>{
+ const result=await executeGraph(graph('hubspot',{operation:'search_contacts',query:'demo@example.com'}),{},{dryRun:true});
+ assert.equal(result.trace[0].status,'skipped');
+});
