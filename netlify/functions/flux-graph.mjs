@@ -29,7 +29,12 @@ export async function handler(event){
   }catch{return json(503,{ok:false,error:'Authentication service unavailable'});}
   if(!authenticated)return json(401,{ok:false,error:'Flux Studio session expired. Sign in again.'});
   sessionToken=bearer[1];
-  if(!dryRun)return json(403,{ok:false,error:'Live execution requires separate server authorization. Use Dry run.'});
+  if(!dryRun){
+   const nodes=body.graph?.nodes,edges=body.graph?.edges;
+   if(!Array.isArray(nodes)||nodes.length!==1||!Array.isArray(edges)||edges.length!==0||nodes[0]?.type!=='trello'||nodes[0]?.config?.operation!=='create_card')
+    return json(403,{ok:false,error:'Live TEST execution is limited to a single Trello Create card block'});
+   if(body.confirmLiveTrello!==true)return json(403,{ok:false,error:'Explicit Trello creation confirmation required'});
+  }
  }
 
  let notificationUrl;
@@ -39,6 +44,7 @@ export async function handler(event){
  }
  try{
   validateGraph(body.graph);
+  if(!dryRun&&(!sessionOwner||body.confirmLiveTrello!==true))return json(403,{ok:false,error:'Authenticated confirmation required for Trello writes'});
   let credits=null;
   if(sessionToken){
    const creditResponse=await fetch('https://sgxinvmfkznzoueqjzop.supabase.co/rest/v1/rpc/flux_consume_credit',{
