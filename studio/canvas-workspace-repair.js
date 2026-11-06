@@ -243,14 +243,15 @@
  let down=null;
  graphNodes?.addEventListener('pointerdown',event=>{
   const element=event.target.closest('.node');
-  if(!element||event.target.closest('button,.port')){down=null;return;}
+  if(!element||event.button!==0||event.target.closest('button,.port')||event.target.closest('[role="menu"],.flux-block-menu')){down=null;return;}
   down={id:element.dataset.nodeId,x:event.clientX,y:event.clientY};
  },true);
  graphNodes?.addEventListener('pointerup',event=>{
   if(!down)return;
   const saved=down;down=null;
+  if(event.button!==0||event.target.closest('button,.port,[role="menu"],.flux-block-menu'))return;
   if(Math.hypot(event.clientX-saved.x,event.clientY-saved.y)>7)return;
-  queueMicrotask(()=>window.fluxOpenBlockConfig?.(saved.id));
+  queueMicrotask(()=>{if(document.querySelector('[role="menu"]:not([hidden]),.flux-block-menu:not([hidden])'))return;window.fluxOpenBlockConfig?.(saved.id);});
  },true);
  graphNodes?.addEventListener('pointercancel',()=>{down=null;},true);
  graphNodes?.addEventListener('keydown',event=>{
