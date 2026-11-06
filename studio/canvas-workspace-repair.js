@@ -387,7 +387,7 @@
   const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel';cancel.addEventListener('click',close);
   const save=document.createElement('button');save.type='button';save.className='fm-primary';save.textContent='Save';
   save.addEventListener('click',()=>{
-   let error='';for(const check of validate){error=check();if(error)break;}if(error){help.textContent=error;help.style.color='#bc3030';return;}node.config={...node.config,...draft};
+   let error='';for(const check of validate){error=check();if(error)break;}if(error){help.textContent=error;help.style.color='#bc3030';return;}if(node.type==='filter'&&draft.operation!=='compare'){delete draft.field;delete draft.operator;delete draft.value;const previous={...node.config};delete previous.field;delete previous.operator;delete previous.value;node.config={...previous,...draft};}else node.config={...node.config,...draft};
    window.dispatchEvent(new Event('flux:canvas-changed'));
    const status=document.getElementById('status');if(status)status.textContent=node.label+' configured. Save your Flux to keep the changes.';
    close();
