@@ -105,7 +105,7 @@
  function render(){
   results.replaceChildren();let count=0;
   for(const b of palette.querySelectorAll('button[data-search]')){
-   const type=b.dataset.search?.split(' ')[0]||'';
+   const type=['manual','schedule','webhook','router','mapper','loop','filter','condition','delay','merge','log','flux','slack','email','whatsapp','telegram','discord','resend','airtable','sheets','database','supabase','http'].find(t=>(' '+b.dataset.search+' ').includes(' '+t+' '))||'';
    const category=classify(type);
    if(active!=='All'&&active!==category)continue;
    if(!b.dataset.search.includes(search.value.trim().toLowerCase()))continue;
