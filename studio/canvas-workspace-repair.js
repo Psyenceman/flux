@@ -392,6 +392,21 @@
    const status=document.getElementById('status');if(status)status.textContent=node.label+' configured. Save your Flux to keep the changes.';
    close();
   });
+  if(node.type==='trello'){
+   const createReal=document.createElement('button');createReal.type='button';createReal.textContent='Create Trello card';createReal.className='fm-create-trello';
+   createReal.style.cssText='padding:10px 15px;background:#a83a23;color:white;border:0;border-radius:9px;font-weight:700;cursor:pointer';
+   const updateCreate=()=>{const enabled=(draft.operation==='create_card');createReal.hidden=!enabled;createReal.disabled=!enabled;};
+   updateCreate();
+   body.addEventListener('change',updateCreate);
+   createReal.addEventListener('click',()=>{
+    save.click();
+    if(modal.open)return; // validation failed: keep configuration visible
+    const run=document.getElementById('flux-trello-live');
+    if(run)run.click();
+    else alert('Trello execution is unavailable. Refresh Flux Studio TEST.');
+   });
+   footerActions.append(createReal);
+  }
   footerActions.append(cancel,save);modal.append(footerActions);
   if(modal.open)modal.close();
   // Stable centered positioning: independent of canvas zoom, scroll and node location.
