@@ -1,1 +1,16 @@
 #flux-test-results{font-size:13px;line-height:1.5}#flux-test-results>strong{display:block;font-size:16px;margin:8px 0}#flux-test-results>p{margin:5px 0 12px}.flux-test-steps{list-style:none;padding:0;margin:8px 0}.flux-test-steps li{padding:10px 12px;border:1px solid #c8d6e8;border-radius:9px;margin-bottom:7px;background:#fff}.flux-test-steps li>strong{font-size:13px}.flux-step-status{float:right;text-transform:capitalize;font-size:11px;font-weight:700;color:#314b70}.flux-step-status.completed{color:#176b4c}.flux-step-status.filtered{color:#94621b}.flux-step-status.skipped{color:#9d4b40}.flux-step-status.simulated{color:#475cb0}.flux-test-steps p{margin:6px 0;color:#516782}.flux-test-steps details{margin-top:8px}.flux-test-steps pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:200px;overflow:auto;font-size:11px;background:#edf3fa;color:#213d5d;padding:8px;border-radius:6px}.flux-raw-result{margin-top:12px;color:#526b88}.flux-raw-result summary{cursor:pointer}.flux-raw-result #run-output{margin-top:10px}
+
+/* Flux Explain — plain-language execution diagnostics (TEST). */
+#flux-test-results .flux-explain{border:1px solid #d9d0ec;border-radius:15px;background:#faf8ff;color:#2a2342;padding:18px;margin:12px 0 18px;box-shadow:0 4px 16px #34215b0a}
+#flux-test-results .flux-explain-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#flux-test-results .flux-explain-header strong{font-size:17px;color:#4f31a7}
+#flux-test-results .flux-explain-state{font-size:11px;font-weight:750;border-radius:999px;padding:6px 10px;background:#ece5ff;color:#5436a6}
+#flux-test-results .flux-explain-state[data-kind="error"]{background:#ffe8e8;color:#9b303b}
+#flux-test-results .flux-explain-state[data-kind="warning"]{background:#fff1d8;color:#825713}
+#flux-test-results .flux-explain-state[data-kind="success"]{background:#e8f5ef;color:#24684f}
+#flux-test-results .flux-explain-summary{color:#443b58;font-size:13px;line-height:1.6;margin:13px 0}
+#flux-test-results .flux-explain-error{border-left:3px solid #c65a68;background:#fff2f3;padding:10px 12px;border-radius:5px;color:#7c2b3b;overflow-wrap:anywhere}
+#flux-test-results .flux-explain-advice{padding-left:20px;margin:12px 0;color:#423852;font-size:12px;line-height:1.6}
+#flux-test-results .flux-explain-advice li{margin:7px 0}
+#flux-test-results .flux-explain-details{background:#fff;color:#5938b2;border:1px solid #cbbbed;border-radius:9px;padding:9px 12px;cursor:pointer;font-weight:700}
+#flux-test-results .flux-explain-details:hover{background:#f0eaff}
