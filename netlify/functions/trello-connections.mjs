@@ -7,7 +7,10 @@ export async function handler(event){
   if(!id)return json(401,{ok:false,error:'Sign in first'});
   stage='connections_query';
   const rows=await db('flux_connections?owner_id=eq.'+id+'&provider=eq.trello&select=id,status,provider_account_label');
-  return json(200,{ok:true,connections:rows||[]});
+  const credentials=await db('flux_trello_credentials?owner_id=eq.'+id+'&select=expires_at');
+  const valid=Boolean(credentials?.length)&&(!credentials[0].expires_at||Date.parse(credentials[0].expires_at)>Date.now());
+  const connections=(rows||[]).map(row=>({...row,status:row.status==='connected'&&valid?'connected':'disconnected'}));
+  return json(200,{ok:true,connections});
  }catch(error){
   // Do not expose database responses, session tokens or credentials to the browser.
   console.error('Trello connections TEST failed at '+stage+': '+(error instanceof Error?error.name:'UnknownError'));
