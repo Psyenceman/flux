@@ -27,6 +27,7 @@ const fluxFeedback=(message,kind='info')=>{
  panel.style.borderColor=kind==='error'?'#c13d4d':kind==='success'?'#288c74':'#2684bd';
  let content=panel.querySelector('[data-flux-feedback-text]');if(!content){content=document.createElement('div');content.dataset.fluxFeedbackText='';panel.append(content);}content.textContent=message;
 };
+window.fluxShowFeedback=fluxFeedback;
 /* Move the whole workflow by dragging empty canvas while group mode is enabled. */
 let workflowDrag=null;
 canvas.addEventListener('pointerdown',event=>{
