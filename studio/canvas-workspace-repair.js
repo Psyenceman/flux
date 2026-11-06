@@ -66,10 +66,14 @@
  const palette=document.getElementById('palette');
  const main=document.querySelector('#canvas-shell > main');
  if(!palette||!main)return;
- document.getElementById('toggle-library')?.remove();\n const style=document.createElement('style');
+ document.getElementById('toggle-library')?.remove();
+ const style=document.createElement('style');
  style.textContent=`
  #flux-editor-stage{display:block!important;min-width:0}
- #flux-block-drawer{display:none!important}\n #flux-editor-stage{position:relative}\n #flux-first-block{position:absolute;left:50%;top:35%;transform:translate(-50%,-50%);border:2px dashed #7da8c7;border-radius:16px;background:#fff;color:#163956;padding:25px 35px;font-weight:750;font-size:18px;cursor:pointer;z-index:3;box-shadow:0 6px 28px #133d531b}\n #flux-first-block[hidden]{display:none!important}
+ #flux-block-drawer{display:none!important}
+ #flux-editor-stage{position:relative}
+ #flux-first-block{position:absolute;left:50%;top:35%;transform:translate(-50%,-50%);border:2px dashed #7da8c7;border-radius:16px;background:#fff;color:#163956;padding:25px 35px;font-weight:750;font-size:18px;cursor:pointer;z-index:3;box-shadow:0 6px 28px #133d531b}
+ #flux-first-block[hidden]{display:none!important}
  #flux-add-block{border:0;border-radius:9px;background:#1674b9;color:#fff;padding:10px 16px;font-weight:700;cursor:pointer}
  #flux-block-dialog{border:1px solid #66819e;border-radius:16px;background:#f7fafd;color:#152943;width:min(650px,calc(100vw - 24px));max-height:85dvh;padding:20px;box-shadow:0 20px 80px #0008}
  #flux-block-dialog::backdrop{background:#071525a8}
