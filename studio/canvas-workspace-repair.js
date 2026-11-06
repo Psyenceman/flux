@@ -238,8 +238,11 @@
  const close=()=>{if(modal.open)modal.close();};
  modal.addEventListener('click',event=>{if(event.target===modal)close();});
  window.addEventListener('flux:automation-opened',close);
+ let lastOpenId=null,lastOpenAt=0;
  window.addEventListener('flux:open-block-config',event=>{
-  const {node,id}=event.detail||{};if(!node||!id)return;hideLegacy();
+  const {node,id}=event.detail||{};if(!node||!id)return;
+  const now=performance.now();if(modal.open&&lastOpenId===id&&now-lastOpenAt<500)return;lastOpenId=id;lastOpenAt=now;
+  hideLegacy();
   const draft={...node.config,schedule:{...(node.config.schedule||{})}};
   modal.replaceChildren();
   const header=document.createElement('div');header.className='fm-head';
