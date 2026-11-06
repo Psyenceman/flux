@@ -5,13 +5,13 @@ window.FluxTrelloConnect = function ({button, title, status, getToken}) {
   button.disabled=busy;
   button.dataset.state=busy?'connecting':connected?'connected':'disconnected';
   button.setAttribute('aria-busy',String(busy));
-  button.textContent=busy?'Connecting…':connected?'✓ Trello connected · Reconnect':'Connect Trello';
+  button.textContent=busy?'Connecting…':connected?'✓ Trello connected · Manage connection':'Connect Trello';
  };
  const check=async()=>{
   const current=++generation;
   const token=await getToken();
   if(disposed||current!==generation)return;
-  if(!token){status.textContent='Sign in to Flux Studio first.';return;}
+  if(!token){connected=null;title.textContent='Trello disconnected';status.textContent='Sign in to Flux Studio first.';render();return;}
   try{
    const response=await fetch('/.netlify/functions/trello-connections',{headers:{authorization:'Bearer '+token},cache:'no-store'});
    const data=await response.json();
@@ -22,7 +22,7 @@ window.FluxTrelloConnect = function ({button, title, status, getToken}) {
    status.textContent=connected?(connected.provider_account_label||'Account connected'):'Connect once, then reuse your account in your automations.';
    render();
    if(connected)window.dispatchEvent(new Event('flux:trello-connected'));
-  }catch(error){if(!disposed&&current===generation)status.textContent=error.message;}
+  }catch(error){if(!disposed&&current===generation){connected=null;title.textContent='Trello status unavailable';status.textContent=error.message;render();}}
  };
  const stop=()=>{clearInterval(timer);timer=null;busy=false;render();};
  const finish=async result=>{
