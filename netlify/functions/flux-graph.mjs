@@ -45,6 +45,19 @@ export async function handler(event){
  try{
   validateGraph(body.graph);
   if(!dryRun&&(!sessionOwner||body.confirmLiveTrello!==true))return json(403,{ok:false,error:'Authenticated confirmation required for Trello writes'});
+  // Never let graph authors select arbitrary server-connected resources.
+  const connectorBlocks=body.graph.nodes.filter(n=>['airtable','sheets','supabase'].includes(n.type));
+  if(connectorBlocks.length){
+   const allowedAirtable=(process.env.FLUX_AIRTABLE_ALLOWED_BASES||'').split(',').map(v=>v.trim()).filter(Boolean);
+   const allowedSheets=(process.env.FLUX_SHEETS_ALLOWED_IDS||'').split(',').map(v=>v.trim()).filter(Boolean);
+   const allowedTables=(process.env.FLUX_SUPABASE_ALLOWED_TABLES||'').split(',').map(v=>v.trim()).filter(Boolean);
+   for(const node of connectorBlocks){
+    const config=node.config||{};
+    if(node.type==='airtable'&&!allowedAirtable.includes(String(config.baseId||'')))return json(403,{ok:false,error:'Airtable base is not approved for Flux TEST'});
+    if(node.type==='sheets'&&!allowedSheets.includes(String(config.spreadsheetId||'')))return json(403,{ok:false,error:'Google Sheets spreadsheet is not approved for Flux TEST'});
+    if(node.type==='supabase'&&!allowedTables.includes(String(config.table||'')))return json(403,{ok:false,error:'Supabase table is not approved for Flux TEST'});
+   }
+  }
   let credits=null;
   if(sessionToken){
    const creditResponse=await fetch('https://sgxinvmfkznzoueqjzop.supabase.co/rest/v1/rpc/flux_consume_credit',{
@@ -61,19 +74,6 @@ export async function handler(event){
    if(!records?.length)return json(409,{ok:false,error:'Connect Trello before testing this workflow'});
    if(records[0].expires_at&&Date.parse(records[0].expires_at)<Date.now())return json(409,{ok:false,error:'Trello connection expired. Reconnect your account.'});
    trelloAccessToken=decrypt(records[0].access_token_ciphertext);
-  }
-  // Never let graph authors select arbitrary server-connected resources.
-  const connectorBlocks=body.graph.nodes.filter(n=>['airtable','sheets','supabase'].includes(n.type));
-  if(connectorBlocks.length){
-   const allowedAirtable=(process.env.FLUX_AIRTABLE_ALLOWED_BASES||'').split(',').map(v=>v.trim()).filter(Boolean);
-   const allowedSheets=(process.env.FLUX_SHEETS_ALLOWED_IDS||'').split(',').map(v=>v.trim()).filter(Boolean);
-   const allowedTables=(process.env.FLUX_SUPABASE_ALLOWED_TABLES||'').split(',').map(v=>v.trim()).filter(Boolean);
-   for(const node of connectorBlocks){
-    const config=node.config||{};
-    if(node.type==='airtable'&&!allowedAirtable.includes(String(config.baseId||'')))return json(403,{ok:false,error:'Airtable base is not approved for Flux TEST'});
-    if(node.type==='sheets'&&!allowedSheets.includes(String(config.spreadsheetId||'')))return json(403,{ok:false,error:'Google Sheets spreadsheet is not approved for Flux TEST'});
-    if(node.type==='supabase'&&!allowedTables.includes(String(config.table||'')))return json(403,{ok:false,error:'Supabase table is not approved for Flux TEST'});
-   }
   }
   const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloAccessToken,airtableToken:process.env.FLUX_AIRTABLE_READ_TOKEN,googleSheetsToken:process.env.FLUX_GOOGLE_SHEETS_TOKEN,supabaseUrl:process.env.FLUX_CONNECTOR_SUPABASE_URL,supabaseServiceToken:process.env.FLUX_CONNECTOR_SUPABASE_TOKEN,telegramToken:process.env.FLUX_TELEGRAM_BOT_TOKEN,telegramChatId:process.env.FLUX_TELEGRAM_CHAT_ID,resendApiKey:process.env.FLUX_RESEND_API_KEY,resendFrom:process.env.FLUX_RESEND_FROM});const metering={model:'preview-v1',unit:'standard_operation',rateFluxCoins:1,billableOperations:result.trace.filter(step=>step.status==='completed').length,simulatedOperations:result.trace.filter(step=>step.status==='simulated').length,excludedOperations:result.trace.filter(step=>['skipped','filtered','failed'].includes(step.status)).length,estimatedFluxCoins:result.trace.filter(step=>step.status==='completed').length,chargedByMetering:false};return json(200,{...result,credits,metering});
  }
