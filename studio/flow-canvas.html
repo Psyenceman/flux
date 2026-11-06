@@ -160,7 +160,7 @@ function field(root,label,value,change,multiline=false){const wrap=document.crea
 const inspectorTabs=['Connection','Operation','Input','Output','Advanced','Test'];let inspectorTab='Connection';
 const operations={trello:['read_list'],webhook:['receive'],manual:['start'],filter:['always','approved','rejected','status=approved'],flux:['pass','pick','count'],http:['post'],merge:['combine'],log:['record'],email:['send'],slack:['send'],sheets:['read_rows','append_row'],drive:['find_file','create_file'],github:['list_issues','create_issue'],wordpress:['read_posts','create_post'],router:['branch'],mapper:['map'],schedule:['cron'],delay:['wait'],loop:['iterate'],whatsapp:['send_template','receive_message'],telegram:['send_message','receive_update'],discord:['send_message'],notion:['search_pages','create_page'],calendar:['list_events','create_event'],stripe:['payment_event','create_checkout'],hubspot:['search_contacts','create_contact'],shopify:['order_event','list_orders'],openai:['generate_text','classify_text'],resend:['send_email'],supabase:['select_rows','insert_row'],cloudflare:['trigger_worker']};
 function inspectorHelp(root,text){const p=document.createElement('p');p.className='inspector-help';p.textContent=text;root.append(p);}
-function renderInspector(){const n=nodes.find(n=>n.id===selected),root=byId('inspector');root.replaceChildren();byId('selection').textContent=n?'Editing '+n.id+' ('+n.type+')':'Select a block to configure it.';if(!n)return;
+function renderInspector(){const n=nodes.find(n=>n.id===selected),root=byId('inspector');root.replaceChildren();byId('selection').textContent=n?'Configure '+n.label:'Choose a block to configure.';if(!n)return;
  if(n.type==='schedule'&&window.fluxAdvancedInspector!==n.id){
   byId('selection').textContent='Schedule · When should this flow start?';
   const heading=document.createElement('h3');heading.textContent='◷ Set a schedule';root.append(heading);
@@ -192,17 +192,19 @@ function renderInspector(){const n=nodes.find(n=>n.id===selected),root=byId('ins
   return;
  }
  if(window.fluxAdvancedInspector!==n.id){
-  const info=document.createElement('p');info.className='inspector-help';info.textContent='Set up '+n.label+' in a few steps.';root.append(info);
+  const info=document.createElement('p');info.className='inspector-help';info.textContent='Choose what '+n.label+' should do. Technical options are optional.';root.append(info);
   const availability=types.find(t=>t[0]===n.type)?.[2]||'';
-  const notice=document.createElement('p');notice.className='inspector-help';notice.textContent=availability==='planned'?'Integration coming soon. Connection and live execution are not available yet.':'Choose an action below. External services require a secure connection before live execution.';root.append(notice);
+  const notice=document.createElement('p');notice.className='inspector-help';notice.textContent=availability==='planned'||availability==='not implemented'?'Preview only: this connection cannot run automatically yet.':'Select an action. Connections to external accounts require authorization before live use.';root.append(notice);
   const options=operations[n.type]||[];
   if(options.length){
-   const label=document.createElement('label');label.textContent='What should this block do?';label.style.cssText='display:block;margin:12px 0 6px';
-   const select=document.createElement('select');select.style.cssText='width:100%;padding:10px;border-radius:8px;background:#17283e;color:white;border:1px solid #637d9d';
+   const label=document.createElement('label');label.textContent='Action';label.style.cssText='display:block;margin:12px 0 6px';
+   const select=document.createElement('select');select.style.cssText='width:100%;padding:12px;border-radius:9px;background:#fff;color:#17283e;border:1px solid #9db2c9;font-size:15px';
    for(const op of options){const option=document.createElement('option');option.value=op;option.textContent=op.replace(/[_-]/g,' ');select.append(option);}
    if(n.config.operation&&options.includes(n.config.operation))select.value=n.config.operation;
    select.addEventListener('change',()=>{n.config.operation=select.value;note('Action selected. Save the workflow to keep this change.');});root.append(label,select);
   }
+  const finish=document.createElement('button');finish.type='button';finish.textContent='Done';finish.style.cssText='display:block;margin-top:18px;padding:11px 20px;background:#176d9d;color:#fff;border:0;border-radius:9px;font-weight:700;cursor:pointer';
+  finish.addEventListener('click',()=>{if(options.length&&!n.config.operation)n.config.operation=root.querySelector('select')?.value||options[0];document.getElementById('flux-inspector-dialog')?.close();note('Block configured. Save the Flux to keep your changes.');});root.append(finish);
   const advanced=document.createElement('button');advanced.type='button';advanced.textContent='Advanced settings';advanced.style.cssText='margin-top:16px;padding:10px;border:1px solid #627d9b;border-radius:8px;background:#263b56;color:white;cursor:pointer';
   advanced.addEventListener('click',()=>{window.fluxAdvancedInspector=n.id;renderInspector();});root.append(advanced);
   return;
