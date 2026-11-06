@@ -21,6 +21,7 @@ window.FluxTrelloConnect = function ({button, title, status, getToken}) {
    title.textContent=connected?'Trello connected':'Trello account · TEST';
    status.textContent=connected?(connected.provider_account_label||'Account connected'):'Connect once, then reuse your account in your automations.';
    render();
+   if(connected)window.dispatchEvent(new Event('flux:trello-connected'));
   }catch(error){if(!disposed&&current===generation)status.textContent=error.message;}
  };
  const stop=()=>{clearInterval(timer);timer=null;busy=false;render();};
