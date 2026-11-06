@@ -264,11 +264,17 @@ function renderInspector(){const n=nodes.find(n=>n.id===selected),root=byId('ins
   root.append(save);return;
  }
  if(n.type==='hubspot'&&window.fluxAdvancedInspector!==n.id){
-  const heading=document.createElement('h3');heading.textContent='HubSpot · Find contact';root.append(heading);
-  const info=document.createElement('p');info.className='inspector-help';info.textContent='Search contacts by email. The HubSpot account connection must be configured securely on the TEST server. Creating contacts is not enabled yet.';root.append(info);
-  const label=document.createElement('label');label.textContent='Contact email';label.style.cssText='display:block;margin:12px 0 6px';
-  const input=document.createElement('input');input.type='email';input.placeholder='contact@example.com';input.value=String(n.config.query||'');input.style.cssText='display:block;width:100%;padding:12px;border-radius:8px;border:1px solid #b8c7d9;background:#fff;color:#17283e';input.addEventListener('input',()=>{n.config.query=input.value.slice(0,200);n.config.operation='search_contacts';});label.append(input);root.append(label);
-  const save=document.createElement('button');save.type='button';save.textContent='Save HubSpot settings';save.style.cssText='padding:12px;border:0;border-radius:8px;background:#5636ad;color:#fff;font-weight:700';save.addEventListener('click',()=>{n.config.operation='search_contacts';n.config.query=input.value.trim();note('HubSpot search configured. Save the workflow to persist it.');document.getElementById('flux-inspector-dialog')?.close();});root.append(save);return;
+  const heading=document.createElement('h3');heading.textContent='HubSpot · Setup';root.append(heading);
+  const info=document.createElement('p');info.className='inspector-help';info.textContent='Search by email or preview contact creation. Credentials stay on the TEST server. Live writes are disabled.';root.append(info);
+  const opLabel=document.createElement('label');opLabel.textContent='Operation';const operation=document.createElement('select');for(const [v,t] of [['search_contacts','Find contact by email'],['create_contact','Create contact']])operation.add(new Option(t,v));operation.value=n.config.operation==='create_contact'?'create_contact':'search_contacts';opLabel.append(operation);root.append(opLabel);
+  const emailLabel=document.createElement('label');emailLabel.textContent='Email to find';const email=document.createElement('input');email.type='email';email.value=String(n.config.query||'');email.placeholder='customer@example.com';emailLabel.append(email);root.append(emailLabel);
+  const propsLabel=document.createElement('label');propsLabel.textContent='Contact properties (JSON)';const props=document.createElement('textarea');props.rows=5;props.placeholder='{"email":"customer@example.com","firstname":"Jane"}';props.value=String(n.config.properties||'');propsLabel.append(props);root.append(propsLabel);
+  for(const el of [opLabel,emailLabel,propsLabel])el.style.cssText='display:block;margin:12px 0;font-weight:600';
+  for(const el of [operation,email,props])el.style.cssText='display:block;width:100%;margin-top:6px;padding:10px;border:1px solid #b8c7d9;border-radius:8px;background:#fff;color:#17283e';
+  function refresh(){emailLabel.hidden=operation.value!=='search_contacts';propsLabel.hidden=operation.value!=='create_contact';}operation.addEventListener('change',refresh);refresh();
+  const save=document.createElement('button');save.type='button';save.textContent='Save HubSpot settings';save.style.cssText='margin-top:12px;padding:12px;border:0;border-radius:8px;background:#5636ad;color:#fff;font-weight:700';
+  save.addEventListener('click',()=>{if(operation.value==='create_contact'){try{const value=JSON.parse(props.value);if(!value||Array.isArray(value)||typeof value!=='object'||!String(value.email||'').includes('@'))throw Error();}catch{note('Enter a valid JSON object containing an email address.');return;}}
+   n.config.operation=operation.value;n.config.query=email.value.trim().slice(0,200);n.config.properties=props.value.slice(0,4000);window.dispatchEvent(new Event('flux:canvas-changed'));note('HubSpot settings updated. Save the workflow to persist them.');document.getElementById('flux-inspector-dialog')?.close();});root.append(save);return;
  }
  if(['airtable','sheets','supabase'].includes(n.type)&&window.fluxAdvancedInspector!==n.id){
   const specs={
