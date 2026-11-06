@@ -28,7 +28,7 @@ function applyMapping(mapping,outputs,input,allowed){
  const result={};for(const [key,val] of Object.entries(spec)){if(!/^[a-zA-Z_][\w]{0,63}$/.test(key)||typeof val!=='string')throw Error('Invalid Data Mapper field');result[key]=resolveTemplate(val,outputs,input,allowed);}
  return result;
 }
-export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom}={}){
+export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom,airtableToken}={}){
  const {order,adj}=validateGraph(graph),byId=new Map(graph.nodes.map(n=>[n.id,n]));
  const received=new Map(),trace=[],outputs={};let calls=0;const ancestors=new Map();for(const id of order){const set=new Set();for(const e of graph.edges.filter(e=>e.to===id)){set.add(e.from);for(const a of ancestors.get(e.from)||[])set.add(a);}ancestors.set(id,set);}
  for(const id of order){
@@ -68,6 +68,25 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
     else if(rule==='count')output={count:Array.isArray(value?.items)?value.items.length:1};
     else if(rule==='pass'||rule==='')output=value;
     else throw Error('Unsupported Flux transform at '+id+'. Use pass, pick or count');
+    break;
+   }
+   case 'airtable':{
+    // TEST-only adapter: token must be injected server-side by the trusted caller.
+    const operation=String(config.operation||'find_records');
+    if(operation!=='find_records')throw Error('Airtable: only find_records is supported by this adapter');
+    const base=String(config.baseId||'').trim(),table=String(config.tableId||'').trim();
+    if(!/^app[a-zA-Z0-9]{14}$/.test(base))throw Error('Airtable: enter a valid base ID');
+    if(!/^tbl[a-zA-Z0-9]{14}$/.test(table))throw Error('Airtable: enter a valid table ID');
+    if(!airtableToken){status='skipped';reason='Airtable server connection is not configured; no records were read';break;}
+    if(++calls>3)throw Error('External read limit exceeded');
+    const url=new URL('https://api.airtable.com/v0/'+base+'/'+table);
+    url.searchParams.set('maxRecords','20');url.searchParams.set('pageSize','20');
+    const response=await fetch(url,{headers:{authorization:'Bearer '+airtableToken},redirect:'error',signal:AbortSignal.timeout(10000)});
+    if(!response.ok)throw Error('Airtable read failed (HTTP '+response.status+')');
+    const payload=await response.json();
+    if(!Array.isArray(payload.records))throw Error('Airtable returned an invalid record list');
+    output={source:'airtable',operation,count:payload.records.length,items:payload.records.map(record=>({id:String(record.id||''),fields:record.fields&&typeof record.fields==='object'?record.fields:{}}))};
+    reason='Read '+payload.records.length+' Airtable records'+(dryRun?' in safe test':'');
     break;
    }
    case 'trello':{
