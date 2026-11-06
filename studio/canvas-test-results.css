@@ -14,3 +14,26 @@
 #flux-test-results .flux-explain-advice li{margin:7px 0}
 #flux-test-results .flux-explain-details{background:#fff;color:#5938b2;border:1px solid #cbbbed;border-radius:9px;padding:9px 12px;cursor:pointer;font-weight:700}
 #flux-test-results .flux-explain-details:hover{background:#f0eaff}
+
+/* Visual execution monitor: only states returned by the server are highlighted. */
+#nodes .node.flux-run-completed{border:3px solid #21946b!important;box-shadow:0 0 0 5px #21946b22,0 8px 22px #164d3226!important}
+#nodes .node.flux-run-failed{border:3px solid #d44757!important;box-shadow:0 0 0 6px #d4475728,0 8px 24px #a1233e22!important}
+#nodes .node.flux-run-filtered{border:3px solid #e1a53e!important;box-shadow:0 0 0 5px #e1a53e29!important}
+#nodes .node.flux-run-skipped{border:3px solid #9ca4b5!important;opacity:.65!important}
+#nodes .node.flux-run-simulated{border:3px solid #458ecb!important;box-shadow:0 0 0 5px #458ecb26!important}
+#nodes .node .flux-run-marker{position:absolute;top:-13px;right:-13px;z-index:7;display:grid;place-items:center;width:29px;height:29px;border-radius:50%;background:#21946b;color:#fff;font-size:17px;font-weight:800;box-shadow:0 2px 8px #17223d3b;pointer-events:none}
+#nodes .node.flux-run-failed .flux-run-marker{background:#d44757}
+#nodes .node.flux-run-filtered .flux-run-marker{background:#e1a53e;color:#432f10}
+#nodes .node.flux-run-skipped .flux-run-marker{background:#9ca4b5}
+#nodes .node.flux-run-simulated .flux-run-marker{background:#458ecb}
+#edges .flux-connection-path.flux-run-edge-completed{stroke:#21946b!important;stroke-width:5!important;filter:drop-shadow(0 0 3px #21946b66)}
+#edges .flux-connection-path.flux-run-edge-simulated{stroke:#458ecb!important;stroke-width:5!important;stroke-dasharray:8 5}
+#flux-run-inspector{position:fixed;right:20px;bottom:20px;z-index:10080;width:min(380px,calc(100vw - 24px));max-height:70vh;overflow:auto;background:#fff;color:#29233d;border:1px solid #d5c7e9;border-radius:15px;padding:19px;box-shadow:0 14px 48px #1e153f40;font:13px/1.55 system-ui,sans-serif}
+#flux-run-inspector[hidden]{display:none!important}
+#flux-run-inspector>strong{font-size:16px;color:#5737a9;display:block;margin-right:55px}
+#flux-run-inspector>button{position:absolute;top:12px;right:12px;background:#f1ecfb;border:1px solid #d5c7e9;border-radius:7px;color:#4c3782;padding:5px 10px;cursor:pointer}
+#flux-run-inspector p{color:#423953;overflow-wrap:anywhere}
+#flux-run-inspector details{border-top:1px solid #e9e1f2;padding-top:10px}
+#flux-run-inspector summary{cursor:pointer;font-weight:700}
+#flux-run-inspector pre{font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f5fc;border-radius:8px;padding:10px;max-height:200px;overflow:auto}
+@media(max-width:650px){#flux-run-inspector{right:12px;bottom:12px;max-height:55vh}}
