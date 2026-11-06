@@ -1,5 +1,5 @@
 import {hash,decrypt,encrypt,db,json,REDIRECT,HOME} from './trello-shared.mjs';
-const back=(result)=>({statusCode:302,headers:{location:HOME+'?trello='+encodeURIComponent(result),'cache-control':'no-store','set-cookie':'flux_trello_state=; Path=/.netlify/functions/trello-oauth-callback; HttpOnly; Secure; SameSite=Lax; Max-Age=0'},body:''});
+const back=(result)=>({statusCode:200,headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','content-security-policy':"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'",'set-cookie':'flux_trello_state=; Path=/.netlify/functions/trello-oauth-callback; HttpOnly; Secure; SameSite=Lax; Max-Age=0'},body:'<!doctype html><html><head><meta charset="utf-8"><title>Trello connection</title></head><body style="font:16px system-ui;padding:30px"><h2>Trello: '+result+'</h2><p>You can close this window and return to Flux Studio.</p><a href="'+HOME+'">Return to Flux Studio</a><script>if(window.opener){window.opener.postMessage({type:"flux:trello-oauth",status:"'+result+'"},"https://flux-studio-test.netlify.app");window.close();}</script></body></html>'});
 export async function handler(event){
  if(event.httpMethod!=='GET')return json(405,{ok:false,error:'GET required'});
  const q=event.queryStringParameters||{};
