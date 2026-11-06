@@ -197,7 +197,7 @@ $('canvas-cloud-load').addEventListener('click',async()=>{
 });
 window.addEventListener('flux:create-scenario',async event=>{
  const name=String(event.detail?.name||'').trim();
- if(!name||name.length>100)return status('Enter a scenario name (up to 100 characters).');
+ if(!name||name.length>100)return status('Enter a flow name (up to 100 characters).');
  if(!client||!user)return status('Sign in to Flux Studio before creating a scenario.');
  try{
   const {data:projects,error:projectError}=await client.from('projects').select('id').eq('owner_id',user.id).order('created_at',{ascending:true}).limit(1);
@@ -217,8 +217,8 @@ window.addEventListener('flux:create-scenario',async event=>{
   try{await restoreGraph(graph);}catch(error){status('Scenario created, but opening the empty canvas failed: '+error.message);return;}
   drawLibrary();updateApiPanel();
   window.dispatchEvent(new CustomEvent('flux:automation-opened',{detail:{id:created.data.id,name}}));
-  status('New scenario "'+name+'" created and saved as a disabled draft.');
- }catch(error){status('Could not create scenario: '+error.message);}
+  status('New flow "'+name+'" created and saved as a disabled draft.');
+ }catch(error){status('Could not create flow: '+error.message);}
 });
 $('canvas-cloud-save').addEventListener('click',async()=>{
   const row=selection();
@@ -235,7 +235,7 @@ $('canvas-cloud-save').addEventListener('click',async()=>{
 });
 // New scenario: create a separate, disabled cloud automation; never overwrite the selected one.
 const newScenarioButton=document.createElement('button');
-newScenarioButton.type='button';newScenarioButton.id='flux-new-scenario';newScenarioButton.textContent='+ New scenario';
+newScenarioButton.type='button';newScenarioButton.id='flux-new-scenario';newScenarioButton.textContent='+ New flow';
 newScenarioButton.style.cssText='border:1px solid #2473a5;border-radius:9px;background:#176d9d;color:white;padding:10px 14px;font-weight:700;cursor:pointer';
 const editorToolbar=document.querySelector('#canvas-shell > main .toolbar:not(#canvas-cloud)');
 if(editorToolbar)editorToolbar.prepend(newScenarioButton);
@@ -243,11 +243,11 @@ let scenarioBusy=false;
 newScenarioButton.addEventListener('click',async()=>{
  if(scenarioBusy)return;
  if(!client||!user){status('Sign in to Flux Studio to create a saved scenario.');return;}
- const proposed=prompt('Name your new scenario','My new scenario');
+ const proposed=prompt('Name your new flow','My new flow');
  if(proposed===null)return;
  const name=proposed.trim();
- if(!name||name.length>100){status('Enter a scenario name between 1 and 100 characters.');return;}
- if(!confirm('Create a new empty scenario? Unsaved changes in the current canvas will be replaced. Your saved scenarios will remain unchanged.'))return;
+ if(!name||name.length>100){status('Enter a flow name between 1 and 100 characters.');return;}
+ if(!confirm('Create a new empty flow? Unsaved changes in the current canvas will be replaced. Your saved scenarios will remain unchanged.'))return;
  scenarioBusy=true;newScenarioButton.disabled=true;
  try{
   const graph={version:1,nodes:[],edges:[]};
@@ -270,9 +270,10 @@ newScenarioButton.addEventListener('click',async()=>{
   try{await restoreGraph(graph);}catch(restoreError){status('Scenario saved, but canvas could not be cleared: '+restoreError.message);drawLibrary();return;}
   drawLibrary();updateApiPanel();
   window.dispatchEvent(new CustomEvent('flux:automation-opened',{detail:{id:data.id,name:data.name}}));
-  status('New scenario "'+name+'" saved to Flux TEST. Add your first block.');
+  window.dispatchEvent(new Event('flux:coins-refresh'));
+  status('New flow "'+name+'" saved to Flux TEST. Add your first block.');
   document.getElementById('flux-add-block')?.focus();
- }catch(error){status('Could not create scenario: '+error.message);}
+ }catch(error){status('Could not create flow: '+error.message);}
  finally{scenarioBusy=false;newScenarioButton.disabled=false;}
 });
 try {
