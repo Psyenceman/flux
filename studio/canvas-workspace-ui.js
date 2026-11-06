@@ -43,6 +43,30 @@
  if(liveRun){actions.insertBefore(liveRun,overflow);liveRun.hidden=false;liveRun.style.display='inline-flex';}
  actions.classList.add('compact-actions');
  for(const view of Object.values(views))body.append(view);
+ const addBlock=document.createElement('button');addBlock.type='button';addBlock.id='flux-add-block';addBlock.textContent='+ Add block';addBlock.setAttribute('aria-expanded','false');
+ const picker=document.createElement('dialog');picker.id='flux-block-picker';picker.setAttribute('aria-label','Choose a block');
+ const pickerHeading=document.createElement('h3');pickerHeading.textContent='Add a block';
+ const pickerHelp=document.createElement('p');pickerHelp.textContent='Search for a block, then select it to place it on your canvas. Some integrations are still planned.';
+ const pickerSearch=document.createElement('input');pickerSearch.type='search';pickerSearch.placeholder='Search Trello, Condition, Log…';pickerSearch.setAttribute('aria-label','Search blocks');
+ const pickerItems=document.createElement('div');pickerItems.className='flux-picker-items';
+ const pickerClose=document.createElement('button');pickerClose.type='button';pickerClose.textContent='Close';pickerClose.addEventListener('click',()=>picker.close());
+ picker.append(pickerHeading,pickerHelp,pickerSearch,pickerItems,pickerClose);document.body.append(picker);
+ const refreshPicker=()=>{
+  pickerItems.replaceChildren();const query=pickerSearch.value.trim().toLowerCase();
+  for(const source of document.querySelectorAll('#palette button[data-type]')){
+   if(query&&!source.dataset.search?.includes(query))continue;
+   const item=document.createElement('button');item.type='button';item.className='flux-picker-item';
+   const title=document.createElement('strong');title.textContent=source.querySelector('span:not(.integration-status)')?.textContent||source.dataset.type;
+   const status=document.createElement('small');status.textContent=source.dataset.integration==='planned'?'Planned · not executable':'Block available in editor · live support varies';
+   item.append(title,status);item.addEventListener('click',()=>{source.click();picker.close();});pickerItems.append(item);
+  }
+  if(!pickerItems.children.length){const empty=document.createElement('p');empty.textContent='No matching blocks';pickerItems.append(empty);}
+ };
+ pickerSearch.addEventListener('input',refreshPicker);
+ addBlock.addEventListener('click',()=>{refreshPicker();picker.showModal();pickerSearch.focus();});
+ picker.addEventListener('close',()=>addBlock.setAttribute('aria-expanded','false'));
+ actions.prepend(addBlock);
+ const pickerStyle=document.createElement('style');pickerStyle.textContent='#flux-add-block{background:#176baf!important;color:#fff!important;border-radius:10px!important;font-weight:700!important}#flux-block-picker{width:min(540px,calc(100vw - 24px));max-height:85vh;border:1px solid #b9cce3;border-radius:16px;padding:22px;background:#fff;color:#17324f;box-shadow:0 18px 70px #10213a55}#flux-block-picker::backdrop{background:#0d1c30a8}#flux-block-picker h3{margin:0 0 10px}#flux-block-picker input{width:100%;padding:12px;border:1px solid #b9cce3;border-radius:8px;margin:10px 0;color:#17324f;background:#fff}#flux-block-picker .flux-picker-items{max-height:45vh;overflow:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:14px}#flux-block-picker .flux-picker-item{text-align:left;display:flex;flex-direction:column;gap:5px;padding:12px;border:1px solid #cbd9ea;border-radius:10px;background:#f6f9fd;color:#17324f;cursor:pointer}#flux-block-picker .flux-picker-item:hover{border-color:#176baf;background:#eaf3ff}#flux-block-picker small{font-size:11px;color:#566b82}';document.head.append(pickerStyle);
  const footer=main.querySelector('#status');
  // Running a test should not unexpectedly switch away from the editor.
  function activate(id){
