@@ -19,7 +19,7 @@
 <script type="module">
 const types=[['trello','Trello','read-only trigger'],['airtable','Airtable','not implemented'],['sheets','Google Sheets','planned'],['drive','Google Drive','planned'],['github','GitHub','planned'],['wordpress','WordPress','planned'],['schedule','Schedule','planned'],['manual','Manual Trigger','trigger'],['router','Router','planned'],['mapper','Data Mapper','transform'],['loop','Loop','planned'],['miro','Miro','action'],['slack','Slack','trigger / action'],['email','Email','action'],['http','HTTP API','action'],['webhook','Webhook','trigger'],['flux','Flux code','transform'],['filter','Condition','branch'],['database','Database','action'],['delay','Delay','control'],['merge','Merge','control'],['log','Log','action'],['whatsapp','WhatsApp Business','planned'],['telegram','Telegram','planned'],['discord','Discord','planned'],['notion','Notion','planned'],['calendar','Google Calendar','planned'],['stripe','Stripe','planned'],['hubspot','HubSpot','planned'],['shopify','Shopify','planned'],['openai','OpenAI','planned'],['resend','Resend','planned'],['supabase','Supabase','planned'],['cloudflare','Cloudflare','planned']];
 const byId=id=>document.getElementById(id),canvas=byId('canvas'),nodesEl=byId('nodes'),edgesEl=byId('edges'),status=byId('status');
-let nodes=[],edges=[],selected=null,connecting=null,sequence=0,wireDrag=null,suppressPortClick=false;
+let nodes=[],edges=[],selected=null,selectedConnection=null,connecting=null,sequence=0,wireDrag=null,suppressPortClick=false;
 const note=message=>{status.textContent=message;};
 const fluxFeedback=(message,kind='info')=>{
  let panel=document.getElementById('flux-visible-feedback');
@@ -59,6 +59,14 @@ const finishWorkflowDrag=event=>{
 canvas.addEventListener('pointerup',finishWorkflowDrag);
 canvas.addEventListener('pointercancel',finishWorkflowDrag);
 
+document.addEventListener('keydown',event=>{
+ if(!selectedConnection||!['Backspace','Delete'].includes(event.key))return;
+ if(event.target?.closest?.('input,textarea,select,[contenteditable="true"],[role="textbox"]'))return;
+ event.preventDefault();
+ const {from,to}=selectedConnection;
+ edges=edges.filter(edge=>!(edge.from===from&&edge.to===to));
+ selectedConnection=null;render();note('Connection removed. Both blocks were kept. Save your changes.');fluxFeedback('Connection removed. Both blocks were kept. Save your changes.','success');
+});
 /* Keyboard-accessible group positioning: arrow keys move the complete workflow. */
 document.addEventListener('keydown',event=>{
  if(!window.fluxMoveAll||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;
@@ -99,7 +107,7 @@ function render(){
  resizeWorkspace();
  queueMicrotask(()=>window.dispatchEvent(new Event('flux:canvas-changed')));
  nodesEl.replaceChildren();edgesEl.replaceChildren();
- for(const edge of edges){const a=nodes.find(n=>n.id===edge.from),b=nodes.find(n=>n.id===edge.to);if(!a||!b)continue;const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',path(a,b));p.setAttribute('stroke','#8c9fbd');p.setAttribute('stroke-width','3');p.setAttribute('stroke-linecap','round');p.classList.add('flux-connection-path');p.setAttribute('fill','none');p.dataset.from=edge.from;p.dataset.to=edge.to;p.style.pointerEvents='stroke';p.style.cursor='copy';p.addEventListener('click',event=>{event.stopPropagation();window.dispatchEvent(new CustomEvent('flux:edge-insert-menu',{detail:{from:edge.from,to:edge.to,x:event.clientX,y:event.clientY}}));});edgesEl.append(p);const insert=document.createElement('button');insert.type='button';insert.className='flux-edge-plus';insert.dataset.from=edge.from;insert.dataset.to=edge.to;insert.textContent='+';insert.title='Insert a block on this connection';insert.setAttribute('aria-label','Insert block between '+a.label+' and '+b.label);insert.style.left=((a.x+nodeWidth(a)+b.x)/2)+'px';insert.style.top=((a.y+b.y)/2+35)+'px';insert.addEventListener('pointerdown',event=>event.stopPropagation());insert.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();window.dispatchEvent(new CustomEvent('flux:edge-insert-menu',{detail:{from:edge.from,to:edge.to,x:event.clientX||window.innerWidth/2,y:event.clientY||window.innerHeight/2}}));});nodesEl.append(insert);}
+ for(const edge of edges){const a=nodes.find(n=>n.id===edge.from),b=nodes.find(n=>n.id===edge.to);if(!a||!b)continue;const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',path(a,b));p.setAttribute('stroke','#8c9fbd');p.setAttribute('stroke-width','3');p.setAttribute('stroke-linecap','round');p.classList.add('flux-connection-path');p.setAttribute('fill','none');p.dataset.from=edge.from;p.dataset.to=edge.to;p.style.pointerEvents='stroke';p.style.cursor='pointer';p.setAttribute('stroke-width',selectedConnection?.from===edge.from&&selectedConnection?.to===edge.to?'7':'4');p.setAttribute('stroke',selectedConnection?.from===edge.from&&selectedConnection?.to===edge.to?'#f97316':'#2796bb');p.addEventListener('click',event=>{event.stopPropagation();selectedConnection={from:edge.from,to:edge.to};render();note('Connection selected. Press Delete or Backspace to remove it.');fluxFeedback('Connection selected: press Delete or Backspace to remove it.');});edgesEl.append(p);const insert=document.createElement('button');insert.type='button';insert.className='flux-edge-plus';insert.dataset.from=edge.from;insert.dataset.to=edge.to;insert.textContent='+';insert.title='Insert a block on this connection';insert.setAttribute('aria-label','Insert block between '+a.label+' and '+b.label);insert.style.left=((a.x+nodeWidth(a)+b.x)/2)+'px';insert.style.top=((a.y+b.y)/2+35)+'px';insert.addEventListener('pointerdown',event=>event.stopPropagation());insert.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();window.dispatchEvent(new CustomEvent('flux:edge-insert-menu',{detail:{from:edge.from,to:edge.to,x:event.clientX||window.innerWidth/2,y:event.clientY||window.innerHeight/2}}));});nodesEl.append(insert);}
  for(const n of nodes){
   const el=document.createElement('div');el.className='node'+(n.id===selected?' selected':'');el.style.left=n.x+'px';el.style.top=n.y+'px';el.style.width=nodeWidth(n)+'px';el.tabIndex=0;el.setAttribute('aria-label',n.label+' block');
   const head=document.createElement('div');head.className='node-head';const symbol=document.createElement('span');symbol.className='block-icon';symbol.dataset.type=n.type;symbol.textContent=({airtable:'A',miro:'M',slack:'S',trello:'T',github:'G',sheets:'▦',drive:'▱',wordpress:'W',email:'✉',http:'↔',webhook:'↧',filter:'◇',mapper:'⇄',router:'⑂',manual:'▶',schedule:'◷',flux:'F',database:'▤',delay:'◷',merge:'⇢',log:'≡',loop:'↻'})[n.type]||'●';const name=document.createElement('span');name.textContent=n.label;head.append(symbol,name);el.dataset.type=n.type;el.dataset.nodeId=n.id;if(n.lastRunStatus==='completed')el.classList.add('flux-node-success');if(n.lastRunStatus==='failed')el.classList.add('flux-node-failed');if(n.lastRunStatus==='simulated')el.classList.add('flux-node-simulated');const del=document.createElement('button');del.type='button';del.className='node-delete';del.title='Delete '+n.label;del.setAttribute('aria-label','Delete '+n.label+' block');del.textContent='×';del.addEventListener('pointerdown',e=>e.stopPropagation());del.addEventListener('click',e=>{e.stopPropagation();deleteNode(n.id);});el.append(head,del);
@@ -157,8 +165,9 @@ function drawEdges(){
   p.setAttribute('d',path(a,b));p.setAttribute('stroke','#8c9fbd');p.setAttribute('stroke-width','3');
   p.setAttribute('stroke-linecap','round');p.classList.add('flux-connection-path');
   p.setAttribute('fill','none');p.dataset.from=e.from;p.dataset.to=e.to;
-  p.style.pointerEvents='stroke';p.style.cursor='copy';
-  p.addEventListener('click',event=>{event.stopPropagation();window.dispatchEvent(new CustomEvent('flux:edge-insert-menu',{detail:{from:e.from,to:e.to,x:event.clientX,y:event.clientY}}));});
+  p.style.pointerEvents='stroke';p.style.cursor='pointer';
+  p.setAttribute('stroke-width',selectedConnection?.from===e.from&&selectedConnection?.to===e.to?'7':'4');p.setAttribute('stroke',selectedConnection?.from===e.from&&selectedConnection?.to===e.to?'#f97316':'#2796bb');
+  p.addEventListener('click',event=>{event.stopPropagation();selectedConnection={from:e.from,to:e.to};render();note('Connection selected. Press Delete or Backspace to remove it.');fluxFeedback('Connection selected: press Delete or Backspace to remove it.');});
   edgesEl.append(p);
   const insert=[...nodesEl.querySelectorAll('.flux-edge-plus')].find(button=>button.dataset.from===e.from&&button.dataset.to===e.to);
   if(insert){insert.style.left=((a.x+nodeWidth(a)+b.x)/2)+'px';insert.style.top=((a.y+b.y)/2+35)+'px';}
