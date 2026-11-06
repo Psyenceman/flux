@@ -347,11 +347,11 @@
       if(current!==request||!modal.open)return;
       if(kind==='boards'){setOptions(boardSelect,data.items,'Choose a board');if(draft.board&&data.items.some(x=>x.id===draft.board)){boardSelect.value=draft.board;await load('lists',draft.board);return;}}
       else{setOptions(listSelect,data.items,'Choose a list');if(draft.list&&data.items.some(x=>x.id===draft.list))listSelect.value=draft.list;}
-      feedback.textContent=data.items.length?'Select a '+(kind==='boards'?'board':'list')+' to continue.':'No available '+kind+'.';
+      feedback.textContent=data.items.length?(kind==='lists'&&draft.list?'List selected. Save this block to continue.':'Select a '+(kind==='boards'?'board':'list')+' to continue.'):'No available '+kind+'.';
      }catch(error){if(current===request)feedback.textContent=error.message;}
     };
     boardSelect.addEventListener('change',()=>{draft.board=boardSelect.value;draft.list='';setOptions(listSelect,[],'Choose a board first');if(draft.board)void load('lists',draft.board);});
-    listSelect.addEventListener('change',()=>{draft.list=listSelect.value;const input=inputs.querySelector('input');if(input)input.value=draft.list;});
+    listSelect.addEventListener('change',()=>{draft.list=listSelect.value;const input=inputs.querySelector('input');if(input)input.value=draft.list;feedback.textContent=draft.list?'List selected. Save this block to continue.':'Select a list to continue.';});
     const onConnected=()=>void load('boards');window.addEventListener('flux:trello-connected',onConnected);modal.addEventListener('close',()=>window.removeEventListener('flux:trello-connected',onConnected),{once:true});
     void load('boards');
    }
@@ -392,21 +392,6 @@
    const status=document.getElementById('status');if(status)status.textContent=node.label+' configured. Save your Flux to keep the changes.';
    close();
   });
-  if(node.type==='trello'){
-   const createReal=document.createElement('button');createReal.type='button';createReal.textContent='Create Trello card';createReal.className='fm-create-trello';
-   createReal.style.cssText='padding:10px 15px;background:#a83a23;color:white;border:0;border-radius:9px;font-weight:700;cursor:pointer';
-   const updateCreate=()=>{const enabled=(draft.operation==='create_card');createReal.hidden=!enabled;createReal.disabled=!enabled;};
-   updateCreate();
-   body.addEventListener('change',updateCreate);
-   createReal.addEventListener('click',()=>{
-    save.click();
-    if(modal.open)return; // validation failed: keep configuration visible
-    const run=document.getElementById('flux-trello-live');
-    if(run)run.click();
-    else alert('Trello execution is unavailable. Refresh Flux Studio TEST.');
-   });
-   footerActions.append(createReal);
-  }
   footerActions.append(cancel,save);modal.append(footerActions);
   if(modal.open)modal.close();
   // Stable centered positioning: independent of canvas zoom, scroll and node location.
