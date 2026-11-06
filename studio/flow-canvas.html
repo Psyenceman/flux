@@ -17,7 +17,7 @@
 #runner .flux-runner-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #dbe6ee;background:#f5f9fc}
 #runner .flux-runner-header button{font-size:27px;line-height:1;border:0;background:transparent;color:#233f5a;cursor:pointer;padding:4px 10px}
 #runner .flux-runner-body{height:calc(100% - 60px);overflow:auto;padding:18px}
-#runner #run-output{display:none}
+#runner #run-output{display:block;max-height:220px;overflow:auto}
 #runner #flux-test-results .flux-test-steps{max-height:none}
 #runner #flux-test-results .flux-test-steps>li{margin:8px 0}
 #runner #flux-test-results .flux-test-steps>li ul{max-height:145px!important}
@@ -27,8 +27,13 @@
 #runner:has(#run-output:not(:empty)) .flux-runner-body>label:has(#run-dry){display:none}
 #runner:has(#run-output:not(:empty)) .flux-runner-body>div:has(> #run-now){display:none}
 #runner:has(#run-output:not(:empty)) #run-output{display:block;max-height:240px;margin-top:8px}
-#runner:has(#run-output:not(:empty)) #run-output:not([data-show-technical="true"]){display:none}
+#runner .flux-technical-toggle:not([open]) #run-output{display:none}
 #runner .flux-technical-toggle{display:block;margin-top:12px;cursor:pointer;color:#315b81}
+#nodes .node.flux-run-completed{border:3px solid #159669!important;box-shadow:0 0 0 5px #15966924!important}
+#nodes .node.flux-run-filtered{border:3px solid #d79522!important;box-shadow:0 0 0 5px #d7952224!important}
+#nodes .node.flux-run-skipped{border:3px solid #9ca3af!important;opacity:.62!important}
+#nodes .node.flux-run-simulated{border:3px solid #6088c8!important}
+
 @media(max-width:650px){#runner{inset:8px!important;height:calc(100dvh - 16px)!important}#runner .flux-runner-body{padding:12px}}
 </style></head><body><header><div><h1>Flux Studio · Flow Canvas</h1><p style="margin:4px 0">Visual workflow editor — experimental server execution available</p></div><nav><a href="./workflow-lab.html">Workflow Lab</a> · <a href="./">Studio</a></nav></header>
 <div class="shell" id="canvas-shell"><aside class="library-panel" id="library-panel"><h2>Block library</h2><p>Drag a block onto the canvas or click to add it. Drag from an output circle (right) to an input circle (left), or click the two circles in sequence.</p><label class="palette-search-label" for="palette-search">Find an app or block</label><input id="palette-search" type="search" placeholder="Search Airtable, HTTP, Condition…" autocomplete="off"><div class="palette-filters" role="group" aria-label="Integration availability"><button type="button" data-filter="all" aria-pressed="true">All</button><button type="button" data-filter="available" aria-pressed="false">Available</button><button type="button" data-filter="planned" aria-pressed="false">Planned</button></div><p id="palette-count" class="palette-count" aria-live="polite"></p><div class="palette" id="palette"></div><p class="hint">Multiple outgoing and incoming links are supported. A graph may contain branches and joins. Cycles are blocked until a controlled loop executor exists.</p></aside>
