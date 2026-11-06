@@ -71,6 +71,19 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
     break;
    }
    case 'trello':{
+    const trelloOperation=String(config.operation||'read_list').trim();
+    if(!['read_list','create_card'].includes(trelloOperation))throw Error('Unsupported Trello operation at '+id);
+    if(trelloOperation==='create_card'){
+     const destination=String(config.list||'').trim();
+     const title=String(config.title||'').trim();
+     const description=String(config.description||'').trim();
+     if(!/^[a-f0-9]{24}$/i.test(destination))throw Error('Trello create card: select a destination list');
+     if(!title||title.length>16384||description.length>16384)throw Error('Trello create card: enter a valid title and description');
+     // Writes remain disabled during initial TEST rollout, even if the caller requests live execution.
+     status='simulated';reason='TEST preview only: no Trello card was created';
+     output={source:'trello',operation:'create_card',listId:destination,title,description,simulated:true};
+     break;
+    }
     const listId=String(config.list||config.connection||'').trim();
     if(!/^[a-f0-9]{24}$/i.test(listId))throw Error('Trello block '+id+': choose a Trello list first');
     if(!trelloAccessToken){status='skipped';reason='Connect your Trello account to read cards';output={source:'trello',listId,items:[],count:0,simulated:true};break;}
