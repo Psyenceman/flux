@@ -5,6 +5,7 @@ const SUPABASE_PUBLIC_KEY='sb_publishable_vcqHLVzTy3u1Ozk9N1YBiQ_iuIhsOHu';
 const allowed=['manual','webhook','filter','mapper','flux','log','merge','delay','trello','airtable','sheets','supabase','hubspot','http','telegram','resend'];
 export async function handler(event){
  if(event.httpMethod!=='POST')return json(405,{ok:false,error:'POST required'});
+ if(process.env.FLUX_AI_ENABLED!=='true')return json(503,{ok:false,error:'Flux AI is not active. AI generation will be enabled after billing controls are ready.',code:'AI_DISABLED'});
  if(event.isBase64Encoded||String(event.body||'').length>12000)return json(413,{ok:false,error:'Request too large'});
  const authorization=event.headers?.authorization||event.headers?.Authorization||'';
  if(!/^Bearer [A-Za-z0-9._-]+$/.test(authorization))return json(401,{ok:false,error:'Sign in to use Flux AI Assistant'});
