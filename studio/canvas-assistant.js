@@ -1,4 +1,4 @@
-/* Flux Assistant v0: deterministic templates, no AI calls, no graph modifications. */
+/* Flux Assistant v0: rule-based workflow previews, no AI service. */
 (()=>{
  const feedback=document.getElementById('flux-assistant-feedback');
  const request=document.getElementById('flux-assistant-request');
@@ -13,7 +13,11 @@
   if(/webhook|incoming|ricev|chiamata/.test(words))blocks[0]=['webhook','Webhook',{}];
   if(/filter|approved|condition|filtr|condizion|approvat/.test(words))blocks.push(['filter','Condition',{field:'status',operator:'equals',value:'approved'}]);
   if(/map|field|email|camp|trasform/.test(words))blocks.push(['mapper','Data Mapper',{mapping:JSON.stringify({message:'{{input.message}}'})}]);
-  if(/trello|schede/.test(words))blocks.push(['trello','Trello',{connection:''}]);
+  if(/trello|schede/.test(words))blocks.push(['trello','Trello',{operation:'read_list'}]);
+  if(/airtable/.test(words))blocks.push(['airtable','Airtable',{operation:'find_records'}]);
+  if(/google sheets|spreadsheet|fogli google/.test(words))blocks.push(['sheets','Google Sheets',{operation:'read_rows'}]);
+  if(/supabase/.test(words))blocks.push(['supabase','Supabase',{operation:'select_rows'}]);
+  if(/hubspot/.test(words))blocks.push(['hubspot','HubSpot',{operation:'search_contacts'}]);
   if(/http|api|post/.test(words))blocks.push(['http','HTTP',{method:'POST'}]);
   if(/log|debug|tracci/.test(words))blocks.push(['log','Log',{message:'Workflow completed'}]);
   if(blocks.length===1)blocks.push(['mapper','Data Mapper',{mapping:JSON.stringify({message:'{{input.message}}'})}],['log','Log',{message:'Workflow completed'}]);
@@ -35,7 +39,7 @@
   const goal=request.value.trim().slice(0,500);
   if(!goal){feedback.textContent='Describe what you want to automate first.';return;}
   proposed=buildTemplate(goal.toLowerCase());
-  feedback.textContent='Workflow preview (no live connections):\\n'+proposed.nodes.map((n,i)=>(i+1)+'. '+n.label).join('\\n')+'\\n\\nReview the sequence and choose Create workflow from preview. Existing canvas will require confirmation before replacement.';
+  feedback.textContent='Rule-based assistant preview (not AI; no live connections):\\n'+proposed.nodes.map((n,i)=>(i+1)+'. '+n.label).join('\\n')+'\\n\\nReview the sequence and choose Create workflow from preview. Existing canvas will require confirmation before replacement.';
   apply.hidden=false;
  });
  repair.addEventListener('click',async()=>{
@@ -46,7 +50,7 @@
    for(const edge of edges)if(!ids.has(edge.from)||!ids.has(edge.to))issues.push('Connection references a missing block.');
    const incoming=new Map(nodes.map(n=>[n.id,0])),outgoing=new Map(nodes.map(n=>[n.id,0]));
    for(const edge of edges){if(incoming.has(edge.to))incoming.set(edge.to,incoming.get(edge.to)+1);if(outgoing.has(edge.from))outgoing.set(edge.from,outgoing.get(edge.from)+1);}
-   for(const node of nodes){if(nodes.length>1&&!incoming.get(node.id)&&!outgoing.get(node.id))issues.push('Unconnected block: '+node.id);if(['database','slack','airtable','sheets','drive','github','miro','wordpress'].includes(node.type))issues.push('Connector '+node.type+' may not have a live backend executor.');}
+   for(const node of nodes){if(nodes.length>1&&!incoming.get(node.id)&&!outgoing.get(node.id))issues.push('Unconnected block: '+node.id);if(['database','slack','drive','github','miro','wordpress','hubspot','airtable','sheets','supabase'].includes(node.type))issues.push('Connector '+node.type+' requires a configured server connection or may be unavailable for live execution.');}
    feedback.textContent=issues.length?'Flux Repair — checks:\n'+[...new Set(issues)].slice(0,30).map(x=>'• '+x).join('\n'):'No obvious disconnected or missing blocks found. Run Validate graph and a dry-run test for deeper checks.';
   }catch(error){feedback.textContent='Repair check failed: '+error.message;}
  });
