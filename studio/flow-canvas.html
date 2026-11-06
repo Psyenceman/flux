@@ -151,6 +151,26 @@ const inspectorTabs=['Connection','Operation','Input','Output','Advanced','Test'
 const operations={trello:['read_list'],webhook:['receive'],manual:['start'],filter:['always','approved','rejected','status=approved'],flux:['pass','pick','count'],http:['post'],merge:['combine'],log:['record'],email:['send'],slack:['send'],sheets:['read_rows','append_row'],drive:['find_file','create_file'],github:['list_issues','create_issue'],wordpress:['read_posts','create_post'],router:['branch'],mapper:['map'],schedule:['cron'],delay:['wait'],loop:['iterate'],whatsapp:['send_template','receive_message'],telegram:['send_message','receive_update'],discord:['send_message'],notion:['search_pages','create_page'],calendar:['list_events','create_event'],stripe:['payment_event','create_checkout'],hubspot:['search_contacts','create_contact'],shopify:['order_event','list_orders'],openai:['generate_text','classify_text'],resend:['send_email'],supabase:['select_rows','insert_row'],cloudflare:['trigger_worker']};
 function inspectorHelp(root,text){const p=document.createElement('p');p.className='inspector-help';p.textContent=text;root.append(p);}
 function renderInspector(){const n=nodes.find(n=>n.id===selected),root=byId('inspector');root.replaceChildren();byId('selection').textContent=n?'Editing '+n.id+' ('+n.type+')':'Select a block to configure it.';if(!n)return;
+ if(n.type==='schedule'&&window.fluxAdvancedInspector!==n.id){
+  byId('selection').textContent='Schedule · When should this flow start?';
+  const heading=document.createElement('h3');heading.textContent='◷ Set a schedule';root.append(heading);
+  const description=document.createElement('p');description.textContent='Choose when this flow should run. Live scheduling is not enabled yet in TEST.';root.append(description);
+  const field=(title,element)=>{const label=document.createElement('label');label.textContent=title;label.style.cssText='display:block;margin:14px 0 6px;font-weight:600';root.append(label,element);return element;};
+  const frequency=field('Repeat',document.createElement('select'));
+  for(const [value,label] of [['once','Once'],['daily','Every day'],['weekly','Every week']])frequency.add(new Option(label,value));
+  const date=field('Start date',document.createElement('input'));date.type='date';
+  const time=field('Time',document.createElement('input'));time.type='time';
+  const day=field('Day of the week',document.createElement('select'));
+  for(const [value,label] of [['1','Monday'],['2','Tuesday'],['3','Wednesday'],['4','Thursday'],['5','Friday'],['6','Saturday'],['0','Sunday']])day.add(new Option(label,value));
+  const timezone=field('Time zone',document.createElement('select'));timezone.add(new Option('Europe/Rome','Europe/Rome'));timezone.add(new Option('UTC','UTC'));
+  for(const control of [frequency,date,time,day,timezone])control.style.cssText='width:100%;padding:11px;border:1px solid #9bb0c5;border-radius:9px;background:#fff;color:#182d45;font-size:15px';
+  const saved=n.config.schedule||{};frequency.value=saved.frequency||'once';date.value=saved.date||'';time.value=saved.time||'09:00';day.value=saved.day||'1';timezone.value=saved.timezone||'Europe/Rome';
+  const update=()=>{day.previousSibling.hidden=day.hidden=frequency.value!=='weekly';date.previousSibling.hidden=date.hidden=frequency.value!=='once';};
+  frequency.addEventListener('change',update);update();
+  const save=document.createElement('button');save.type='button';save.textContent='Save schedule settings';save.style.cssText='margin-top:20px;padding:12px 16px;background:#176d9d;color:#fff;border:0;border-radius:9px;cursor:pointer';
+  save.addEventListener('click',()=>{if(!time.value||(frequency.value==='once'&&!date.value)){note('Choose a valid date and time.');return;}n.config.schedule={frequency:frequency.value,date:date.value,time:time.value,day:day.value,timezone:timezone.value};n.config.operation=frequency.value;note('Schedule settings updated. Save the flow to keep them. Live scheduling is not enabled.');});
+  root.append(save);return;
+ }
  if(n.type==='calendar'){
   byId('selection').textContent='Google Calendar';
   const intro=document.createElement('p');intro.textContent='Connect your Google account to use Calendar in an automation.';root.append(intro);
