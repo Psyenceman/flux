@@ -10,6 +10,81 @@ if(output){
  output.before(logArea);
  logBody.append(output);
 
+ // Execution overlay follows real server trace, including canvas re-renders.
+ let latestTrace=null,latestError='';
+ const statusClasses=['completed','filtered','skipped','simulated','failed'];
+ const statusLabels={completed:'Completed',filtered:'Filtered',skipped:'Skipped',simulated:'Simulated',failed:'Error'};
+ const humanAdvice=(message)=>{
+  if(/connect|token|authoriz|authenticat|401|403/i.test(message))return 'Check the connection and sign in again if necessary.';
+  if(/list|destination|field|mapping|configuration|valid|required|unsupported/i.test(message))return 'Check the required fields and operation in this block.';
+  if(/timeout|network|fetch|429|rate limit/i.test(message))return 'Check service availability. Before retrying a write, verify whether the external action already occurred.';
+  return 'Open the technical execution log for more information.';
+ };
+ const renderFlowStatus=()=>{
+  const nodes=[...document.querySelectorAll('#nodes .node')];
+  const byId=new Map(nodes.map(node=>[node.dataset.nodeId,node]));
+  for(const node of nodes){
+   for(const status of statusClasses)node.classList.remove('flux-run-'+status);
+   node.querySelector('.flux-run-marker')?.remove();
+   node.removeAttribute('data-flux-run-reason');
+  }
+  const edges=[...document.querySelectorAll('#edges .flux-connection-path')];
+  for(const edge of edges)edge.classList.remove('flux-run-edge-completed','flux-run-edge-simulated');
+  if(!latestTrace)return;
+  const state=new Map();
+  for(const step of latestTrace){
+   const node=byId.get(step.id);if(!node)continue;
+   const status=statusClasses.includes(step.status)?step.status:'failed';
+   state.set(step.id,status);
+   node.classList.add('flux-run-'+status);
+   const marker=document.createElement('span');marker.className='flux-run-marker';marker.textContent=status==='completed'?'✓':status==='filtered'?'−':status==='skipped'?'·':status==='simulated'?'◌':'!';
+   marker.setAttribute('aria-label',statusLabels[status]);
+   const reason=String(step.reason|| (status==='failed'?latestError:'')).slice(0,500);
+   if(reason)node.dataset.fluxRunReason=reason;
+   marker.title=statusLabels[status]+(reason?' · '+reason:'');
+   node.append(marker);
+  }
+  // A server error may omit a failing step from the trace: never mark it as successful.
+  if(latestError&&!latestTrace.some(step=>step.status==='failed'||step.status==='error')){
+   const matched=latestError.match(/(?:at|block|node)\s+([a-zA-Z][\w-]{0,79})/i);
+   const target=matched&&byId.get(matched[1]);
+   if(target&&!state.has(matched[1])){
+    target.classList.add('flux-run-failed');target.dataset.fluxRunReason=latestError.slice(0,500);
+    const marker=document.createElement('span');marker.className='flux-run-marker';marker.textContent='!';marker.title='Error · '+latestError.slice(0,500);target.append(marker);
+   }
+  }
+  for(const edge of edges){
+   const from=state.get(edge.dataset.from),to=state.get(edge.dataset.to);
+   if(from==='completed'&&to==='completed')edge.classList.add('flux-run-edge-completed');
+   else if(['completed','simulated'].includes(from)&&to==='simulated')edge.classList.add('flux-run-edge-simulated');
+  }
+ };
+ const graphNodes=document.getElementById('nodes'),graphEdges=document.getElementById('edges');
+ if(graphNodes)new MutationObserver(records=>{if(records.some(record=>record.type==='childList'&&[...record.addedNodes].some(node=>node.nodeType===1&&node.classList?.contains('node'))))renderFlowStatus();}).observe(graphNodes,{childList:true});
+ if(graphEdges)new MutationObserver(records=>{if(records.some(record=>record.type==='childList'))renderFlowStatus();}).observe(graphEdges,{childList:true});
+ const inspector=document.createElement('aside');inspector.id='flux-run-inspector';inspector.hidden=true;inspector.setAttribute('aria-label','Block execution details');
+ const inspectorHeading=document.createElement('strong');inspectorHeading.textContent='Block execution';
+ const inspectorClose=document.createElement('button');inspectorClose.type='button';inspectorClose.textContent='Close';inspectorClose.addEventListener('click',()=>inspector.hidden=true);
+ const inspectorStatus=document.createElement('p'),inspectorReason=document.createElement('p'),inspectorAdvice=document.createElement('p');
+ const inspectorData=document.createElement('details');const inspectorSummary=document.createElement('summary');inspectorSummary.textContent='View block output';
+ const inspectorPre=document.createElement('pre');inspectorData.append(inspectorSummary,inspectorPre);
+ inspector.append(inspectorHeading,inspectorClose,inspectorStatus,inspectorReason,inspectorAdvice,inspectorData);
+ document.body.append(inspector);
+ graphNodes?.addEventListener('click',event=>{
+  const node=event.target.closest('.node');if(!node||!latestTrace)return;
+  const step=latestTrace.find(item=>item.id===node.dataset.nodeId);
+  if(!step)return;
+  const status=step.status==='error'?'failed':step.status;
+  inspectorHeading.textContent=String(step.type||'Block')+' · '+String(step.id);
+  inspectorStatus.textContent='Status: '+(statusLabels[status]||status);
+  inspectorReason.textContent=step.reason?'Details: '+String(step.reason):'No additional details reported.';
+  inspectorAdvice.textContent=status==='failed'?'Suggestion: '+humanAdvice(String(step.reason||latestError)):'';
+  const value=latestOutputs&&Object.hasOwn(latestOutputs,step.id)?latestOutputs[step.id]:undefined;
+  inspectorData.hidden=value===undefined;
+  inspectorPre.textContent=value===undefined?'':JSON.stringify(value,null,2);
+  inspector.hidden=false;
+ });
+ let latestOutputs=null;
  const observer=new MutationObserver(()=>{
   const raw=output.textContent||'';
   if(!raw.startsWith('HTTP ')){panel.replaceChildren();return;}
@@ -17,8 +92,7 @@ if(output){
   let result;try{result=JSON.parse(raw.slice(start));}catch{return;}
   if(raw!==window.fluxLastLoggedResponse){window.fluxLastLoggedResponse=raw;window.dispatchEvent(new CustomEvent('flux:run-summary',{detail:{...result,dryRun:document.getElementById('run-dry')?.checked!==false}}));}
   window.dispatchEvent(new CustomEvent('flux:test-outputs',{detail:{outputs:result.ok&&result.outputs&&typeof result.outputs==='object'?result.outputs:{}}}));
-  for(const node of document.querySelectorAll('#nodes .node')){node.classList.remove('flux-run-completed','flux-run-filtered','flux-run-skipped','flux-run-simulated');}
-  if(Array.isArray(result.trace))for(const step of result.trace){const node=[...document.querySelectorAll('#nodes .node')].find(el=>el.dataset.nodeId===step.id);if(node&&['completed','filtered','skipped','simulated'].includes(step.status))node.classList.add('flux-run-'+step.status);}
+  latestTrace=Array.isArray(result.trace)?result.trace:[];latestError=String(result.error||'');latestOutputs=result.outputs&&typeof result.outputs==='object'?result.outputs:{};renderFlowStatus();
   panel.replaceChildren();for(const stepLog of logBody.querySelectorAll('.flux-step-raw'))stepLog.remove();
   // Flux Explain: actionable diagnostics derived only from actual execution results.
   const explain=document.createElement('section');explain.className='flux-explain';explain.setAttribute('aria-label','Flux Explain');
