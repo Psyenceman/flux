@@ -75,7 +75,17 @@ export async function handler(event){
    if(records[0].expires_at&&Date.parse(records[0].expires_at)<Date.now())return json(409,{ok:false,error:'Trello connection expired. Reconnect your account.'});
    trelloAccessToken=decrypt(records[0].access_token_ciphertext);
   }
-  const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloAccessToken,airtableToken:process.env.FLUX_AIRTABLE_READ_TOKEN,googleSheetsToken:process.env.FLUX_GOOGLE_SHEETS_TOKEN,supabaseUrl:process.env.FLUX_CONNECTOR_SUPABASE_URL,supabaseServiceToken:process.env.FLUX_CONNECTOR_SUPABASE_TOKEN,hubspotToken:process.env.FLUX_HUBSPOT_TOKEN,telegramToken:process.env.FLUX_TELEGRAM_BOT_TOKEN,telegramChatId:process.env.FLUX_TELEGRAM_CHAT_ID,resendApiKey:process.env.FLUX_RESEND_API_KEY,resendFrom:process.env.FLUX_RESEND_FROM});const metering={model:'preview-v1',unit:'standard_operation',rateFluxCoins:1,billableOperations:result.trace.filter(step=>step.status==='completed').length,simulatedOperations:result.trace.filter(step=>step.status==='simulated').length,excludedOperations:result.trace.filter(step=>['skipped','filtered','failed'].includes(step.status)).length,estimatedFluxCoins:result.trace.filter(step=>step.status==='completed').length,chargedByMetering:false};return json(200,{...result,credits,metering});
+  let personalCredentials={};
+  if(sessionOwner&&dryRun){
+   for(const provider of ['airtable','hubspot']){
+    if(!body.graph.nodes.some(n=>n.type===provider))continue;
+    try{
+     const rows=await db('flux_connector_credentials?owner_id=eq.'+sessionOwner+'&provider=eq.'+provider+'&select=token_ciphertext');
+     if(rows?.length===1)personalCredentials[provider]=decrypt(rows[0].token_ciphertext);
+    }catch{return json(503,{ok:false,error:'Cannot load your '+provider+' connection; check TEST setup'});}
+   }
+  }
+  const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloAccessToken,airtableToken:personalCredentials.airtable||process.env.FLUX_AIRTABLE_READ_TOKEN,googleSheetsToken:process.env.FLUX_GOOGLE_SHEETS_TOKEN,supabaseUrl:process.env.FLUX_CONNECTOR_SUPABASE_URL,supabaseServiceToken:process.env.FLUX_CONNECTOR_SUPABASE_TOKEN,hubspotToken:personalCredentials.hubspot||process.env.FLUX_HUBSPOT_TOKEN,telegramToken:process.env.FLUX_TELEGRAM_BOT_TOKEN,telegramChatId:process.env.FLUX_TELEGRAM_CHAT_ID,resendApiKey:process.env.FLUX_RESEND_API_KEY,resendFrom:process.env.FLUX_RESEND_FROM});const metering={model:'preview-v1',unit:'standard_operation',rateFluxCoins:1,billableOperations:result.trace.filter(step=>step.status==='completed').length,simulatedOperations:result.trace.filter(step=>step.status==='simulated').length,excludedOperations:result.trace.filter(step=>['skipped','filtered','failed'].includes(step.status)).length,estimatedFluxCoins:result.trace.filter(step=>step.status==='completed').length,chargedByMetering:false};return json(200,{...result,credits,metering});
  }
  catch(error){console.error(JSON.stringify({event:'flux.graph.failed',reason:String(error?.message||error)}));return json(422,{ok:false,error:String(error?.message||'Execution failed').slice(0,240)});}
 }
