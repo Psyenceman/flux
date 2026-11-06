@@ -29,7 +29,7 @@ document.getElementById('zoom-fit').addEventListener('click', () => {
   const top = Math.min(...nodes.map(n => n.offsetTop)) - 70;
   const right = Math.max(...nodes.map(n => n.offsetLeft + n.offsetWidth)) + 70;
   const bottom = Math.max(...nodes.map(n => n.offsetTop + n.offsetHeight)) + 70;
-  const next = clamp(Math.min(viewport.clientWidth / (right - left), viewport.clientHeight / (bottom - top), 1.6));
+  const next = clamp(Math.min(viewport.clientWidth / (right - left), viewport.clientHeight / (bottom - top), 1));
   zoom = next;
   window.fluxCanvasZoom = next;
   canvas.style.transform = 'scale(' + next + ')';
@@ -74,7 +74,5 @@ function endPan(event) {
 }
 viewport.addEventListener('pointerup', endPan);
 viewport.addEventListener('pointercancel', endPan);
-// Start centered on the example, without changing its saved coordinates.
-requestAnimationFrame(() => {
-  document.getElementById('zoom-fit')?.click();
-});
+// Start at actual size (100%); users may choose Fit manually.
+requestAnimationFrame(() => applyZoom(1));
