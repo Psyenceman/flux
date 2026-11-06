@@ -226,7 +226,7 @@
  cloudflare:{trigger_worker:[f('worker','Worker name','text',true),f('event','Event')] }
  };
  const actions={
- manual:[['start','Start manually']],trello:[['read_list','Read list cards']],airtable:[['find_records','Find records'],['create_record','Create record'],['update_record','Update record']],miro:[['create_card','Create card'],['find_items','Find items'],['update_item','Update item']],
+ manual:[['start','Start manually']],trello:[['read_list','Read list cards'],['create_card','Create card (TEST preview)']],airtable:[['find_records','Find records'],['create_record','Create record'],['update_record','Update record']],miro:[['create_card','Create card'],['find_items','Find items'],['update_item','Update item']],
  filter:[['always','Always'],['compare','Compare incoming data'],['approved','Only approved'],['rejected','Only rejected'],['status=approved','Status approved']],
  flux:[['pass','Pass through'],['pick','Pick field'],['count','Count items']],database:[['select','Read rows'],['insert','Create row'],['update','Update row'],['delete','Delete row']],
  router:[['branch','Choose branch']],loop:[['iterate','For each item']],mapper:[['map','Map fields']],merge:[['combine','Combine']],delay:[['wait','Wait']],log:[['record','Record event']],
