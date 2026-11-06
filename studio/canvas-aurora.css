@@ -122,3 +122,30 @@ body>header a{color:#d9cbff!important}
 #flux-block-picker .flux-picker-item[data-ready="supported"]{border-left:4px solid #6946d5!important}
 #flux-block-picker .flux-picker-item[data-ready="planned"]{opacity:.75}
 @media(prefers-reduced-motion:reduce){#canvas-shell .compact-actions #flux-add-block{transition:none!important}#canvas-shell .compact-actions #flux-add-block:hover{transform:none!important}}
+
+/* Flux Studio UX prototype: accessible dashboard, editor telemetry and mobile layout. */
+#canvas-shell .flux-prototype-hero{position:relative;overflow:hidden;background:linear-gradient(115deg,#2c2052 0%,#53349b 72%,#7050c5 100%);border-radius:20px;padding:clamp(24px,4vw,46px);color:#fff;margin:4px 0 24px}
+#canvas-shell .flux-prototype-hero:after{content:"";position:absolute;width:260px;height:260px;border:1px solid #ffffff25;border-radius:50%;right:-65px;top:-100px;pointer-events:none;box-shadow:0 0 0 45px #ffffff0b,0 0 0 90px #ffffff08}
+#canvas-shell .flux-prototype-hero .flux-hero-eyebrow{display:inline-block;font-size:11px;letter-spacing:.14em;font-weight:750;color:#d7c7ff}
+#canvas-shell .flux-prototype-hero h3{font-size:clamp(24px,3vw,37px);line-height:1.14;margin:13px 0 12px;color:#fff;max-width:580px}
+#canvas-shell .flux-prototype-hero p{font-size:14px;color:#e9e2ff!important;max-width:510px}
+#canvas-shell .flux-hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;position:relative;z-index:1}
+#canvas-shell .flux-hero-actions button{border:1px solid #ffffff7a;border-radius:10px;background:#fff;color:#392267;font-weight:750;padding:12px 18px;cursor:pointer}
+#canvas-shell .flux-hero-actions button+button{background:#ffffff15;color:#fff}
+#canvas-shell .flux-hero-actions button:hover{filter:brightness(.94);transform:translateY(-1px)}
+#canvas-shell .flux-quick-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+#canvas-shell .flux-quick-links button{min-width:0;display:flex;flex-direction:column;gap:8px;text-align:left;padding:18px;background:#fff;color:#29233f;border:1px solid #e4ddf0;border-radius:13px;cursor:pointer}
+#canvas-shell .flux-quick-links button:hover,#canvas-shell .flux-quick-links button:focus-visible{border-color:#8665d7;box-shadow:0 5px 20px #36205c14}
+#canvas-shell .flux-quick-links strong{font-size:14px}
+#canvas-shell .flux-quick-links small{font-size:12px;color:#655e78;line-height:1.5}
+#canvas-shell .flux-credit-note{font-size:12px;color:#696079!important;margin:16px 0}
+#canvas-shell #flux-flow-overview{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #e7e1f2;color:#38314c;padding:9px 20px;font-size:12px}
+#canvas-shell #flux-flow-overview[hidden]{display:none!important}
+#canvas-shell #flux-flow-overview strong{color:#5635b5}
+#canvas-shell .flux-flow-help{color:#655e78}
+#canvas-shell .flux-shortcut-hint{margin-left:auto;color:#786e89}
+#canvas-shell #flux-automation-library .flux-home-header{padding-top:2px}
+#canvas-shell #flux-automation-library .flux-home-header>p{font-size:13px}
+#canvas-shell #flux-automation-library .flux-technical{background:#fff;border-color:#e5ddf0}
+@media(max-width:750px){#canvas-shell .flux-quick-links{grid-template-columns:1fr}#canvas-shell .flux-prototype-hero{padding:25px 20px}#canvas-shell .flux-hero-actions button{flex:1}#canvas-shell #flux-flow-overview{gap:8px;padding:10px 12px}#canvas-shell .flux-shortcut-hint{display:none}}
+@media(prefers-reduced-motion:reduce){#canvas-shell .flux-hero-actions button:hover{transform:none}}
