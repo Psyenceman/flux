@@ -56,9 +56,26 @@
  const homeHeader=document.createElement('div');homeHeader.className='flux-home-header';
  const homeIntro=document.createElement('p');homeIntro.textContent='Create and manage automations. Open one to edit its workflow.';
  const start=document.createElement('button');start.type='button';start.className='primary';start.textContent='+ Create automation';
- start.addEventListener('click',()=>{activate('editor');const candidate=[...document.querySelectorAll('button')].find(button=>button.textContent.trim()==='+ New Flux');if(candidate)candidate.click();else window.dispatchEvent(new Event('flux:new-automation-requested'));});
+ const wizard=document.createElement('section');wizard.className='flux-guide';wizard.hidden=true;
+ const heading=document.createElement('h3');heading.textContent='Create your automation';
+ const explanation=document.createElement('p');explanation.textContent='Choose what happens, optionally add a condition, and choose the result.';
+ const triggerLabel=document.createElement('label');triggerLabel.textContent='1. When this happens';
+ const trigger=document.createElement('select');trigger.innerHTML='<option value="trello_read">Read cards from a Trello list</option>';triggerLabel.append(trigger);
+ const conditionLabel=document.createElement('label');conditionLabel.textContent='2. Only if (optional)';
+ const condition=document.createElement('select');condition.innerHTML='<option value="none">No condition</option><option value="compare">Compare incoming data</option>';conditionLabel.append(condition);
+ const actionLabel=document.createElement('label');actionLabel.textContent='3. Then do this';
+ const action=document.createElement('select');action.innerHTML='<option value="trello_create">Create a Trello card</option><option value="log">Record a log entry</option>';actionLabel.append(action);
+ const hint=document.createElement('p');hint.textContent='The blocks will be connected automatically. Configure the Trello lists and card details in the editor before running.';
+ const controls=document.createElement('div');controls.className='flux-guide-actions';
+ const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel';cancel.addEventListener('click',()=>{wizard.hidden=true;});
+ const create=document.createElement('button');create.type='button';create.className='primary';create.textContent='Build workflow';
+ create.addEventListener('click',()=>window.dispatchEvent(new CustomEvent('flux:guided-build',{detail:{action:action.value,condition:condition.value==='compare'}})));
+ controls.append(cancel,create);wizard.append(heading,explanation,triggerLabel,conditionLabel,actionLabel,hint,controls);
+ library.prepend(wizard);
+ start.addEventListener('click',()=>{wizard.hidden=false;wizard.scrollIntoView({block:'nearest',behavior:'smooth'});});
+ window.addEventListener('flux:guided-build-complete',()=>{wizard.hidden=true;activate('editor');});
  homeHeader.append(homeIntro,start);library.prepend(homeHeader);
- const style=document.createElement('style');style.textContent='.flux-home-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 0 18px}.flux-home-header p{margin:0}.flux-home-header button{background:#176baf;color:#fff;border:0;border-radius:9px;padding:12px 16px;font-weight:700;cursor:pointer}@media(max-width:600px){.flux-home-header{align-items:stretch;flex-direction:column}.flux-home-header button{width:100%}}';document.head.append(style);
+ const style=document.createElement('style');style.textContent='.flux-guide{padding:18px;margin:10px 0 20px;border:1px solid #4a6587;border-radius:14px;background:#19283e}.flux-guide[hidden]{display:none}.flux-guide label{display:flex;flex-direction:column;gap:8px;margin:14px 0;font-weight:650}.flux-guide select{width:100%;padding:12px;border:1px solid #577293;border-radius:8px;background:#101c2e;color:#fff}.flux-guide-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}.flux-guide-actions button{padding:11px 16px;border-radius:8px;cursor:pointer}.flux-guide-actions .primary{background:#176baf;color:white;border:0}.flux-home-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 0 18px}.flux-home-header p{margin:0}.flux-home-header button{background:#176baf;color:#fff;border:0;border-radius:9px;padding:12px 16px;font-weight:700;cursor:pointer}@media(max-width:600px){.flux-home-header{align-items:stretch;flex-direction:column}.flux-home-header button{width:100%}}';document.head.append(style);
  // Remove obsolete stacked drawers, while preserving their content.
  for(const details of main.querySelectorAll('.flux-drawer'))details.remove();
  activate('automations');
