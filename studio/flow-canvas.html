@@ -21,6 +21,12 @@ const types=[['trello','Trello','read-only trigger'],['airtable','Airtable','not
 const byId=id=>document.getElementById(id),canvas=byId('canvas'),nodesEl=byId('nodes'),edgesEl=byId('edges'),status=byId('status');
 let nodes=[],edges=[],selected=null,connecting=null,sequence=0,wireDrag=null,suppressPortClick=false;
 const note=message=>{status.textContent=message;};
+const fluxFeedback=(message,kind='info')=>{
+ let panel=document.getElementById('flux-visible-feedback');
+ if(!panel){panel=document.createElement('div');panel.id='flux-visible-feedback';panel.setAttribute('role','status');panel.setAttribute('aria-live','polite');panel.style.cssText='position:fixed;right:20px;top:150px;z-index:10000;max-width:min(420px,calc(100vw - 40px));background:#fff;color:#17304d;border:2px solid #2684bd;border-radius:12px;padding:16px 44px 16px 18px;box-shadow:0 12px 38px #13263b44;font:600 14px/1.5 system-ui,sans-serif;white-space:pre-wrap';const close=document.createElement('button');close.type='button';close.textContent='×';close.setAttribute('aria-label','Close notification');close.style.cssText='position:absolute;right:12px;top:8px;background:none;border:0;color:inherit;font-size:24px;cursor:pointer';close.onclick=()=>panel.remove();panel.append(close);document.body.append(panel);}
+ panel.style.borderColor=kind==='error'?'#c13d4d':kind==='success'?'#288c74':'#2684bd';
+ let content=panel.querySelector('[data-flux-feedback-text]');if(!content){content=document.createElement('div');content.dataset.fluxFeedbackText='';panel.append(content);}content.textContent=message;
+};
 /* Move the whole workflow by dragging empty canvas while group mode is enabled. */
 let workflowDrag=null;
 canvas.addEventListener('pointerdown',event=>{
@@ -294,15 +300,15 @@ byId('save').addEventListener('click',()=>{try{localStorage.setItem(key,JSON.str
 byId('load').addEventListener('click',()=>{try{const raw=localStorage.getItem(key);if(!raw){note('No saved graph');return;}restore(JSON.parse(raw));note('Graph loaded');}catch(e){note('Load failed: '+e.message);}});
 byId('export').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(snapshot(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='flux-workflow.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 byId('import').addEventListener('click',()=>byId('file').click());byId('file').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;if(file.size>250000){note('File too large');return;}try{restore(JSON.parse(await file.text()));note('Graph imported');}catch(error){note('Import failed: '+error.message);}e.target.value='';});
-byId('execute').addEventListener('click',()=>{byId('run-dry').checked=true;byId('run-now').click();});
+byId('execute').addEventListener('click',()=>{byId('run-dry').checked=true;byId('runner').style.display='block';fluxFeedback('Testing workflow… Trello will be read without changing cards.');byId('run-now').click();});
 byId('run-now').addEventListener('click',async()=>{
  const token=byId('run-token').value,output=byId('run-output'),dryRun=byId('run-dry').checked;
 
- let input;try{input=JSON.parse(byId('run-input').value);if(!input||typeof input!=='object'||Array.isArray(input))throw Error('Input must be an object');}catch(e){output.textContent='Invalid input JSON: '+e.message;return;}
+ let input;try{input=JSON.parse(byId('run-input').value);if(!input||typeof input!=='object'||Array.isArray(input))throw Error('Input must be an object');}catch(e){output.textContent='Invalid input JSON: '+e.message;fluxFeedback(output.textContent,'error');return;}
  if(!dryRun&&!confirm('Execute workflow with real server-side HTTP actions?'))return;
  const button=byId('run-now'),primary=byId('execute');button.disabled=true;primary.disabled=true;primary.textContent='Testing…';output.textContent='Executing…';note('Testing workflow…');
- try{const response=await fetch('/.netlify/functions/flux-graph',{method:'POST',headers:await window.fluxExecutionHeaders(token),body:JSON.stringify({graph:snapshot(),input,dryRun})});const data=await response.json();output.textContent='HTTP '+response.status+'\n'+JSON.stringify(data,null,2);note(data.ok?'Test complete: '+(data.trace?.filter(item=>item.status==='completed'||item.status==='simulated').length||0)+' blocks executed.':('Test failed: '+(data.error||'Check execution results.')));window.dispatchEvent(new CustomEvent('flux:run-completed',{detail:{...data,httpStatus:response.status}}));if(response.ok&&data.credits?.ok)window.dispatchEvent(new CustomEvent('flux:run-summary',{detail:data}));}
- catch(e){output.textContent='Execution error: '+e.message;note('Test failed: '+e.message);}
+ try{const response=await fetch('/.netlify/functions/flux-graph',{method:'POST',headers:await window.fluxExecutionHeaders(token),body:JSON.stringify({graph:snapshot(),input,dryRun})});const data=await response.json();output.textContent='HTTP '+response.status+'\n'+JSON.stringify(data,null,2);note(data.ok?'Test complete: '+(data.trace?.filter(item=>item.status==='completed'||item.status==='simulated').length||0)+' blocks executed.':('Test failed: '+(data.error||'Check execution results.')));fluxFeedback(data.ok?'Workflow test complete. '+(data.trace?.length||0)+' blocks processed. Open the results below for details.':'Test failed: '+(data.error||'Check execution results.'),data.ok?'success':'error');window.dispatchEvent(new CustomEvent('flux:run-completed',{detail:{...data,httpStatus:response.status}}));if(response.ok&&data.credits?.ok)window.dispatchEvent(new CustomEvent('flux:run-summary',{detail:data}));}
+ catch(e){output.textContent='Execution error: '+e.message;note('Test failed: '+e.message);fluxFeedback('Test failed: '+e.message,'error');}
  finally{button.disabled=false;primary.disabled=false;primary.textContent='Test workflow';byId('run-token').value='';}
 });
 window.addEventListener('flux:run-completed',event=>{
@@ -317,7 +323,7 @@ window.addEventListener('flux:run-completed',event=>{
   const icon=el.querySelector('.block-icon');if(icon){icon.title=status?'Last test: '+status:'Not tested';icon.setAttribute('aria-label',icon.title);}
  }
 });
-byId('validate').addEventListener('click',()=>{const disconnected=nodes.filter(n=>!edges.some(e=>e.from===n.id||e.to===n.id));note('Graph structurally valid: '+nodes.length+' blocks, '+edges.length+' connections.'+(disconnected.length?' Unconnected blocks: '+disconnected.map(n=>n.id).join(', '):'')+' No actions were executed.');});
+byId('validate').addEventListener('click',()=>{const disconnected=nodes.filter(n=>!edges.some(e=>e.from===n.id||e.to===n.id));const message='Graph structurally valid: '+nodes.length+' blocks, '+edges.length+' connections.'+(disconnected.length?' Unconnected blocks: '+disconnected.map(n=>n.label).join(', '):'')+' No actions were executed.';note(message);fluxFeedback(message,'success');});
 byId('reset').addEventListener('click',()=>{if(!confirm('Replace current canvas with the example? Save or export first.'))return;example();});
 function example(){nodes=[];edges=[];sequence=0;const a=add('airtable',90,190,{operation:'new record'}),b=add('filter',360,190,{operation:'status approved'}),c=add('miro',650,100,{operation:'create card'}),d=add('slack',650,290,{operation:'send message'}),e=add('email',930,290,{operation:'send email'});edges=[{from:a.id,to:b.id},{from:b.id,to:c.id},{from:b.id,to:d.id},{from:d.id,to:e.id}];selected=null;render();note('Example graph ready. Design only; integrations are not connected.');}
 example();
