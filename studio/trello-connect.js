@@ -27,7 +27,10 @@ window.FluxTrelloConnect = function ({button, title, status, getToken}) {
  const finish=async result=>{
   stop();
   await check();
-  if(!disposed&&result&&result!=='connected')status.textContent='Trello authorization: '+result+'. You can try again.';
+  if(!disposed&&result&&result!=='connected'&&!connected){
+   const labels={invalid:'Invalid OAuth callback or missing state cookie',expired:'OAuth session expired',exchange_failed:'Atlassian token exchange failed',connection_missing:'Connection record was not created',failed_state_lookup:'OAuth state database lookup failed',failed_token_exchange:'Atlassian token request failed',failed_connection_lookup:'Connection database lookup failed',failed_connection_create:'Connection database insert failed',failed_credentials_save:'Encrypted credential storage failed',failed_connection_update:'Connection status update failed'};
+   status.textContent='Trello authorization: '+(labels[result]||result)+'. Please try again.';
+  }
  };
  const onMessage=event=>{
   if(!busy||event.origin!==location.origin||event.source!==popup||event.data?.type!=='flux:trello-oauth')return;
