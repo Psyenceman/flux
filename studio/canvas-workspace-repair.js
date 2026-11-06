@@ -133,40 +133,101 @@
  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
 })();
 
-/* TEST: contextual Inspector in a real accessible modal. No graph state changes. */
+/* TEST: single-click compact module editor, inspired by simple automation dialogs. */
 (()=>{
- const inspector=document.getElementById('inspector-panel');
- const nodes=document.getElementById('nodes');
- if(!inspector||!nodes)return;
- const modal=document.createElement('dialog');modal.id='flux-inspector-dialog';modal.setAttribute('aria-label','Configure block');
- document.body.append(modal);modal.append(inspector);
- const style=document.createElement('style');
- style.textContent=`
- #flux-inspector-dialog{position:fixed!important;inset:0!important;margin:auto!important;width:min(510px,calc(100vw - 24px))!important;max-width:510px!important;max-height:min(85dvh,820px)!important;overflow:auto!important;padding:0!important;border:1px solid #d4dce7!important;border-radius:18px!important;background:#fff!important;color:#172b45!important;box-shadow:0 20px 90px #061a354f!important;z-index:9995!important}
- #flux-inspector-dialog::backdrop{background:rgba(7,20,35,.52)}
- #flux-inspector-dialog #inspector-panel{display:block!important;position:static!important;inset:auto!important;transform:none!important;visibility:visible!important;opacity:1!important;width:100%!important;max-width:none!important;max-height:none!important;height:auto!important;min-height:0!important;overflow:visible!important;padding:24px!important;margin:0!important;border:0!important;box-shadow:none!important;background:#fff!important;color:#172b45!important}
- #flux-inspector-dialog #inspector-panel h2{font-size:20px!important;color:#172b45!important}
- #flux-inspector-dialog #inspector-panel p,#flux-inspector-dialog #selection{color:#566a80!important}
- #flux-inspector-dialog #inspector-panel label{color:#233c55!important}
- #flux-inspector-dialog #inspector-panel input,#flux-inspector-dialog #inspector-panel select,#flux-inspector-dialog #inspector-panel textarea{max-width:100%!important}
- #flux-inspector-dialog #inspector-panel .inspector-close{position:sticky;top:0;float:right}
- #flux-inspector-dialog #workflow-graph-tools{display:none!important}
- #flux-inspector-dialog #inspector-panel .inspector-tabs button{font-size:12px}
- @media(max-width:600px){#flux-inspector-dialog #inspector-panel{padding:16px!important}}
+ const modal=document.createElement('dialog');modal.id='flux-module-config';modal.setAttribute('aria-label','Configure Flux module');
+ document.body.append(modal);
+ const css=document.createElement('style');
+ css.textContent=`
+ #flux-module-config{position:fixed!important;inset:auto!important;margin:0!important;width:min(408px,calc(100vw - 20px))!important;max-height:min(76dvh,650px)!important;overflow:auto!important;border:1px solid #d6e0ed!important;border-radius:15px!important;background:#fff!important;color:#142b45!important;padding:0!important;box-shadow:0 18px 55px #0a243d44!important;z-index:9999!important}
+ #flux-module-config::backdrop{background:rgba(14,30,48,.17)!important}
+ #flux-module-config .fm-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 17px;border-bottom:1px solid #e1e8ef}
+ #flux-module-config h2{color:#19344f;font-size:18px;line-height:1.2;margin:0}
+ #flux-module-config .fm-close{background:transparent;border:0;font-size:24px;color:#506782;cursor:pointer;padding:0 5px}
+ #flux-module-config .fm-body{padding:16px 17px}
+ #flux-module-config .fm-row{display:block;margin:0 0 14px;font-size:13px;font-weight:650;color:#344d66}
+ #flux-module-config .fm-row select,#flux-module-config .fm-row input,#flux-module-config .fm-row textarea{margin-top:7px;display:block;width:100%;min-height:42px;box-sizing:border-box;border:1px solid #c0cddd;background:white;color:#203750;border-radius:9px;padding:9px 11px;font:14px system-ui,sans-serif}
+ #flux-module-config .fm-row input:focus,#flux-module-config .fm-row select:focus{outline:2px solid #569dcc;outline-offset:1px}
+ #flux-module-config .fm-help{font-size:12px;line-height:1.5;color:#627890;margin:0 0 14px}
+ #flux-module-config .fm-actions{display:flex;justify-content:flex-end;gap:8px;padding:12px 17px;border-top:1px solid #e5ebf1}
+ #flux-module-config .fm-actions button{border:1px solid #c5d2df;border-radius:8px;padding:9px 15px;background:#f6f8fb;color:#203750;cursor:pointer;font-weight:650}
+ #flux-module-config .fm-actions button.fm-primary{background:#166fa6;color:#fff;border-color:#166fa6}
+ #flux-module-config details{border-top:1px solid #e8edf3;padding-top:11px;font-size:12px;color:#577085}
+ #flux-module-config summary{cursor:pointer}
+ @media(max-width:600px){#flux-module-config{left:10px!important;top:auto!important;bottom:10px!important;max-height:82dvh!important}}
  `;
- document.head.append(style);
- const open=()=>{if(!modal.open)modal.showModal();};
- window.addEventListener('flux:open-block-config',open);
- nodes.addEventListener('click',event=>{
-  if(!event.target.closest('.node')||event.target.closest('button,.port,.node-delete,.flux-node-resize'))return;
-  queueMicrotask(open);
+ document.head.append(css);
+ const labelize=value=>String(value).replace(/[_-]/g,' ').replace(/\b\w/g,char=>char.toUpperCase());
+ const field=(parent,label,type,value,options)=>{
+  const row=document.createElement('label');row.className='fm-row';row.textContent=label;
+  const el=document.createElement(options?'select':'input');
+  if(options){for(const [v,text] of options)el.add(new Option(text,v));}
+  else el.type=type||'text';
+  el.value=value??'';
+  row.append(el);parent.append(row);return {row,el};
+ };
+ const extraFields={
+  email:[['recipient','To','email']],resend:[['recipient','To','email']],
+  slack:[['channel','Channel','text']],discord:[['channel','Channel','text']],
+  http:[['url','Destination URL','url']],trello:[['list','List ID','text']],
+  airtable:[['table','Table','text']],sheets:[['spreadsheet','Spreadsheet','text']],
+  database:[['table','Table','text']],supabase:[['table','Table','text']],
+  filter:[['value','Value to check','text']],delay:[['seconds','Seconds','number']],
+  webhook:[['name','Webhook label','text']],log:[['message','Message','text']]
+ };
+ const close=()=>{if(modal.open)modal.close();};
+ modal.addEventListener('click',event=>{if(event.target===modal)close();});
+ window.addEventListener('flux:automation-opened',close);
+ window.addEventListener('flux:open-block-config',event=>{
+  const {node,options=[],availability,id}=event.detail||{};
+  if(!node||!id)return;
+  const draft={...node.config,schedule:{...(node.config.schedule||{})}};
+  modal.replaceChildren();
+  const header=document.createElement('div');header.className='fm-head';
+  const heading=document.createElement('h2');heading.textContent=node.label;
+  const x=document.createElement('button');x.className='fm-close';x.type='button';x.textContent='×';x.setAttribute('aria-label','Close');x.addEventListener('click',close);
+  header.append(heading,x);modal.append(header);
+  const body=document.createElement('div');body.className='fm-body';modal.append(body);
+  const help=document.createElement('p');help.className='fm-help';help.textContent=availability==='planned'||availability==='not implemented'?'Module setup preview. Live connection is not available yet.':'Choose the action and fill in only the fields you need.';body.append(help);
+  if(node.type==='schedule'){
+   const recurrence=field(body,'When should it run?','',draft.schedule.frequency||'once',[['once','One time'],['daily','Every day'],['weekly','Every week']]);
+   const date=field(body,'Date','date',draft.schedule.date||'');
+   const time=field(body,'Time','time',draft.schedule.time||'09:00');
+   const day=field(body,'Day','',draft.schedule.day||'1',[['1','Monday'],['2','Tuesday'],['3','Wednesday'],['4','Thursday'],['5','Friday'],['6','Saturday'],['0','Sunday']]);
+   const tz=field(body,'Time zone','',draft.schedule.timezone||'Europe/Rome',[['Europe/Rome','Europe/Rome'],['UTC','UTC']]);
+   const sync=()=>{date.row.hidden=recurrence.el.value!=='once';day.row.hidden=recurrence.el.value!=='weekly';};
+   recurrence.el.addEventListener('change',sync);sync();
+   draft._validate=()=>{if(!time.el.value||(recurrence.el.value==='once'&&!date.el.value))return 'Choose a date and time.';draft.schedule={frequency:recurrence.el.value,date:date.el.value,time:time.el.value,day:day.el.value,timezone:tz.el.value};draft.operation=recurrence.el.value;return '';};
+  }else{
+   if(options.length){
+    const op=field(body,'Action','',options.includes(draft.operation)?draft.operation:options[0],options.map(value=>[value,labelize(value)]));
+    op.el.addEventListener('change',()=>{draft.operation=op.el.value;});
+    draft.operation=op.el.value;
+   }
+   const fields=extraFields[node.type]||[];
+   for(const [key,name,type] of fields){const control=field(body,name,type,draft[key]||'');control.el.addEventListener('input',()=>{draft[key]=control.el.value;});}
+   if(node.type==='calendar'){const note=document.createElement('p');note.className='fm-help';note.textContent='Google Calendar connection will be available when secure account authorization is enabled.';body.append(note);}
+  }
+  const more=document.createElement('details');const summary=document.createElement('summary');summary.textContent='Advanced information';more.append(summary);
+  const detail=document.createElement('p');detail.className='fm-help';detail.textContent='Module type: '+node.type+'. Connection credentials are never collected in this form. Advanced integrations are configured separately.';more.append(detail);body.append(more);
+  const actions=document.createElement('div');actions.className='fm-actions';
+  const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel';cancel.addEventListener('click',close);
+  const save=document.createElement('button');save.type='button';save.className='fm-primary';save.textContent='Save';
+  save.addEventListener('click',()=>{
+   const error=draft._validate?.();if(error){help.textContent=error;help.style.color='#bc3030';return;}
+   delete draft._validate;node.config={...node.config,...draft};
+   window.dispatchEvent(new Event('flux:canvas-changed'));
+   const status=document.getElementById('status');if(status)status.textContent=node.label+' configured. Save your Flux to keep the changes.';
+   close();
+  });
+  actions.append(cancel,save);modal.append(actions);
+  if(modal.open)modal.close();
+  const anchor=document.querySelector('#nodes .node[data-node-id="'+CSS.escape(id)+'"]');
+  const rect=anchor?.getBoundingClientRect();const width=Math.min(408,window.innerWidth-20);
+  if(rect&&window.innerWidth>600){const left=rect.right+18+width<window.innerWidth-12?rect.right+18:Math.max(12,rect.left-width-18);modal.style.left=Math.round(left)+'px';modal.style.top=Math.round(Math.max(12,Math.min(window.innerHeight-460,rect.top-20)))+'px';}
+  else{modal.style.left='10px';modal.style.top='auto';}
+  modal.showModal();
  });
- nodes.addEventListener('dblclick',event=>{
-  if(!event.target.closest('.node')||event.target.closest('button,.port'))return;
-  queueMicrotask(open);
- });
- modal.addEventListener('click',event=>{if(event.target===modal||event.target.closest('.inspector-close'))modal.close();});
- window.addEventListener('flux:automation-opened',()=>{if(modal.open)modal.close();});
 })();
 
 /* TEST: simple horizontal blocks, native branding and explicit next-block action. */
