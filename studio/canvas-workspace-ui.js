@@ -53,6 +53,9 @@
   body.dataset.view=id;
   if(id==='editor')window.dispatchEvent(new Event('resize'));
  }
+ // Keep cloud/webhook administration out of the main automation dashboard.
+ const technical=document.createElement('details');technical.className='flux-technical';
+ const technicalTitle=document.createElement('summary');technicalTitle.textContent='Advanced settings · Cloud and webhooks';technical.append(technicalTitle,cloud);library.append(technical);
  const homeHeader=document.createElement('div');homeHeader.className='flux-home-header';
  const homeIntro=document.createElement('p');homeIntro.textContent='Create and manage automations. Open one to edit its workflow.';
  const start=document.createElement('button');start.type='button';start.className='primary';start.textContent='+ Create automation';
@@ -75,7 +78,7 @@
  start.addEventListener('click',()=>{wizard.hidden=false;wizard.scrollIntoView({block:'nearest',behavior:'smooth'});});
  window.addEventListener('flux:guided-build-complete',()=>{wizard.hidden=true;activate('editor');});
  homeHeader.append(homeIntro,start);library.prepend(homeHeader);
- const style=document.createElement('style');style.textContent='.flux-guide{padding:18px;margin:10px 0 20px;border:1px solid #4a6587;border-radius:14px;background:#19283e}.flux-guide[hidden]{display:none}.flux-guide label{display:flex;flex-direction:column;gap:8px;margin:14px 0;font-weight:650}.flux-guide select{width:100%;padding:12px;border:1px solid #577293;border-radius:8px;background:#101c2e;color:#fff}.flux-guide-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}.flux-guide-actions button{padding:11px 16px;border-radius:8px;cursor:pointer}.flux-guide-actions .primary{background:#176baf;color:white;border:0}.flux-home-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 0 18px}.flux-home-header p{margin:0}.flux-home-header button{background:#176baf;color:#fff;border:0;border-radius:9px;padding:12px 16px;font-weight:700;cursor:pointer}@media(max-width:600px){.flux-home-header{align-items:stretch;flex-direction:column}.flux-home-header button{width:100%}}';document.head.append(style);
+ const style=document.createElement('style');style.textContent='.flux-guide{padding:18px;margin:10px 0 20px;border:1px solid #4a6587;border-radius:14px;background:#f7faff;color:#18314d}.flux-guide h3,.flux-guide label{color:#18314d}.flux-guide p{color:#52657d}.flux-guide[hidden]{display:none}.flux-guide label{display:flex;flex-direction:column;gap:8px;margin:14px 0;font-weight:650}.flux-guide select{width:100%;padding:12px;border:1px solid #bfd0e4;border-radius:8px;background:#fff;color:#18314d}.flux-guide-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}.flux-guide-actions button{padding:11px 16px;border-radius:8px;cursor:pointer}.flux-guide-actions .primary{background:#176baf;color:white;border:0}.flux-technical{margin-top:24px;border:1px solid #d4dfed;border-radius:10px;padding:12px;background:#f7faff;color:#18314d}.flux-technical>summary{cursor:pointer;font-weight:650;padding:5px}.flux-technical:not([open]) #canvas-cloud{display:none}.flux-home-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 0 18px}.flux-home-header p{margin:0}.flux-home-header button{background:#176baf;color:#fff;border:0;border-radius:9px;padding:12px 16px;font-weight:700;cursor:pointer}@media(max-width:600px){.flux-home-header{align-items:stretch;flex-direction:column}.flux-home-header button{width:100%}}';document.head.append(style);
  // Remove obsolete stacked drawers, while preserving their content.
  for(const details of main.querySelectorAll('.flux-drawer'))details.remove();
  activate('automations');
