@@ -233,6 +233,39 @@ $('canvas-cloud-save').addEventListener('click',async()=>{
     drawLibrary();updateApiPanel();status('Canvas saved to Supabase. Automation remains disabled.');
   } catch(error){status('Save failed: '+error.message);}
 });
+// New scenario: create a separate, disabled cloud automation; never overwrite the selected one.
+const newScenarioButton=document.createElement('button');
+newScenarioButton.type='button';newScenarioButton.id='flux-new-scenario';newScenarioButton.textContent='+ New scenario';
+newScenarioButton.style.cssText='border:1px solid #2473a5;border-radius:9px;background:#176d9d;color:white;padding:10px 14px;font-weight:700;cursor:pointer';
+const editorToolbar=document.querySelector('#canvas-shell > main .toolbar:not(#canvas-cloud)');
+if(editorToolbar)editorToolbar.prepend(newScenarioButton);
+let scenarioBusy=false;
+newScenarioButton.addEventListener('click',async()=>{
+ if(scenarioBusy)return;
+ if(!client||!user){status('Sign in to Flux Studio to create a saved scenario.');return;}
+ const proposed=prompt('Name your new scenario','My new scenario');
+ if(proposed===null)return;
+ const name=proposed.trim();
+ if(!name||name.length>100){status('Enter a scenario name between 1 and 100 characters.');return;}
+ if(!confirm('Create a new empty scenario? Unsaved changes in the current canvas will be replaced. Your saved scenarios will remain unchanged.'))return;
+ scenarioBusy=true;newScenarioButton.disabled=true;
+ try{
+  const graph={version:1,nodes:[],edges:[]};
+  const payload={name,owner_id:user.id,action_config:{graph,version:2},enabled:false};
+  const {data,error}=await client.from('automations').insert(payload).select('id,name,action_config,project_id').single();
+  if(error)throw error;
+  // Persist first; only replace the canvas after the database confirms creation.
+  rows.unshift(data);
+  $('canvas-automation').add(new Option(data.name,data.id));
+  $('canvas-automation').value=data.id;
+  try{await restoreGraph(graph);}catch(restoreError){status('Scenario saved, but canvas could not be cleared: '+restoreError.message);drawLibrary();return;}
+  drawLibrary();updateApiPanel();
+  window.dispatchEvent(new CustomEvent('flux:automation-opened',{detail:{id:data.id,name:data.name}}));
+  status('New scenario "'+name+'" saved to Flux TEST. Add your first block.');
+  document.getElementById('flux-add-block')?.focus();
+ }catch(error){status('Could not create scenario: '+error.message);}
+ finally{scenarioBusy=false;newScenarioButton.disabled=false;}
+});
 try {
   const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2.49.10');
   client=createClient(supabaseUrl,supabasePublishableKey);
