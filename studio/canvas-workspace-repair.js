@@ -294,7 +294,7 @@
   body.append(connection);
   const more=document.createElement('details');const summary=document.createElement('summary');summary.textContent='Advanced information';more.append(summary);
   const detail=document.createElement('p');detail.className='fm-help';detail.textContent='Module type: '+node.type+'. Never paste account passwords or API tokens into this form. Settings are saved with the Flux graph; provider authorization is managed separately.';more.append(detail);body.append(more);
-  const actions=document.createElement('div');actions.className='fm-actions';
+  const footerActions=document.createElement('div');footerActions.className='fm-actions';
   const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel';cancel.addEventListener('click',close);
   const save=document.createElement('button');save.type='button';save.className='fm-primary';save.textContent='Save';
   save.addEventListener('click',()=>{
@@ -303,7 +303,7 @@
    const status=document.getElementById('status');if(status)status.textContent=node.label+' configured. Save your Flux to keep the changes.';
    close();
   });
-  actions.append(cancel,save);modal.append(actions);
+  footerActions.append(cancel,save);modal.append(footerActions);
   if(modal.open)modal.close();
   const anchor=document.querySelector('#nodes .node[data-node-id="'+CSS.escape(id)+'"]');
   const rect=anchor?.getBoundingClientRect();const width=Math.min(408,window.innerWidth-20);
