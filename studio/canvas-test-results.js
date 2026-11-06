@@ -11,7 +11,7 @@ if(output){
   if(raw!==window.fluxLastLoggedResponse){window.fluxLastLoggedResponse=raw;window.dispatchEvent(new CustomEvent('flux:run-summary',{detail:{...result,dryRun:document.getElementById('run-dry')?.checked!==false}}));}
   window.dispatchEvent(new CustomEvent('flux:test-outputs',{detail:{outputs:result.ok&&result.outputs&&typeof result.outputs==='object'?result.outputs:{}}}));
   panel.replaceChildren();
-  const heading=document.createElement('strong');heading.textContent=result.ok?(result.dryRun?'Simulation completed — no live actions sent':'Execution completed'):'Test could not finish';panel.append(heading);
+  const heading=document.createElement('strong');heading.textContent=result.ok?(result.dryRun?'Safe test completed — no external changes made':'Execution completed'):'Test could not finish';panel.append(heading);
   if(result.error){const error=document.createElement('p');error.textContent=result.error;panel.append(error);}
   if(Array.isArray(result.trace)){
    const counts={completed:0,simulated:0,filtered:0,skipped:0};
@@ -25,6 +25,18 @@ if(output){
     item.append(title,status);
     if(step.reason){const reason=document.createElement('p');reason.textContent=step.reason;item.append(reason);}
     if(result.outputs&&Object.hasOwn(result.outputs,step.id)){
+     const stepOutput=result.outputs[step.id];
+     if(step.type==='trello'&&Array.isArray(stepOutput?.items)){
+      const count=document.createElement('p');count.textContent=stepOutput.items.length+' Trello cards retrieved';item.append(count);
+      const cards=document.createElement('ul');cards.style.cssText='padding-left:20px;max-height:300px;overflow:auto';
+      for(const card of stepOutput.items){
+       const line=document.createElement('li');
+       if(typeof card.url==='string'&&/^https:\/\/trello\.com\/c\//.test(card.url)){const link=document.createElement('a');link.href=card.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=String(card.name||'Untitled card');line.append(link);}
+       else line.textContent=String(card.name||'Untitled card');
+       cards.append(line);
+      }
+      item.append(cards);
+     }
      const details=document.createElement('details');const summary=document.createElement('summary');summary.textContent='View output';
      const data=document.createElement('pre');data.textContent=JSON.stringify(result.outputs[step.id],null,2);details.append(summary,data);item.append(details);
     }
