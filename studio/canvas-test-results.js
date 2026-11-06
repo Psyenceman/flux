@@ -3,6 +3,12 @@ const output=document.getElementById('run-output');
 if(output){
  const panel=document.createElement('div');panel.id='flux-test-results';panel.setAttribute('aria-live','polite');
  output.before(panel);
+ const technical=document.createElement('details');technical.className='flux-technical-toggle';
+ const technicalSummary=document.createElement('summary');technicalSummary.textContent='Technical response (advanced)';
+ technical.append(technicalSummary);
+ output.after(technical);technical.append(output);
+ output.style.display='block';
+
  const observer=new MutationObserver(()=>{
   const raw=output.textContent||'';
   if(!raw.startsWith('HTTP ')){panel.replaceChildren();return;}
@@ -10,6 +16,8 @@ if(output){
   let result;try{result=JSON.parse(raw.slice(start));}catch{return;}
   if(raw!==window.fluxLastLoggedResponse){window.fluxLastLoggedResponse=raw;window.dispatchEvent(new CustomEvent('flux:run-summary',{detail:{...result,dryRun:document.getElementById('run-dry')?.checked!==false}}));}
   window.dispatchEvent(new CustomEvent('flux:test-outputs',{detail:{outputs:result.ok&&result.outputs&&typeof result.outputs==='object'?result.outputs:{}}}));
+  for(const node of document.querySelectorAll('#nodes .node')){node.classList.remove('flux-run-completed','flux-run-filtered','flux-run-skipped','flux-run-simulated');}
+  if(Array.isArray(result.trace))for(const step of result.trace){const node=[...document.querySelectorAll('#nodes .node')].find(el=>el.dataset.nodeId===step.id);if(node&&['completed','filtered','skipped','simulated'].includes(step.status))node.classList.add('flux-run-'+step.status);}
   panel.replaceChildren();
   const heading=document.createElement('strong');heading.textContent=result.ok?(result.dryRun?'Safe test completed — no external changes made':'Execution completed'):'Test could not finish';panel.append(heading);
   if(result.error){const error=document.createElement('p');error.textContent=result.error;panel.append(error);}
