@@ -134,6 +134,14 @@ function render(){
  }
  renderInspector();renderConnections();byId('stats').textContent=nodes.length+' blocks · '+edges.length+' connections';
 }
+// Single public entrypoint for block configuration, including touch and keyboard.
+window.fluxOpenBlockConfig=id=>{
+ const node=nodes.find(item=>item.id===id);
+ if(!node)return false;
+ selected=id;
+ window.dispatchEvent(new CustomEvent('flux:open-block-config',{detail:{id:node.id,node,options:operations[node.type]||[],availability:types.find(t=>t[0]===node.type)?.[2]||''}}));
+ return true;
+};
 function drawEdges(){
  edgesEl.replaceChildren();
  for(const e of edges){
