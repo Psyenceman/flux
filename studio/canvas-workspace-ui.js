@@ -57,7 +57,7 @@
    if(query&&!source.dataset.search?.includes(query))continue;
    const item=document.createElement('button');item.type='button';item.className='flux-picker-item';
    const title=document.createElement('strong');title.textContent=source.querySelector('span:not(.integration-status)')?.textContent||source.dataset.type;
-   const status=document.createElement('small');status.textContent=source.dataset.integration==='planned'?'Planned · not executable':'Block available in editor · live support varies';
+   const status=document.createElement('small');const supported={trello:'Trello · read cards / create card',filter:'Condition · executable',mapper:'Data mapping · executable',flux:'Transform · limited operations',manual:'Manual trigger · executable',webhook:'Webhook · requires setup',log:'Log · executable',telegram:'Telegram · requires bot setup',resend:'Resend · requires email setup'};const description=supported[source.dataset.type];status.textContent=description||'Planned or experimental · check before running';item.dataset.ready=description?'supported':'planned';
    item.append(title,status);item.addEventListener('click',()=>{source.click();picker.close();});pickerItems.append(item);
   }
   if(!pickerItems.children.length){const empty=document.createElement('p');empty.textContent='No matching blocks';pickerItems.append(empty);}
