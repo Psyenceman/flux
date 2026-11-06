@@ -9,7 +9,6 @@ function item(text,action){const button=document.createElement('button');button.
 window.addEventListener('flux:block-menu',event=>{
  const {id,label,x,y}=event.detail;menu.replaceChildren();
  const heading=document.createElement('strong');heading.textContent=label;menu.append(heading);
- item('Configure block',()=>{panel.classList.add('context-open');document.getElementById('canvas-shell').classList.remove('inspector-closed');document.getElementById('toggle-inspector').setAttribute('aria-expanded','true');});
  item('Delete block',()=>window.dispatchEvent(new CustomEvent('flux:delete-block',{detail:id})));
  openAt(x,y);
 });
