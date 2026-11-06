@@ -195,6 +195,31 @@ $('canvas-cloud-load').addEventListener('click',async()=>{
   try{await restoreGraph(graph);drawLibrary();window.dispatchEvent(new CustomEvent('flux:automation-opened',{detail:{id:row.id,name:row.name}}));status('Canvas loaded from Supabase. No workflow was executed.');}
   catch(error){status('Load failed: '+error.message);}
 });
+window.addEventListener('flux:create-scenario',async event=>{
+ const name=String(event.detail?.name||'').trim();
+ if(!name||name.length>100)return status('Enter a scenario name (up to 100 characters).');
+ if(!client||!user)return status('Sign in to Flux Studio before creating a scenario.');
+ try{
+  const {data:projects,error:projectError}=await client.from('projects').select('id').eq('owner_id',user.id).order('created_at',{ascending:true}).limit(1);
+  if(projectError)throw projectError;
+  let projectId=projects?.[0]?.id;
+  if(!projectId){
+   const created=await client.from('projects').insert({owner_id:user.id,name:'My scenarios',description:'Flux Studio scenarios'}).select('id').single();
+   if(created.error)throw created.error;
+   projectId=created.data.id;
+  }
+  const graph={version:1,nodes:[],edges:[]};
+  const created=await client.from('automations').insert({owner_id:user.id,project_id:projectId,name,enabled:false,trigger_type:'manual',trigger_config:{},action_config:{graph,version:2}}).select('id,name,action_config,project_id').single();
+  if(created.error)throw created.error;
+  rows.unshift(created.data);
+  $('canvas-automation').add(new Option(name,created.data.id));
+  $('canvas-automation').value=created.data.id;
+  try{await restoreGraph(graph);}catch(error){status('Scenario created, but opening the empty canvas failed: '+error.message);return;}
+  drawLibrary();updateApiPanel();
+  window.dispatchEvent(new CustomEvent('flux:automation-opened',{detail:{id:created.data.id,name}}));
+  status('New scenario "'+name+'" created and saved as a disabled draft.');
+ }catch(error){status('Could not create scenario: '+error.message);}
+});
 $('canvas-cloud-save').addEventListener('click',async()=>{
   const row=selection();
   if(!row) return status('Select an automation first.');
