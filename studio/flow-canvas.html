@@ -356,6 +356,11 @@ byId('viewport').addEventListener('dragover',e=>e.preventDefault());byId('viewpo
 const key='flux-flow-canvas-v1';
 window.addEventListener('flux:canvas-snapshot-request',()=>window.dispatchEvent(new CustomEvent('flux:canvas-snapshot',{detail:snapshot()})));
 window.addEventListener('flux:canvas-restore-request',event=>{try{restore(event.detail);window.dispatchEvent(new CustomEvent('flux:canvas-restored'));}catch(error){window.dispatchEvent(new CustomEvent('flux:canvas-restore-error',{detail:error.message}));}});
+window.addEventListener('flux:guided-blank',()=>{
+ if(!confirm('Start a blank automation? Unsaved canvas changes will be replaced.'))return;
+ try{restore({version:1,nodes:[],edges:[]});window.dispatchEvent(new Event('flux:guided-build-complete'));note('Blank automation ready. Add blocks from the library.');}
+ catch(error){alert('Unable to start blank automation: '+error.message);}
+});
 window.addEventListener('flux:guided-build',event=>{
  const detail=event.detail||{};
  const action=detail.action;
