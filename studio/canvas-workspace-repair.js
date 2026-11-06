@@ -141,6 +141,8 @@
  css.textContent=`
  #flux-module-config{position:fixed!important;inset:auto!important;margin:0!important;width:min(408px,calc(100vw - 20px))!important;max-height:min(76dvh,650px)!important;overflow:auto!important;border:1px solid #d6e0ed!important;border-radius:15px!important;background:#fff!important;color:#142b45!important;padding:0!important;box-shadow:0 18px 55px #0a243d44!important;z-index:9999!important}
  #flux-module-config::backdrop{background:rgba(14,30,48,.17)!important}
+ #flux-module-config{left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%)!important}
+ #flux-module-config[open]{display:block!important}
  #canvas-shell > #inspector-panel,#canvas-shell > #inspector-panel.context-open{display:none!important;visibility:hidden!important;pointer-events:none!important}
  #flux-module-config:not([open]){display:none!important}
  #flux-module-config .fm-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 17px;border-bottom:1px solid #e1e8ef}
@@ -160,7 +162,7 @@
  #flux-module-config .fm-connect strong{font-size:12px;color:#294663}
  #flux-module-config .fm-connect small{color:#5c7188;line-height:1.45}
  #flux-module-config .fm-connect button{align-self:flex-start;padding:7px 9px;border:1px solid #d6e0e8;border-radius:7px;background:#eaeef2;color:#7d8c9f;margin-top:6px}
- @media(max-width:600px){#flux-module-config{left:10px!important;top:auto!important;bottom:10px!important;max-height:82dvh!important}}
+ @media(max-width:600px){#flux-module-config{width:calc(100vw - 24px)!important;max-height:82dvh!important}}
  `;
  document.head.append(css);
  // The retired sidebar must never compete with this dialog.
@@ -305,10 +307,13 @@
   });
   footerActions.append(cancel,save);modal.append(footerActions);
   if(modal.open)modal.close();
-  const anchor=document.querySelector('#nodes .node[data-node-id="'+CSS.escape(id)+'"]');
-  const rect=anchor?.getBoundingClientRect();const width=Math.min(408,window.innerWidth-20);
-  if(rect&&window.innerWidth>600){const left=rect.right+18+width<window.innerWidth-12?rect.right+18:Math.max(12,rect.left-width-18);modal.style.left=Math.round(left)+'px';modal.style.top=Math.round(Math.max(12,Math.min(window.innerHeight-460,rect.top-20)))+'px';}
-  else{modal.style.left='10px';modal.style.top='auto';}
+  // Stable centered positioning: independent of canvas zoom, scroll and node location.
+  modal.style.setProperty('position','fixed','important');
+  modal.style.setProperty('left','50%','important');
+  modal.style.setProperty('top','50%','important');
+  modal.style.setProperty('right','auto','important');
+  modal.style.setProperty('bottom','auto','important');
+  modal.style.setProperty('transform','translate(-50%,-50%)','important');
   modal.showModal();
  });
 })();
