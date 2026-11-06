@@ -85,3 +85,40 @@ body>header h1{color:#fff!important}body>header p{color:#b9d3df!important}body>h
 #canvas-shell .flux-webhook-panel input{flex:1 1 240px;min-width:180px;padding:9px;border:1px solid #b8d7e0;border-radius:8px;background:white;color:#14243a}
 #canvas-shell .flux-webhook-panel button{border:1px solid #91bac6;border-radius:8px;padding:8px 12px;background:white;color:#126a80;cursor:pointer}
 #canvas-shell .flux-webhook-history{max-height:140px;overflow:auto}
+
+
+/* TEST: Flux Studio 2 — Make-inspired clarity, independent visual identity. */
+:root{--flux-ink:#24213b;--flux-line:#e2ddf0;--flux-canvas:#f8f7fd;--flux-purple:#6946d5;--flux-blue:#6946d5;--flux-teal:#3b8eab;--flux-pink:#ed7596;--flux-orange:#f3ac57}
+html,body{background:#f8f7fd!important;color:#24213b!important}
+body>header{background:#241b45!important;border-bottom-color:#392c62!important}
+body>header a{color:#d9cbff!important}
+#canvas-shell,#canvas-shell main,#canvas-shell .flux-main-view{background:#f8f7fd!important;color:#24213b!important}
+#canvas-shell .workspace-bar,#canvas-shell .compact-actions{background:#fff!important;border-color:#e7e1f2!important}
+#canvas-shell .flux-mode-tabs button[aria-current=true]{background:#efe9ff!important;color:#5635b5!important;box-shadow:none!important}
+#canvas-shell .flux-mode-tabs button:hover{background:#f4efff!important}
+#canvas-shell .compact-actions #save,#canvas-shell .compact-actions #execute{background:#fff!important;color:#5635b5!important;border:1px solid #c7b9eb!important}
+#canvas-shell .compact-actions #flux-add-block{background:#6946d5!important;color:#fff!important;border:1px solid #6946d5!important;box-shadow:0 4px 12px #6946d533!important;transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
+#canvas-shell .compact-actions #flux-add-block:hover{background:#5936c5!important;transform:translateY(-1px);box-shadow:0 7px 18px #6946d54d!important}
+#canvas-shell .canvas-wrap,#canvas-shell #viewport{background-color:#faf9fe!important;background-image:radial-gradient(circle,#d8d1e9 1px,transparent 1.4px)!important;background-size:23px 23px!important}
+#canvas-shell #library-panel{background:#fff!important;color:#24213b!important;border-right:1px solid #e2ddf0!important}
+#canvas-shell #library-panel h2,#canvas-shell #library-panel label,#canvas-shell #library-panel p,#canvas-shell #library-panel .palette-count{color:#302a47!important}
+#canvas-shell #library-panel .palette-search-label{color:#514965!important}
+#canvas-shell #library-panel .palette-filters button{background:#f4f0fb!important;color:#46386b!important;border-color:#e2d9f2!important}
+#canvas-shell #library-panel .palette-filters button[aria-pressed=true]{background:#6946d5!important;color:#fff!important;border-color:#6946d5!important}
+#canvas-shell #library-panel .palette button{background:#fff!important;color:#24213b!important;border:1px solid #e2ddf0!important}
+#canvas-shell #library-panel .palette button:hover{background:#f5f0ff!important;border-color:#a78ae9!important}
+#canvas-shell .node{background:#fff!important;border-color:#c7b9df!important;box-shadow:0 6px 20px #36225b1a!important}
+#canvas-shell .node.selected{outline:3px solid #6946d5!important}
+#canvas-shell .node .port.in{background:#7957d9!important}
+#canvas-shell .node .port.out{background:#4693b6!important}
+#canvas-shell #flux-automation-library,#canvas-shell #flux-automation-logs,#canvas-shell #flux-assistant-panel{border-color:#e7e1f2!important;box-shadow:0 6px 22px #2c204b0a!important}
+#canvas-shell .flux-guide{background:#faf8ff!important;color:#24213b!important;border-color:#d9cdef!important}
+#canvas-shell .flux-guide label,#canvas-shell .flux-guide h3{color:#24213b!important}
+#canvas-shell .flux-guide select{background:#fff!important;color:#24213b!important;border-color:#d5c9e9!important}
+#canvas-shell .flux-guide-actions .primary,#canvas-shell .flux-home-header button{background:#6946d5!important;color:#fff!important}
+#flux-block-picker{border-color:#d6caeb!important;color:#24213b!important}
+#flux-block-picker .flux-picker-item{background:#fbfaff!important;color:#24213b!important;border-color:#e4ddf1!important}
+#flux-block-picker .flux-picker-item:hover{background:#f1eaff!important;border-color:#6946d5!important}
+#flux-block-picker .flux-picker-item[data-ready="supported"]{border-left:4px solid #6946d5!important}
+#flux-block-picker .flux-picker-item[data-ready="planned"]{opacity:.75}
+@media(prefers-reduced-motion:reduce){#canvas-shell .compact-actions #flux-add-block{transition:none!important}#canvas-shell .compact-actions #flux-add-block:hover{transform:none!important}}
