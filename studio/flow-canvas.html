@@ -29,6 +29,9 @@
 #runner:has(#run-output:not(:empty)) #run-output{display:block;max-height:240px;margin-top:8px}
 #runner .flux-technical-toggle:not([open]) #run-output{display:none}
 #runner .flux-technical-toggle{display:block;margin-top:12px;cursor:pointer;color:#315b81}
+/* Keep engineering controls available without crowding the everyday editor. */
+#validate,#export,#import,#reset,#save-local,#load-local{display:none!important}
+#runner .flux-runner-body>.field:has(#run-token){display:none}
 #nodes .node.flux-run-completed{border:3px solid #159669!important;box-shadow:0 0 0 5px #15966924!important}
 #nodes .node.flux-run-filtered{border:3px solid #d79522!important;box-shadow:0 0 0 5px #d7952224!important}
 #nodes .node.flux-run-skipped{border:3px solid #9ca3af!important;opacity:.62!important}
