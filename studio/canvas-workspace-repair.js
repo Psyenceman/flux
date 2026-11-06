@@ -194,7 +194,7 @@
  manual:{start:[]},
  schedule:{},
  webhook:{receive:[f('event','Event label')]},
- trello:{read_list:[f('list','List ID','text',true)]},
+ trello:{read_list:[f('list','List ID','text',true)],create_card:[f('list','Destination list ID','text',true),f('title','Card title','text',true),f('description','Card description','textarea')]},
  airtable:{find_records:[f('base','Base ID','text',true),f('table','Table','text',true),f('filter','Search filter')],create_record:[f('base','Base ID','text',true),f('table','Table','text',true),f('body','Fields (JSON)','textarea',true)],update_record:[f('base','Base ID','text',true),f('table','Table','text',true),f('recordId','Record ID','text',true),f('body','Changes (JSON)','textarea',true)]},
  miro:{create_card:[f('board','Board ID','text',true),f('title','Card title','text',true),f('message','Description','textarea')],find_items:[f('board','Board ID','text',true),f('query','Search')],update_item:[f('board','Board ID','text',true),f('itemId','Item ID','text',true),f('title','New title')]},
  sheets:{read_rows:[f('spreadsheet','Spreadsheet ID','text',true),f('range','Range','text',true)],append_row:[f('spreadsheet','Spreadsheet ID','text',true),f('range','Range','text',true),f('body','Row (JSON)','textarea',true)]},
