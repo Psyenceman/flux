@@ -79,9 +79,19 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
      const description=String(config.description||'').trim();
      if(!/^[a-f0-9]{24}$/i.test(destination))throw Error('Trello create card: select a destination list');
      if(!title||title.length>16384||description.length>16384)throw Error('Trello create card: enter a valid title and description');
-     // Writes remain disabled during initial TEST rollout, even if the caller requests live execution.
-     status='simulated';reason='TEST preview only: no Trello card was created';
-     output={source:'trello',operation:'create_card',listId:destination,title,description,simulated:true};
+     if(dryRun){status='simulated';reason='TEST preview only: no Trello card was created';output={source:'trello',operation:'create_card',listId:destination,title,description,simulated:true};break;}
+     if(!trelloAccessToken)throw Error('Connect Trello before creating a card');
+     if(++calls>1)throw Error('Only one Trello write is permitted per live execution');
+     const params=new URLSearchParams({idList:destination,name:title,desc:description});
+     const response=await fetch('https://api.trello.com/1/cards',{
+      method:'POST',headers:{authorization:'Bearer '+trelloAccessToken,'content-type':'application/x-www-form-urlencoded'},
+      body:params.toString(),redirect:'error',signal:AbortSignal.timeout(12000)
+     });
+     if(!response.ok)throw Error('Trello card creation failed (HTTP '+response.status+')');
+     const created=await response.json();
+     if(!/^[a-f0-9]{24}$/i.test(String(created?.id||'')))throw Error('Trello returned an unexpected card response');
+     output={source:'trello',operation:'create_card',id:created.id,title:created.name||title,url:typeof created.url==='string'&&created.url.startsWith('https://trello.com/')?created.url:null,listId:destination,created:true};
+     reason='Trello card created';
      break;
     }
     const listId=String(config.list||config.connection||'').trim();
