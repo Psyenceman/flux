@@ -131,6 +131,23 @@
  start.addEventListener('click',()=>{wizard.hidden=false;wizard.scrollIntoView({block:'nearest',behavior:'smooth'});});
  window.addEventListener('flux:guided-build-complete',()=>{wizard.hidden=true;activate('editor');});
  homeHeader.append(homeIntro,start);library.prepend(homeHeader);
+ const hero=document.createElement('section');hero.className='flux-prototype-hero';
+ const eyebrow=document.createElement('span');eyebrow.className='flux-hero-eyebrow';eyebrow.textContent='FLUX STUDIO · TEST PROTOTYPE';
+ const heroTitle=document.createElement('h3');heroTitle.textContent='Build something that works.';
+ const heroDescription=document.createElement('p');heroDescription.textContent='Connect your tools, design each step and follow what happens. Start simple. Grow without limits.';
+ const heroActions=document.createElement('div');heroActions.className='flux-hero-actions';
+ const heroCreate=document.createElement('button');heroCreate.type='button';heroCreate.textContent='+ New automation';heroCreate.addEventListener('click',()=>start.click());
+ const heroEditor=document.createElement('button');heroEditor.type='button';heroEditor.textContent='Open canvas';heroEditor.addEventListener('click',()=>activate('editor'));
+ heroActions.append(heroCreate,heroEditor);hero.append(eyebrow,heroTitle,heroDescription,heroActions);
+ library.insertBefore(hero,homeHeader);
+ const quickLinks=document.createElement('div');quickLinks.className='flux-quick-links';
+ for(const [heading,description,fn] of [
+  ['Visual builder','Arrange as many blocks and branches as you need.',()=>activate('editor')],
+  ['Execution history','Inspect completed runs and errors.',()=>activate('logs')],
+  ['Connections & settings','Manage cloud and webhook options.',()=>{technical.open=true;technical.scrollIntoView({block:'nearest'});}]
+ ]){const button=document.createElement('button');button.type='button';const title=document.createElement('strong');title.textContent=heading;const sub=document.createElement('small');sub.textContent=description;button.append(title,sub);button.addEventListener('click',fn);quickLinks.append(button);}
+ library.insertBefore(quickLinks,technical);
+ const creditNote=document.createElement('p');creditNote.className='flux-credit-note';creditNote.textContent='FluxCoins · Usage is recorded by the execution service. No estimated balance or price is shown in this prototype.';library.insertBefore(creditNote,technical);
  const style=document.createElement('style');style.textContent='.flux-guide{padding:18px;margin:10px 0 20px;border:1px solid #4a6587;border-radius:14px;background:#f7faff;color:#18314d}.flux-guide h3,.flux-guide label{color:#18314d}.flux-guide p{color:#52657d}.flux-guide[hidden]{display:none}.flux-guide label{display:flex;flex-direction:column;gap:8px;margin:14px 0;font-weight:650}.flux-guide select{width:100%;padding:12px;border:1px solid #bfd0e4;border-radius:8px;background:#fff;color:#18314d}.flux-guide-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}.flux-guide-actions button{padding:11px 16px;border-radius:8px;cursor:pointer}.flux-guide-actions .primary{background:#176baf;color:white;border:0}.flux-technical{margin-top:24px;border:1px solid #d4dfed;border-radius:10px;padding:12px;background:#f7faff;color:#18314d}.flux-technical>summary{cursor:pointer;font-weight:650;padding:5px}.flux-technical:not([open]) #canvas-cloud{display:none}.flux-technical + #canvas-cloud{display:none}.flux-home-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 0 18px}.flux-home-header p{margin:0}.flux-home-header button{background:#176baf;color:#fff;border:0;border-radius:9px;padding:12px 16px;font-weight:700;cursor:pointer}@media(max-width:600px){.flux-home-header{align-items:stretch;flex-direction:column}.flux-home-header button{width:100%}}';document.head.append(style);
  // Remove obsolete stacked drawers, while preserving their content.
  for(const details of main.querySelectorAll('.flux-drawer'))details.remove();
