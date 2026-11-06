@@ -156,6 +156,10 @@
  #flux-module-config .fm-actions button.fm-primary{background:#166fa6;color:#fff;border-color:#166fa6}
  #flux-module-config details{border-top:1px solid #e8edf3;padding-top:11px;font-size:12px;color:#577085}
  #flux-module-config summary{cursor:pointer}
+ #flux-module-config .fm-connect{background:#f6f8fb;border:1px solid #e2e8ef;border-radius:10px;padding:11px 12px;margin:10px 0 16px;display:flex;flex-direction:column;gap:5px}
+ #flux-module-config .fm-connect strong{font-size:12px;color:#294663}
+ #flux-module-config .fm-connect small{color:#5c7188;line-height:1.45}
+ #flux-module-config .fm-connect button{align-self:flex-start;padding:7px 9px;border:1px solid #d6e0e8;border-radius:7px;background:#eaeef2;color:#7d8c9f;margin-top:6px}
  @media(max-width:600px){#flux-module-config{left:10px!important;top:auto!important;bottom:10px!important;max-height:82dvh!important}}
  `;
  document.head.append(css);
@@ -176,22 +180,64 @@
   el.value=value??'';
   row.append(el);parent.append(row);return {row,el};
  };
- const extraFields={
-  email:[['recipient','To','email']],resend:[['recipient','To','email']],
-  slack:[['channel','Channel','text']],discord:[['channel','Channel','text']],
-  http:[['url','Destination URL','url']],trello:[['list','List ID','text']],
-  airtable:[['table','Table','text']],sheets:[['spreadsheet','Spreadsheet','text']],
-  database:[['table','Table','text']],supabase:[['table','Table','text']],
-  filter:[['value','Value to check','text']],delay:[['seconds','Seconds','number']],
-  webhook:[['name','Webhook label','text']],log:[['message','Message','text']]
+
+ // Action-aware configuration schemas. These are UI forms, not account integrations.
+ const f=(key,label,type='text',required=false)=>({key,label,type,required});
+ const schemas={
+ manual:{start:[]},
+ schedule:{},
+ webhook:{receive:[f('event','Event label')]},
+ trello:{read_list:[f('list','List ID','text',true)]},
+ airtable:{find_records:[f('base','Base ID','text',true),f('table','Table','text',true),f('filter','Search filter')],create_record:[f('base','Base ID','text',true),f('table','Table','text',true),f('body','Fields (JSON)','textarea',true)],update_record:[f('base','Base ID','text',true),f('table','Table','text',true),f('recordId','Record ID','text',true),f('body','Changes (JSON)','textarea',true)]},
+ miro:{create_card:[f('board','Board ID','text',true),f('title','Card title','text',true),f('message','Description','textarea')],find_items:[f('board','Board ID','text',true),f('query','Search')],update_item:[f('board','Board ID','text',true),f('itemId','Item ID','text',true),f('title','New title')]},
+ sheets:{read_rows:[f('spreadsheet','Spreadsheet ID','text',true),f('range','Range','text',true)],append_row:[f('spreadsheet','Spreadsheet ID','text',true),f('range','Range','text',true),f('body','Row (JSON)','textarea',true)]},
+ drive:{find_file:[f('query','File name / query','text',true),f('folder','Folder ID')],create_file:[f('title','File name','text',true),f('folder','Folder ID')]},
+ github:{list_issues:[f('repository','Repository (owner/name)','text',true)],create_issue:[f('repository','Repository (owner/name)','text',true),f('title','Issue title','text',true),f('message','Description','textarea')]},
+ wordpress:{read_posts:[f('site','Website URL','url',true)],create_post:[f('site','Website URL','url',true),f('title','Post title','text',true),f('message','Post content','textarea',true)]},
+ filter:{always:[],approved:[f('field','Approval field')],rejected:[f('field','Approval field')],'status=approved':[f('field','Status field')]},
+ flux:{pass:[],pick:[f('mapping','Field to select','text',true)],count:[f('mapping','Items field')]},
+ mapper:{map:[f('mapping','Input field','text',true),f('target','Output field','text',true)]},
+ router:{branch:[f('route','Branch rule','text',true)]},
+ loop:{iterate:[f('items','Collection field','text',true)]},
+ merge:{combine:[]},log:{record:[f('message','Log message','textarea')]},
+ delay:{wait:[f('duration','Duration','number',true),f('unit','Unit')]},
+ http:{post:[f('url','Destination URL','url',true),f('body','JSON body','textarea')]},
+ email:{send:[f('recipient','To','email',true),f('subject','Subject','text',true),f('message','Body','textarea',true)]},
+ resend:{send_email:[f('recipient','To','email',true),f('subject','Subject','text',true),f('message','Body','textarea',true)]},
+ slack:{send:[f('channel','Channel','text',true),f('message','Message','textarea',true)]},
+ database:{select:[f('table','Table','text',true),f('filter','Filter')],insert:[f('table','Table','text',true),f('body','Row JSON','textarea',true)],update:[f('table','Table','text',true),f('filter','Filter','text',true),f('body','Changes JSON','textarea',true)],delete:[f('table','Table','text',true),f('filter','Filter','text',true)]},
+ whatsapp:{send_template:[f('recipient','Phone number','tel',true),f('template','Approved template','text',true)],receive_message:[]},
+ telegram:{send_message:[f('chatId','Chat ID','text',true),f('message','Message','textarea',true)],receive_update:[]},
+ discord:{send_message:[f('channel','Channel ID','text',true),f('message','Message','textarea',true)]},
+ notion:{search_pages:[f('query','Search query','text',true)],create_page:[f('databaseId','Database ID','text',true),f('title','Page title','text',true)]},
+ calendar:{list_events:[f('calendarId','Calendar ID','text',true)],create_event:[f('calendarId','Calendar ID','text',true),f('title','Event title','text',true),f('start','Start','datetime-local',true),f('end','End','datetime-local',true)]},
+ stripe:{payment_event:[f('event','Event name')],create_checkout:[f('priceId','Price ID','text',true)]},
+ hubspot:{search_contacts:[f('property','Search field','text',true),f('value','Search value','text',true)],create_contact:[f('body','Contact JSON','textarea',true)]},
+ shopify:{order_event:[f('store','Store domain','text',true)],list_orders:[f('store','Store domain','text',true),f('orderStatus','Status')]},
+ openai:{generate_text:[f('model','Model'),f('prompt','Prompt','textarea',true)],classify_text:[f('prompt','Text','textarea',true),f('categories','Categories','text',true)]},
+ supabase:{select_rows:[f('table','Table','text',true),f('filter','Filter')],insert_row:[f('table','Table','text',true),f('body','Row JSON','textarea',true)]},
+ cloudflare:{trigger_worker:[f('worker','Worker name','text',true),f('event','Event')] }
  };
+ const actions={
+ manual:[['start','Start manually']],trello:[['read_list','Read list cards']],airtable:[['find_records','Find records'],['create_record','Create record'],['update_record','Update record']],miro:[['create_card','Create card'],['find_items','Find items'],['update_item','Update item']],
+ filter:[['always','Always'],['approved','Only approved'],['rejected','Only rejected'],['status=approved','Status approved']],
+ flux:[['pass','Pass through'],['pick','Pick field'],['count','Count items']],database:[['select','Read rows'],['insert','Create row'],['update','Update row'],['delete','Delete row']],
+ router:[['branch','Choose branch']],loop:[['iterate','For each item']],mapper:[['map','Map fields']],merge:[['combine','Combine']],delay:[['wait','Wait']],log:[['record','Record event']],
+ http:[['post','Send POST']],webhook:[['receive','Receive event']],email:[['send','Send email']],slack:[['send','Send message']],
+ sheets:[['read_rows','Read rows'],['append_row','Append row']],drive:[['find_file','Find file'],['create_file','Create file']],github:[['list_issues','List issues'],['create_issue','Create issue']],
+ wordpress:[['read_posts','Read posts'],['create_post','Create post']],whatsapp:[['send_template','Send template'],['receive_message','Receive message']],telegram:[['send_message','Send message'],['receive_update','Receive update']],
+ discord:[['send_message','Send message']],notion:[['search_pages','Search pages'],['create_page','Create page']],calendar:[['list_events','List events'],['create_event','Create event']],
+ stripe:[['payment_event','Payment event'],['create_checkout','Create checkout']],hubspot:[['search_contacts','Find contacts'],['create_contact','Create contact']],shopify:[['order_event','Order trigger'],['list_orders','List orders']],
+ openai:[['generate_text','Generate text'],['classify_text','Classify text']],resend:[['send_email','Send email']],supabase:[['select_rows','Read rows'],['insert_row','Insert row']],cloudflare:[['trigger_worker','Call Worker']]
+ };
+ const connectedLocal=new Set(['manual','filter','flux','merge','log']);
+ const limited=new Set(['trello','http','webhook']);
+ const internal=new Set(['manual','filter','flux','merge','log','delay','mapper','router','loop','schedule','webhook']);
  const close=()=>{if(modal.open)modal.close();};
  modal.addEventListener('click',event=>{if(event.target===modal)close();});
  window.addEventListener('flux:automation-opened',close);
  window.addEventListener('flux:open-block-config',event=>{
-  const {node,options=[],availability,id}=event.detail||{};
-  if(!node||!id)return;
-  hideLegacy();
+  const {node,id}=event.detail||{};if(!node||!id)return;hideLegacy();
   const draft={...node.config,schedule:{...(node.config.schedule||{})}};
   modal.replaceChildren();
   const header=document.createElement('div');header.className='fm-head';
@@ -199,34 +245,60 @@
   const x=document.createElement('button');x.className='fm-close';x.type='button';x.textContent='×';x.setAttribute('aria-label','Close');x.addEventListener('click',close);
   header.append(heading,x);modal.append(header);
   const body=document.createElement('div');body.className='fm-body';modal.append(body);
-  const help=document.createElement('p');help.className='fm-help';help.textContent=availability==='planned'||availability==='not implemented'?'Module setup preview. Live connection is not available yet.':'Choose the action and fill in only the fields you need.';body.append(help);
+  const help=document.createElement('p');help.className='fm-help';help.setAttribute('role','status');help.textContent='Choose an action and enter the essential information.';body.append(help);
+  const validate=[];
   if(node.type==='schedule'){
-   const recurrence=field(body,'When should it run?','',draft.schedule.frequency||'once',[['once','One time'],['daily','Every day'],['weekly','Every week']]);
+   const repeat=field(body,'Repeat','',draft.schedule.frequency||'once',[['once','One time'],['daily','Every day'],['weekly','Every week']]);
    const date=field(body,'Date','date',draft.schedule.date||'');
    const time=field(body,'Time','time',draft.schedule.time||'09:00');
    const day=field(body,'Day','',draft.schedule.day||'1',[['1','Monday'],['2','Tuesday'],['3','Wednesday'],['4','Thursday'],['5','Friday'],['6','Saturday'],['0','Sunday']]);
    const tz=field(body,'Time zone','',draft.schedule.timezone||'Europe/Rome',[['Europe/Rome','Europe/Rome'],['UTC','UTC']]);
-   const sync=()=>{date.row.hidden=recurrence.el.value!=='once';day.row.hidden=recurrence.el.value!=='weekly';};
-   recurrence.el.addEventListener('change',sync);sync();
-   draft._validate=()=>{if(!time.el.value||(recurrence.el.value==='once'&&!date.el.value))return 'Choose a date and time.';draft.schedule={frequency:recurrence.el.value,date:date.el.value,time:time.el.value,day:day.el.value,timezone:tz.el.value};draft.operation=recurrence.el.value;return '';};
+   const sync=()=>{date.row.hidden=repeat.el.value!=='once';day.row.hidden=repeat.el.value!=='weekly';};
+   repeat.el.addEventListener('change',sync);sync();
+   validate.push(()=>{if(!time.el.value||(repeat.el.value==='once'&&!date.el.value))return 'Choose a date and time';draft.schedule={frequency:repeat.el.value,date:date.el.value,time:time.el.value,day:day.el.value,timezone:tz.el.value};draft.operation=repeat.el.value;return '';});
   }else{
-   if(options.length){
-    const op=field(body,'Action','',options.includes(draft.operation)?draft.operation:options[0],options.map(value=>[value,labelize(value)]));
-    op.el.addEventListener('change',()=>{draft.operation=op.el.value;});
-    draft.operation=op.el.value;
+   const choices=actions[node.type]||[];
+   const action=choices.length?field(body,'Action','',choices.some(c=>c[0]===draft.operation)?draft.operation:choices[0][0],choices):null;
+   const inputs=document.createElement('div');body.append(inputs);
+   function drawFields(){
+    inputs.replaceChildren();
+    const fields=schemas[node.type]?.[action?.el.value]||[];
+    for(const spec of fields){
+     const row=document.createElement('label');row.className='fm-row';row.textContent=spec.label+(spec.required?' *':'');
+     const input=document.createElement(spec.type==='textarea'?'textarea':'input');if(spec.type!=='textarea')input.type=spec.type;
+     if(spec.type==='textarea')input.rows=3;
+     input.value=draft[spec.key]??'';input.placeholder=spec.label;
+     input.addEventListener('input',()=>{draft[spec.key]=input.value;});
+     row.append(input);inputs.append(row);
+    }
    }
-   const fields=extraFields[node.type]||[];
-   for(const [key,name,type] of fields){const control=field(body,name,type,draft[key]||'');control.el.addEventListener('input',()=>{draft[key]=control.el.value;});}
-   if(node.type==='calendar'){const note=document.createElement('p');note.className='fm-help';note.textContent='Google Calendar connection will be available when secure account authorization is enabled.';body.append(note);}
+   if(action){draft.operation=action.el.value;action.el.addEventListener('change',()=>{draft.operation=action.el.value;drawFields();});}
+   drawFields();
+   validate.push(()=>{
+    const fields=schemas[node.type]?.[action?.el.value]||[];
+    for(const spec of fields){const v=String(draft[spec.key]??'').trim();if(spec.required&&!v)return 'Required: '+spec.label;
+      if(spec.type==='url'&&v&&!v.startsWith('https://'))return 'Use a secure https:// URL';
+      if(spec.key==='body'&&v&&spec.label.includes('JSON')){try{JSON.parse(v)}catch{return 'Invalid JSON in '+spec.label;}}
+    }
+    return '';
+   });
   }
+  const connection=document.createElement('div');connection.className='fm-connect';
+  const cTitle=document.createElement('strong'),cText=document.createElement('small');
+  if(connectedLocal.has(node.type)){cTitle.textContent='Local TEST module';cText.textContent='Settings are saved in the graph. Some actions may be supported in the TEST engine.';}
+  else if(limited.has(node.type)){cTitle.textContent='Server connection required';cText.textContent=node.type==='trello'?'Trello reading needs server credentials. ChatGPT plugin access does not transfer to Flux.':node.type==='webhook'?'Generate the webhook key in Automations. This form alone does not activate it.':'Live HTTP destinations must be explicitly enabled on the server.';}
+  else if(internal.has(node.type)){cTitle.textContent='Execution not enabled';cText.textContent='You can design the module now; automatic execution is still in development.';}
+  else{cTitle.textContent='Account not connected';cText.textContent='Secure OAuth / server authorization for '+node.label+' is not yet available in Flux Studio.';}
+  connection.append(cTitle,cText);
+  if(!internal.has(node.type)){const btn=document.createElement('button');btn.type='button';btn.textContent='Connect account · coming soon';btn.disabled=true;connection.append(btn);}
+  body.append(connection);
   const more=document.createElement('details');const summary=document.createElement('summary');summary.textContent='Advanced information';more.append(summary);
-  const detail=document.createElement('p');detail.className='fm-help';detail.textContent='Module type: '+node.type+'. Connection credentials are never collected in this form. Advanced integrations are configured separately.';more.append(detail);body.append(more);
+  const detail=document.createElement('p');detail.className='fm-help';detail.textContent='Module type: '+node.type+'. Never paste account passwords or API tokens into this form. Settings are saved with the Flux graph; provider authorization is managed separately.';more.append(detail);body.append(more);
   const actions=document.createElement('div');actions.className='fm-actions';
   const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel';cancel.addEventListener('click',close);
   const save=document.createElement('button');save.type='button';save.className='fm-primary';save.textContent='Save';
   save.addEventListener('click',()=>{
-   const error=draft._validate?.();if(error){help.textContent=error;help.style.color='#bc3030';return;}
-   delete draft._validate;node.config={...node.config,...draft};
+   let error='';for(const check of validate){error=check();if(error)break;}if(error){help.textContent=error;help.style.color='#bc3030';return;}node.config={...node.config,...draft};
    window.dispatchEvent(new Event('flux:canvas-changed'));
    const status=document.getElementById('status');if(status)status.textContent=node.label+' configured. Save your Flux to keep the changes.';
    close();
