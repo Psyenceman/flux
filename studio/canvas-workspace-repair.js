@@ -162,6 +162,11 @@
  #flux-module-config .fm-connect strong{font-size:12px;color:#294663}
  #flux-module-config .fm-connect small{color:#5c7188;line-height:1.45}
  #flux-module-config .fm-connect button{align-self:flex-start;padding:7px 9px;border:1px solid #d6e0e8;border-radius:7px;background:#eaeef2;color:#7d8c9f;margin-top:6px}
+ #flux-module-config .fm-connect .flux-trello-connect{background:linear-gradient(115deg,#1767b4,#168ac9);color:#fff;border:1px solid #168ac9;border-radius:9px;padding:11px 18px;font-weight:700;cursor:pointer;box-shadow:0 3px 9px #1767b430;transition:box-shadow .22s ease,transform .22s ease,filter .22s ease}
+ #flux-module-config .fm-connect .flux-trello-connect:hover:not(:disabled),#flux-module-config .fm-connect .flux-trello-connect:focus-visible{filter:brightness(1.18);box-shadow:0 0 0 3px #38bdf833,0 0 24px #168ac980;transform:translateY(-2px);outline:2px solid #38bdf8;outline-offset:3px}
+ #flux-module-config .fm-connect .flux-trello-connect[data-state=connected]{background:linear-gradient(115deg,#174e87,#5467cf);border-color:#7787e1;box-shadow:0 0 0 2px #7787e126}
+ #flux-module-config .fm-connect .flux-trello-connect:disabled{cursor:wait;opacity:.75}
+ @media(prefers-reduced-motion:reduce){#flux-module-config .fm-connect .flux-trello-connect{transition:none;transform:none!important}}
  @media(max-width:600px){#flux-module-config{width:calc(100vw - 24px)!important;max-height:82dvh!important}}
  `;
  document.head.append(css);
@@ -320,17 +325,11 @@
   if(node.type==='trello'){
    cTitle.textContent='Trello account · TEST';
    cText.textContent='Connect once, then reuse your account in your automations.';
-   const btn=document.createElement('button');btn.type='button';btn.textContent='Connect Trello';
+   const btn=document.createElement('button');btn.type='button';btn.className='flux-trello-connect';btn.textContent='Connect Trello';
    const getToken=()=>new Promise(resolve=>{const handler=e=>{window.removeEventListener('flux:session-response',handler);clearTimeout(timer);resolve(e.detail);};const timer=setTimeout(()=>{window.removeEventListener('flux:session-response',handler);resolve(null);},5000);window.addEventListener('flux:session-response',handler);window.dispatchEvent(new Event('flux:session-request'));});
-   const check=async()=>{const token=await getToken();if(!token){cText.textContent='Sign in to Flux Studio first.';return null;}try{const res=await fetch('/.netlify/functions/trello-connections',{headers:{authorization:'Bearer '+token}});const data=await res.json();const connected=data.connections?.find(c=>c.status==='connected');if(connected){cTitle.textContent='Trello connected';cText.textContent=connected.provider_account_label||'Account connected';btn.textContent='Reconnect Trello';}return token;}catch{cText.textContent='Connection status unavailable.';return token;}};
-   btn.classList.add('flux-trello-connect');
-   btn.style.cssText='background:#1767b4;color:#fff;border:1px solid #135a9e;border-radius:9px;padding:11px 18px;font-weight:700;cursor:pointer;box-shadow:0 3px 9px rgba(23,103,180,.18);transition:background .15s,box-shadow .15s,transform .15s';
-   btn.addEventListener('mouseenter',()=>{if(!btn.disabled){btn.style.background='#0b4b8a';btn.style.boxShadow='0 5px 15px rgba(23,103,180,.35)';}});
-   btn.addEventListener('mouseleave',()=>{btn.style.background='#1767b4';btn.style.boxShadow='0 3px 9px rgba(23,103,180,.18)';});
-   window.addEventListener('message',event=>{if(event.origin!==window.location.origin||event.data?.type!=='flux:trello-oauth')return;btn.disabled=false;btn.textContent='Connect Trello';if(event.data.status==='connected'){cText.textContent='Trello connected successfully.';check();}else cText.textContent='Trello authorization: '+event.data.status;});
-   btn.addEventListener('click',async()=>{const popup=window.open('about:blank','flux-trello-auth','popup=yes,width=570,height=720,resizable=yes,scrollbars=yes');if(!popup){cText.textContent='Allow pop-ups for Flux Studio to connect Trello.';return;}popup.document.title='Connecting Trello';popup.document.body.textContent='Preparing secure Trello authorization…';btn.disabled=true;btn.textContent='Connecting…';try{const token=await getToken();if(!token)throw Error('Sign in to Flux Studio first.');const res=await fetch('/.netlify/functions/trello-oauth-start',{method:'POST',headers:{authorization:'Bearer '+token}});const data=await res.json();if(!res.ok||!data.authorizeUrl)throw Error(data.error||'Authorization unavailable');popup.location.replace(data.authorizeUrl);}catch(error){popup.close();cText.textContent=error.message;btn.disabled=false;btn.textContent='Connect Trello';}});
-
-   connection.append(btn);check();
+   const dispose=window.FluxTrelloConnect({button:btn,title:cTitle,status:cText,getToken});
+   modal.addEventListener('close',dispose,{once:true});
+   connection.append(btn);
   }else if(!internal.has(node.type)){const btn=document.createElement('button');btn.type='button';btn.textContent='Connect account · coming soon';btn.disabled=true;connection.append(btn);}
   body.append(connection);
   const more=document.createElement('details');const summary=document.createElement('summary');summary.textContent='Advanced information';more.append(summary);
