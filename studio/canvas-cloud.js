@@ -233,6 +233,44 @@ $('canvas-cloud-save').addEventListener('click',async()=>{
     drawLibrary();updateApiPanel();status('Canvas saved to Supabase. Automation remains disabled.');
   } catch(error){status('Save failed: '+error.message);}
 });
+// Primary Save stores the current workflow in the signed-in user's TEST cloud account.
+const primarySave=document.getElementById('save');
+let primarySaveBusy=false;
+if(primarySave)primarySave.addEventListener('click',async event=>{
+ event.preventDefault();event.stopImmediatePropagation();
+ if(primarySaveBusy)return;
+ if(!client||!user){status('Sign in to save your Flux to the cloud.');window.fluxShowFeedback?.('Sign in to save your Flux.','error');return;}
+ primarySaveBusy=true;primarySave.disabled=true;primarySave.textContent='Saving…';
+ try{
+  const graph=await requestSnapshot();
+  let row=selection();
+  if(row){
+   const action_config={...row.action_config,graph,version:2};
+   const {error}=await client.from('automations').update({action_config,enabled:false,updated_at:new Date().toISOString()}).eq('id',row.id).eq('owner_id',user.id);
+   if(error)throw error;
+   row.action_config=action_config;
+   status('Saved "'+row.name+'" to Flux TEST.');
+   window.fluxShowFeedback?.('Saved "'+row.name+'" to your Flux account.','success');
+  }else{
+   const proposed=prompt('Name this Flux before saving','My Trello workflow');
+   if(proposed===null){status('Save cancelled. Your canvas is unchanged.');return;}
+   const name=proposed.trim();if(!name||name.length>100)throw Error('Enter a name between 1 and 100 characters');
+   let {data:projects,error:projectError}=await client.from('projects').select('id').eq('owner_id',user.id).order('created_at',{ascending:true}).limit(1);
+   if(projectError)throw projectError;
+   let projectId=projects?.[0]?.id;
+   if(!projectId){const created=await client.from('projects').insert({owner_id:user.id,name:'My scenarios'}).select('id').single();if(created.error)throw created.error;projectId=created.data.id;}
+   const payload={name,owner_id:user.id,project_id:projectId,trigger_type:'manual',action_config:{graph,version:2},enabled:false};
+   const {data,error}=await client.from('automations').insert(payload).select('id,name,action_config,project_id').single();
+   if(error)throw error;
+   rows.unshift(data);$('canvas-automation').value=data.id;
+   window.dispatchEvent(new CustomEvent('flux:automation-opened',{detail:{id:data.id,name:data.name}}));
+   status('Created and saved "'+name+'" in Flux TEST.');
+   window.fluxShowFeedback?.('Created and saved "'+name+'" to your Flux account.','success');
+  }
+  drawLibrary();updateApiPanel();
+ }catch(error){status('Save failed: '+error.message);window.fluxShowFeedback?.('Save failed: '+error.message,'error');}
+ finally{primarySaveBusy=false;primarySave.disabled=false;primarySave.textContent='Save';}
+},true);
 // New scenario: create a separate, disabled cloud automation; never overwrite the selected one.
 const newScenarioButton=document.createElement('button');
 newScenarioButton.type='button';newScenarioButton.id='flux-new-scenario';newScenarioButton.textContent='+ New Flux';
