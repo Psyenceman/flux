@@ -28,7 +28,7 @@ function applyMapping(mapping,outputs,input,allowed){
  const result={};for(const [key,val] of Object.entries(spec)){if(!/^[a-zA-Z_][\w]{0,63}$/.test(key)||typeof val!=='string')throw Error('Invalid Data Mapper field');result[key]=resolveTemplate(val,outputs,input,allowed);}
  return result;
 }
-export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom,airtableToken,googleSheetsToken,supabaseUrl,supabaseServiceToken}={}){
+export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom,airtableToken,googleSheetsToken,supabaseUrl,supabaseServiceToken,hubspotToken}={}){
  const {order,adj}=validateGraph(graph),byId=new Map(graph.nodes.map(n=>[n.id,n]));
  const received=new Map(),trace=[],outputs={};let calls=0;const ancestors=new Map();for(const id of order){const set=new Set();for(const e of graph.edges.filter(e=>e.to===id)){set.add(e.from);for(const a of ancestors.get(e.from)||[])set.add(a);}ancestors.set(id,set);}
  for(const id of order){
@@ -69,6 +69,20 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
     else if(rule==='pass'||rule==='')output=value;
     else throw Error('Unsupported Flux transform at '+id+'. Use pass, pick or count');
     break;
+   }
+   case 'hubspot':{
+    const operation=String(config.operation||'search_contacts');
+    if(operation!=='search_contacts')throw Error('HubSpot: only contact search is currently enabled');
+    const query=String(config.query||'').trim();
+    if(!query||query.length>200)throw Error('HubSpot: enter an email to search');
+    if(!hubspotToken){status='skipped';reason='HubSpot server connection is not configured';break;}
+    if(++calls>3)throw Error('External request limit exceeded');
+    const response=await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search',{method:'POST',headers:{authorization:'Bearer '+hubspotToken,'content-type':'application/json'},body:JSON.stringify({filterGroups:[{filters:[{propertyName:'email',operator:'EQ',value:query}]}],limit:20,properties:['email','firstname','lastname']}),redirect:'error',signal:AbortSignal.timeout(10000)});
+    if(!response.ok)throw Error('HubSpot search failed (HTTP '+response.status+')');
+    const data=await response.json();
+    if(!Array.isArray(data.results))throw Error('HubSpot returned an invalid response');
+    output={source:'hubspot',operation,count:data.results.length,items:data.results.map(c=>({id:c.id,properties:c.properties}))};
+    reason='HubSpot contact search completed';break;
    }
    case 'airtable':{
     const operation=String(config.operation||'find_records');
