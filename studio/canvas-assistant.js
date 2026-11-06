@@ -35,12 +35,22 @@
    document.querySelector('.flux-mode-tabs button')?.click();
   }catch(error){feedback.textContent='Could not apply template: '+error.message;}
  });
- suggest.addEventListener('click',()=>{
-  const goal=request.value.trim().slice(0,500);
-  if(!goal){feedback.textContent='Describe what you want to automate first.';return;}
-  proposed=buildTemplate(goal.toLowerCase());
-  feedback.textContent='Rule-based assistant preview (not AI; no live connections):\\n'+proposed.nodes.map((n,i)=>(i+1)+'. '+n.label).join('\\n')+'\\n\\nReview the sequence and choose Create workflow from preview. Existing canvas will require confirmation before replacement.';
-  apply.hidden=false;
+ suggest.addEventListener('click',async()=>{
+  const goal=request.value.trim().slice(0,1500);
+  if(goal.length<10){feedback.textContent='Describe your automation with at least 10 characters.';return;}
+  suggest.disabled=true;apply.hidden=true;proposed=null;
+  feedback.textContent='Flux AI is preparing a workflow preview…';
+  try{
+   if(typeof window.fluxExecutionHeaders!=='function')throw Error('Sign in to Flux Studio to use the AI Assistant');
+   const headers=await window.fluxExecutionHeaders('');
+   const response=await fetch('/.netlify/functions/flux-ai-assistant',{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify({goal})});
+   const data=await response.json();
+   if(!response.ok)throw Error(data.error||'AI planning failed');
+   proposed=data.graph;
+   feedback.textContent='Flux AI · '+(data.explanation||'Workflow proposal')+'\n\n'+proposed.nodes.map((n,i)=>(i+1)+'. '+n.label).join('\n')+(data.warnings?.length?'\n\nBefore running:\n'+data.warnings.map(w=>'• '+w).join('\n'):'')+'\n\nPreview only. No external action has run.';
+   apply.hidden=false;
+  }catch(error){feedback.textContent='Flux AI unavailable: '+error.message+'\nNo workflow was changed. You can still create blocks manually.';}
+  finally{suggest.disabled=false;}
  });
  repair.addEventListener('click',async()=>{
   try{
