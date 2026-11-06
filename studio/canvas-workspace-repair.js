@@ -130,3 +130,38 @@
  search.addEventListener('input',render);
  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
 })();
+
+/* TEST: contextual Inspector in a real accessible modal. No graph state changes. */
+(()=>{
+ const inspector=document.getElementById('inspector-panel');
+ const nodes=document.getElementById('nodes');
+ if(!inspector||!nodes)return;
+ const modal=document.createElement('dialog');modal.id='flux-inspector-dialog';modal.setAttribute('aria-label','Configure block');
+ document.body.append(modal);modal.append(inspector);
+ const style=document.createElement('style');
+ style.textContent=`
+ #flux-inspector-dialog{position:fixed!important;inset:0!important;margin:auto!important;width:min(510px,calc(100vw - 24px))!important;max-width:510px!important;max-height:min(85dvh,820px)!important;overflow:auto!important;padding:0!important;border:1px solid #d4dce7!important;border-radius:18px!important;background:#fff!important;color:#172b45!important;box-shadow:0 20px 90px #061a354f!important;z-index:9995!important}
+ #flux-inspector-dialog::backdrop{background:rgba(7,20,35,.52)}
+ #flux-inspector-dialog #inspector-panel{display:block!important;position:static!important;inset:auto!important;transform:none!important;visibility:visible!important;opacity:1!important;width:100%!important;max-width:none!important;max-height:none!important;height:auto!important;min-height:0!important;overflow:visible!important;padding:24px!important;margin:0!important;border:0!important;box-shadow:none!important;background:#fff!important;color:#172b45!important}
+ #flux-inspector-dialog #inspector-panel h2{font-size:20px!important;color:#172b45!important}
+ #flux-inspector-dialog #inspector-panel p,#flux-inspector-dialog #selection{color:#566a80!important}
+ #flux-inspector-dialog #inspector-panel label{color:#233c55!important}
+ #flux-inspector-dialog #inspector-panel input,#flux-inspector-dialog #inspector-panel select,#flux-inspector-dialog #inspector-panel textarea{max-width:100%!important}
+ #flux-inspector-dialog #inspector-panel .inspector-close{position:sticky;top:0;float:right}
+ #flux-inspector-dialog #workflow-graph-tools{display:none!important}
+ #flux-inspector-dialog #inspector-panel .inspector-tabs button{font-size:12px}
+ @media(max-width:600px){#flux-inspector-dialog #inspector-panel{padding:16px!important}}
+ `;
+ document.head.append(style);
+ const open=()=>{if(!modal.open)modal.showModal();};
+ nodes.addEventListener('click',event=>{
+  if(!event.target.closest('.node')||event.target.closest('button,.port,.node-delete,.flux-node-resize'))return;
+  queueMicrotask(open);
+ });
+ nodes.addEventListener('dblclick',event=>{
+  if(!event.target.closest('.node')||event.target.closest('button,.port'))return;
+  queueMicrotask(open);
+ });
+ modal.addEventListener('click',event=>{if(event.target===modal||event.target.closest('.inspector-close'))modal.close();});
+ window.addEventListener('flux:automation-opened',()=>{if(modal.open)modal.close();});
+})();
