@@ -31,7 +31,7 @@ if (bar) {
     return wrapper;
   };
   const save = group('Save and open',['save','load'],'main-actions');
-  const validate = group('Workflow actions',['validate','execute'],'run-actions');
+  const validate = group('Workflow actions',['validate','execute','flux-run-live'],'run-actions');
   const more = document.createElement('details');
   more.className = 'more-actions';
   const summary = document.createElement('summary');
