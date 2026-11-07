@@ -9,12 +9,14 @@ export async function handler(event){
   const profiles=await db('profiles?id=eq.'+encodeURIComponent(userId)+'&select=role');
   if(profiles?.length!==1||profiles[0].role!=='super_admin')return json(403,{ok:false,error:'Super Admin access required'});
   // Aggregates only; no user emails, tokens, connection details or payloads.
-  const [accounts,automations,runs,webhooks]=await Promise.all([
+  const [accounts,automations,runs]=await Promise.all([
    db('flux_credit_accounts?select=balance,lifetime_used&limit=1000'),
    db('automations?select=id,enabled,trigger_type&limit=1000'),
-   db('automation_runs?select=status,started_at&order=started_at.desc&limit=500'),
-   db('flux_webhooks?select=enabled,revoked_at&limit=1000')
+   db('automation_runs?select=status&limit=500')
   ]);
+  // Optional webhook statistics must never prevent the rest of the admin dashboard loading.
+  let webhooks=null;
+  try{webhooks=await db('flux_webhooks?select=enabled,revoked_at&limit=1000');}catch{}
   const sum=(rows,key)=>rows.reduce((total,row)=>total+(Number(row[key])||0),0);
   return json(200,{ok:true,environment:'test',snapshotAt:new Date().toISOString(),metrics:{
    creditAccounts:accounts.length,coinsRemaining:sum(accounts,'balance'),coinsUsed:sum(accounts,'lifetime_used'),
@@ -22,7 +24,7 @@ export async function handler(event){
    scheduledAutomations:automations.filter(a=>a.enabled&&a.trigger_type==='schedule').length,
    recentRuns:runs.length,successfulRuns:runs.filter(r=>r.status==='success').length,
    failedRuns:runs.filter(r=>r.status==='failed').length,
-   activeWebhooks:webhooks.filter(w=>w.enabled&&!w.revoked_at).length
-  },notes:['Run metrics are limited to the 500 most recent records; other aggregates are capped at 1000 rows.','This dashboard is read-only. No credits or permissions can be changed here.']});
+   activeWebhooks:webhooks?webhooks.filter(w=>w.enabled&&!w.revoked_at).length:null
+  },notes:['Run metrics are limited to the 500 most recent records; other aggregates are capped at 1000 rows.','Webhook count may be unavailable if the optional webhook table is not configured.']});
  }catch{return json(503,{ok:false,error:'Admin overview unavailable; check TEST configuration'});}
 }
