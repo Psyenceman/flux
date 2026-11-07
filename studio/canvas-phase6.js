@@ -20,19 +20,22 @@
  const submit=document.createElement('button');submit.type='button';submit.textContent='Apply adjustment';
  const resultText=document.createElement('p');resultText.setAttribute('role','status');
  adjustment.append(adjustmentTitle,adjustmentHelp,target,delta,reason,submit,resultText);
+ let pendingAdjustment=null;
  submit.addEventListener('click',async()=>{
   const value=Number(delta.value),why=reason.value.trim(),id=target.value.trim();
   if(!/^[a-f0-9-]{36}$/i.test(id)||!Number.isSafeInteger(value)||!value||Math.abs(value)>100000||why.length<8)return resultText.textContent='Enter a valid user UUID, non-zero integer amount and reason (8+ characters).';
   if(!confirm('Apply '+value+' FluxCoins to user '+id+' in TEST? This creates an audit entry.'))return;
   submit.disabled=true;resultText.textContent='Applying…';
-  const requestId=crypto.randomUUID();
+  const fingerprint=JSON.stringify([id,value,why]);
+  if(!pendingAdjustment||pendingAdjustment.fingerprint!==fingerprint)pendingAdjustment={fingerprint,requestId:crypto.randomUUID()};
+  const requestId=pendingAdjustment.requestId;
   try{
    const headers=await window.fluxExecutionHeaders('');
    const response=await fetch('/.netlify/functions/flux-admin-credits',{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify({targetUserId:id,delta:value,reason:why,requestId})});
    const payload=await response.json();
    if(!response.ok)throw Error(payload.error||'Adjustment failed');
    resultText.textContent='Saved. New balance: '+payload.balance+' FCX'+(payload.duplicate?' (already processed)':'');
-   delta.value='';reason.value='';window.dispatchEvent(new Event('flux:coins-refresh'));load();
+   delta.value='';reason.value='';pendingAdjustment=null;window.dispatchEvent(new Event('flux:coins-refresh'));load();
   }catch(error){resultText.textContent='No confirmed adjustment: '+error.message+'; verify audit before retrying.';}
   finally{submit.disabled=false;}
  });
