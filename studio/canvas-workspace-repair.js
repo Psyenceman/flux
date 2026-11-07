@@ -211,7 +211,7 @@
  http:{post:[f('url','Destination URL','url',true),f('body','JSON body','textarea')]},
  email:{send:[f('recipient','To','email',true),f('subject','Subject','text',true),f('message','Body','textarea',true)]},
  resend:{send_email:[f('recipient','To','email',true),f('subject','Subject','text',true),f('message','Body','textarea',true)]},
- slack:{send:[f('channel','Channel','text',true),f('message','Message','textarea',true)]},
+ slack:{list_channels:[],send:[f('channel','Channel','text',true),f('message','Message','textarea',true)]},
  database:{select:[f('table','Table','text',true),f('filter','Filter')],insert:[f('table','Table','text',true),f('body','Row JSON','textarea',true)],update:[f('table','Table','text',true),f('filter','Filter','text',true),f('body','Changes JSON','textarea',true)],delete:[f('table','Table','text',true),f('filter','Filter','text',true)]},
  whatsapp:{send_template:[f('recipient','Phone number','tel',true),f('template','Approved template','text',true)],receive_message:[]},
  telegram:{send_message:[f('chatId','Chat ID','text',true),f('message','Message','textarea',true)],receive_update:[]},
@@ -230,7 +230,7 @@
  filter:[['always','Always'],['compare','Compare incoming data'],['approved','Only approved'],['rejected','Only rejected'],['status=approved','Status approved']],
  flux:[['pass','Pass through'],['pick','Pick field'],['count','Count items']],database:[['select','Read rows'],['insert','Create row'],['update','Update row'],['delete','Delete row']],
  router:[['branch','Choose branch']],loop:[['iterate','For each item']],mapper:[['map','Map fields']],merge:[['combine','Combine']],delay:[['wait','Wait']],log:[['record','Record event']],
- http:[['post','Send POST']],webhook:[['receive','Receive event']],email:[['send','Send email']],slack:[['send','Send message']],
+ http:[['post','Send POST']],webhook:[['receive','Receive event']],email:[['send','Send email']],slack:[['send','Send message'],['list_channels','List joined public channels']],
  sheets:[['read_rows','Read rows'],['append_row','Append row']],drive:[['find_file','Find file'],['create_file','Create file']],github:[['list_issues','Read public repository issues'],['create_issue','Create issue · execution pending']],
  wordpress:[['read_posts','Read posts'],['create_post','Create post']],whatsapp:[['send_template','Send template'],['receive_message','Receive message']],telegram:[['send_message','Send message'],['receive_update','Receive update']],
  discord:[['send_message','Send message']],notion:[['search_pages','Search shared pages'],['create_page','Create page · execution pending']],calendar:[['list_events','List events'],['create_event','Create event']],
@@ -292,12 +292,13 @@
    const choices=actions[node.type]||[];
    const action=choices.length?field(body,'Action','',choices.some(c=>c[0]===draft.operation)?draft.operation:choices[0][0],choices):null;
    const inputs=document.createElement('div');body.append(inputs);
-   let structuredChecks=[];
+   let structuredChecks=[],disposeSlack=()=>{};
+   modal.addEventListener('close',()=>disposeSlack(),{once:true});
    function drawFields(){
-    inputs.replaceChildren();structuredChecks=[];
+    disposeSlack();inputs.replaceChildren();structuredChecks=[];
     const fields=schemas[node.type]?.[action?.el.value]||[];
     for(const spec of fields){
-     if(node.type==='trello'&&spec.key==='list'||node.type==='mapper')continue;
+     if(node.type==='trello'&&spec.key==='list'||node.type==='slack'&&spec.key==='channel'||node.type==='mapper')continue;
      if(['fields','properties','values'].includes(spec.key)||spec.key==='body'&&/JSON/.test(spec.label)){structuredChecks.push(window.FluxStructuredFields(inputs,draft,spec.key,spec.label,spec.key==='values'));continue;}
      const row=document.createElement('label');row.className='fm-row';row.textContent=spec.label+(spec.required?' *':'');
      const input=document.createElement(spec.type==='textarea'?'textarea':'input');if(spec.type!=='textarea')input.type=spec.type;
@@ -305,6 +306,30 @@
      input.value=draft[spec.key]??'';input.placeholder=spec.label;
      input.addEventListener('input',()=>{draft[spec.key]=input.value;});
      row.append(input);inputs.append(row);
+    }
+    if(node.type==='slack'&&action?.el.value==='send'){
+     const row=document.createElement('label');row.className='fm-row';row.textContent='Channel *';
+     const select=document.createElement('select');select.setAttribute('aria-label','Choose Slack channel');row.append(select);inputs.prepend(row);
+     const feedback=document.createElement('p');feedback.className='fm-help';feedback.setAttribute('role','status');
+     const refresh=document.createElement('button');refresh.type='button';refresh.className='fx-form-button';refresh.textContent='Refresh channels';
+     const more=document.createElement('button');more.type='button';more.className='fx-form-button';more.textContent='Load more channels';
+     row.after(feedback,refresh,more);
+     const controller=window.FluxSlackChannels({draft,
+      load:async cursor=>{
+       const headers=await window.fluxExecutionHeaders('');
+       const response=await fetch('/.netlify/functions/slack-resources?'+new URLSearchParams({cursor}),{headers,cache:'no-store'});
+       const data=await response.json();if(!response.ok)throw Error(data.error||'Slack channels unavailable');if(!Array.isArray(data.items))throw Error('Unexpected Slack channels response');return data;
+      },
+      render:state=>{
+       select.replaceChildren(new Option(state.loading?'Loading channels…':'Choose a channel',''));
+       for(const item of state.items)select.add(new Option('#'+item.name,item.id));
+       select.value=state.selected;select.disabled=state.loading||!state.items.length;
+       refresh.disabled=state.loading;more.disabled=state.loading;more.hidden=!state.more;
+       feedback.textContent=state.error||(state.loading?'Loading your Slack channels…':state.ready?'Channel selected. Safe test previews your message without sending.':state.more?'Choose a channel or load the next page.':'Invite your bot to a public channel, then refresh and choose it.');
+      }
+     });
+     select.addEventListener('change',()=>controller.select(select.value));refresh.onclick=()=>void controller.refresh();more.onclick=()=>void controller.more();
+     disposeSlack=controller.dispose;structuredChecks.push(controller.validate);void controller.refresh();
     }
    }
    if(action){draft.operation=action.el.value;action.el.addEventListener('change',()=>{draft.operation=action.el.value;drawFields();});}

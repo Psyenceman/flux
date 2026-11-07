@@ -21,6 +21,7 @@ export async function handler(event){
   const token=String(data?.token||'').trim(),label=String(data?.label||provider).trim().slice(0,100);
   if(token.length<12||token.length>2048||/[\s\r\n]/.test(token))return json(422,{ok:false,error:'Invalid credential format'});
   if(provider==='airtable'&&!token.startsWith('pat'))return json(422,{ok:false,error:'Use an Airtable personal access token'});
+  if(provider==='slack'&&!token.startsWith('xoxb-'))return json(422,{ok:false,error:'Use a Slack bot token starting with xoxb-'});
   // Verify credentials with a read-only request before persisting. Never log tokens or response bodies.
   let verified;
   try{verified=await verifyCredential(provider,token);}catch{return json(502,{ok:false,error:'Provider verification unavailable. Nothing saved.'});}

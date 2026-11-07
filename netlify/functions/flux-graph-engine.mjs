@@ -1,3 +1,4 @@
+import {validateSlackConfig,listSlackChannels,sendSlackMessage} from './slack-connector.mjs';
 import {readGithubIssues,searchNotionPages} from './flux-reader-connectors.mjs';
 // Flux graph executor v0.1. No eval, arbitrary code execution or user-defined outbound URLs.
 export function validateGraph(graph){
@@ -29,7 +30,7 @@ function applyMapping(mapping,outputs,input,allowed){
  const result={};for(const [key,val] of Object.entries(spec)){if(!/^[a-zA-Z_][\w]{0,63}$/.test(key)||typeof val!=='string')throw Error('Invalid Data Mapper field');result[key]=resolveTemplate(val,outputs,input,allowed);}
  return result;
 }
-export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom,airtableToken,googleSheetsToken,supabaseUrl,supabaseServiceToken,hubspotToken,notionToken}={}){
+export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom,airtableToken,googleSheetsToken,supabaseUrl,supabaseServiceToken,hubspotToken,notionToken,slackToken}={}){
  const {order,adj}=validateGraph(graph),byId=new Map(graph.nodes.map(n=>[n.id,n]));
  const received=new Map(),trace=[],outputs={};let calls=0;const ancestors=new Map();for(const id of order){const set=new Set();for(const e of graph.edges.filter(e=>e.to===id)){set.add(e.from);for(const a of ancestors.get(e.from)||[])set.add(a);}ancestors.set(id,set);}
  for(const id of order){
@@ -70,6 +71,17 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
     else if(rule==='pass'||rule==='')output=value;
     else throw Error('Unsupported Flux transform at '+id+'. Use pass, pick or count');
     break;
+   }
+   case 'slack':{
+    const operation=config.operation||'send';
+    const resolved={...config,operation};
+    if(operation==='send')resolved.message=String(resolveTemplate(String(config.message||''),outputs,input,ancestors.get(id))??'');
+    validateSlackConfig(resolved);
+    if(operation==='send'&&dryRun){status='simulated';reason='Safe preview: Slack message not sent';output={source:'slack',operation,channel:config.channel,channelName:String(config.channelName||'Selected channel').slice(0,100),message:resolved.message,simulated:true};break;}
+    if(!slackToken)throw Error('Connect Slack in My connections before running this step');
+    if(++calls>3)throw Error('External action limit exceeded');
+    output=operation==='list_channels'?await listSlackChannels(slackToken):await sendSlackMessage(resolved,slackToken);
+    reason=operation==='list_channels'?'Slack channels retrieved':'Slack message sent';break;
    }
    case 'github':{if(++calls>3)throw Error('External read limit exceeded');output=await readGithubIssues(config);break;}
    case 'notion':{if(++calls>3)throw Error('External read limit exceeded');output=await searchNotionPages(config,notionToken);break;}

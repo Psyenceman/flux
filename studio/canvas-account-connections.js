@@ -1,4 +1,5 @@
 import './structured-config.js';
+import './slack-resource-picker.js';
 import {CONNECTORS} from './connector-catalog.js';
 (()=>{
  const bar=document.querySelector('.workspace-bar');if(!bar)return;

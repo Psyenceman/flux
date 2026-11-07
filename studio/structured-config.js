@@ -6,7 +6,7 @@ export function encodeFields(rows,array=false){
 }
 function typed(row){if(row.type==='number'){if(!row.value.trim()||!Number.isFinite(Number(row.value)))throw Error('Enter a valid number');return Number(row.value);}if(row.type==='boolean'){if(!['true','false'].includes(row.value))throw Error('Choose true or false');return row.value==='true';}if(row.type==='structured'){try{return JSON.parse(row.value);}catch{throw Error('Invalid advanced structured value');}}return row.value;}
 export function structuredFields(parent,draft,key,label,array=false){
- const section=document.createElement('section');section.className='fx-structured-fields';const heading=document.createElement('strong');heading.textContent=label.replace(/\s*\(JSON\)/,'');section.append(heading);
+ const section=document.createElement('section');section.className='fx-structured-fields';const heading=document.createElement('strong');heading.textContent=label.replace(/\s*\(?JSON\)?/gi,'').trim();section.append(heading);
  const hint=document.createElement('p');hint.className='fm-help';hint.textContent=array?'Add the values in the order they should appear.':'Add field names and values. Incoming data can be inserted using {{input.name}}.';section.append(hint);
  const rows=[],root=document.createElement('div');section.append(root);let initialError='';
  function add(name='',value=''){

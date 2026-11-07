@@ -156,6 +156,13 @@ if(output){
     if(step.reason){const reason=document.createElement('p');reason.textContent=step.reason;item.append(reason);}
     if(result.outputs&&Object.hasOwn(result.outputs,step.id)){
      const stepOutput=result.outputs[step.id];
+     if(step.type==='slack'){
+      const summary=document.createElement('p');
+      summary.textContent=stepOutput?.delivered===true?'Message delivered to #'+stepOutput.channelName:stepOutput?.simulated===true?'Message preview for #'+stepOutput.channelName+' · not sent':(stepOutput?.count||0)+' available Slack channels';
+      item.append(summary);
+      if(stepOutput?.simulated===true){const preview=document.createElement('p');preview.style.whiteSpace='pre-wrap';preview.textContent=stepOutput.message;item.append(preview);}
+      if(Array.isArray(stepOutput?.items)){const channels=document.createElement('p');channels.textContent=stepOutput.items.map(c=>'#'+c.name).join(', ');item.append(channels);if(stepOutput.hasMore){const more=document.createElement('p');more.textContent='More channels are available. Use the channel picker to load the next page.';item.append(more);}}
+     }
      if(step.type==='trello'&&Array.isArray(stepOutput?.items)){
       const count=document.createElement('p');count.textContent=stepOutput.items.length+' Trello cards retrieved';item.append(count);
       const cards=document.createElement('ul');cards.style.cssText='padding-left:20px;max-height:300px;overflow:auto';

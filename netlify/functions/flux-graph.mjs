@@ -1,3 +1,5 @@
+import {liveWorkflowKind} from '../../studio/workflow-live-policy.js';
+import {validateSlackConfig,checkSlackChannel} from './slack-connector.mjs';
 import {db,decrypt} from './trello-shared.mjs';
 import {createHash,timingSafeEqual} from 'node:crypto';
 import {executeGraph,validateGraph} from './flux-graph-engine.mjs';
@@ -30,10 +32,9 @@ export async function handler(event){
   if(!authenticated)return json(401,{ok:false,error:'Flux Studio session expired. Sign in again.'});
   sessionToken=bearer[1];
   if(!dryRun){
-   const nodes=body.graph?.nodes,edges=body.graph?.edges;
-   if(!Array.isArray(nodes)||nodes.length!==1||!Array.isArray(edges)||edges.length!==0||nodes[0]?.type!=='trello'||nodes[0]?.config?.operation!=='create_card')
-    return json(403,{ok:false,error:'Live TEST execution is limited to a single Trello Create card block'});
-   if(body.confirmLiveTrello!==true)return json(403,{ok:false,error:'Explicit Trello creation confirmation required'});
+   const kind=liveWorkflowKind(body.graph);
+   if(!kind)return json(403,{ok:false,error:'Live TEST supports a single Trello Create card or a workflow with one Slack Send message and supported read/local steps'});
+   if(kind==='trello'&&body.confirmLiveTrello!==true||kind==='slack'&&body.confirmLiveSlack!==true)return json(403,{ok:false,error:'Explicit action confirmation required'});
   }
  }
 
@@ -44,15 +45,22 @@ export async function handler(event){
  }
  try{
   validateGraph(body.graph);
-  if(!dryRun&&(!sessionOwner||body.confirmLiveTrello!==true))return json(403,{ok:false,error:'Authenticated confirmation required for Trello writes'});
+  if(!dryRun&&(!sessionOwner||!liveWorkflowKind(body.graph)))return json(403,{ok:false,error:'Authenticated confirmation required for live actions'});
   let personalCredentials={};
-  if(sessionOwner&&dryRun){
-   for(const provider of ['airtable','hubspot','notion']){
+  if(sessionOwner){
+   for(const provider of ['airtable','hubspot','notion','slack']){
     if(!body.graph.nodes.some(n=>n.type===provider))continue;
     try{
      const rows=await db('flux_connector_credentials?owner_id=eq.'+sessionOwner+'&provider=eq.'+provider+'&select=token_ciphertext');
      if(rows?.length!==1)return json(409,{ok:false,error:'Connect '+provider+' in My connections before testing this workflow'});personalCredentials[provider]=decrypt(rows[0].token_ciphertext);
     }catch{return json(503,{ok:false,error:'Cannot load your '+provider+' connection; check TEST setup'});}
+   }
+  }
+  if(body.graph.nodes.some(n=>n.type==='slack')){
+   for(const n of body.graph.nodes.filter(n=>n.type==='slack'))validateSlackConfig(n.config||{});
+   if(!dryRun){
+    const sending=body.graph.nodes.find(n=>n.type==='slack'&&(n.config?.operation||'send')==='send');
+    try{await checkSlackChannel(personalCredentials.slack,sending.config.channel);}catch(error){return json(409,{ok:false,error:error.message});}
    }
   }
   let trelloAccessToken;
@@ -87,7 +95,7 @@ export async function handler(event){
    if(!credits?.ok)return json(402,{ok:false,error:'Insufficient FluxCoins',credits});
   }
 
-  const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloAccessToken,notionToken:personalCredentials.notion,airtableToken:sessionOwner?personalCredentials.airtable:process.env.FLUX_AIRTABLE_READ_TOKEN,googleSheetsToken:process.env.FLUX_GOOGLE_SHEETS_TOKEN,supabaseUrl:process.env.FLUX_CONNECTOR_SUPABASE_URL,supabaseServiceToken:process.env.FLUX_CONNECTOR_SUPABASE_TOKEN,hubspotToken:sessionOwner?personalCredentials.hubspot:process.env.FLUX_HUBSPOT_TOKEN,telegramToken:process.env.FLUX_TELEGRAM_BOT_TOKEN,telegramChatId:process.env.FLUX_TELEGRAM_CHAT_ID,resendApiKey:process.env.FLUX_RESEND_API_KEY,resendFrom:process.env.FLUX_RESEND_FROM});const metering={model:'preview-v1',unit:'standard_operation',rateFluxCoins:1,billableOperations:result.trace.filter(step=>step.status==='completed').length,simulatedOperations:result.trace.filter(step=>step.status==='simulated').length,excludedOperations:result.trace.filter(step=>['skipped','filtered','failed'].includes(step.status)).length,estimatedFluxCoins:result.trace.filter(step=>step.status==='completed').length,chargedByMetering:false};return json(200,{...result,credits,metering});
+  const result=await executeGraph(body.graph,body.input,{dryRun,notificationUrl,trelloAccessToken,notionToken:personalCredentials.notion,slackToken:personalCredentials.slack,airtableToken:sessionOwner?personalCredentials.airtable:process.env.FLUX_AIRTABLE_READ_TOKEN,googleSheetsToken:process.env.FLUX_GOOGLE_SHEETS_TOKEN,supabaseUrl:process.env.FLUX_CONNECTOR_SUPABASE_URL,supabaseServiceToken:process.env.FLUX_CONNECTOR_SUPABASE_TOKEN,hubspotToken:sessionOwner?personalCredentials.hubspot:process.env.FLUX_HUBSPOT_TOKEN,telegramToken:process.env.FLUX_TELEGRAM_BOT_TOKEN,telegramChatId:process.env.FLUX_TELEGRAM_CHAT_ID,resendApiKey:process.env.FLUX_RESEND_API_KEY,resendFrom:process.env.FLUX_RESEND_FROM});const metering={model:'preview-v1',unit:'standard_operation',rateFluxCoins:1,billableOperations:result.trace.filter(step=>step.status==='completed').length,simulatedOperations:result.trace.filter(step=>step.status==='simulated').length,excludedOperations:result.trace.filter(step=>['skipped','filtered','failed'].includes(step.status)).length,estimatedFluxCoins:result.trace.filter(step=>step.status==='completed').length,chargedByMetering:false};return json(200,{...result,credits,metering});
  }
  catch(error){console.error(JSON.stringify({event:'flux.graph.failed',reason:String(error?.message||error)}));return json(422,{ok:false,error:String(error?.message||'Execution failed').slice(0,240)});}
 }
