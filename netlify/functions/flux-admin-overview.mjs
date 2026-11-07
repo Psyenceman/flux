@@ -23,7 +23,7 @@ export async function handler(event){
   }
   if(profiles?.length!==1||profiles[0].role!=='super_admin')return json(403,{ok:false,error:'Super Admin access required'});
   // After the server-side authorization succeeds, failures may be reported by stage.
-  const read=async (name,path)=>{try{return await db(path);}catch(error){return {error:true,source:name};}};
+  const read=async (name,path)=>{try{return await db(path);}catch(error){const status=String(error?.message||'').match(/^Database error (\d{3})$/);return {error:true,source:name,httpStatus:status?Number(status[1]):null};}};
   const [accounts,automations,runs,webhooks]=await Promise.all([
    read('credits','flux_credit_accounts?select=balance,lifetime_used&limit=1000'),
    read('automations','automations?select=enabled,trigger_type&limit=1000'),
@@ -31,7 +31,7 @@ export async function handler(event){
    read('webhooks','flux_webhooks?select=enabled,revoked_at&limit=1000')
   ]);
   const sources={credits:accounts,automations,runs,webhooks};
-  const unavailable=Object.entries(sources).filter(([,value])=>!Array.isArray(value)).map(([name])=>name);
+  const unavailable=Object.entries(sources).filter(([,value])=>!Array.isArray(value)).map(([name,value])=>({source:name,httpStatus:value?.httpStatus??null}));
   const sum=(rows,key)=>Array.isArray(rows)?rows.reduce((total,row)=>total+(Number(row[key])||0),0):null;
   return json(200,{ok:true,environment:'test',snapshotAt:new Date().toISOString(),
    metrics:{
