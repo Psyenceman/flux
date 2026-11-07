@@ -108,6 +108,8 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
     if(writing){
      try{fields=JSON.parse(String(config.fields||'{}'));}catch{throw Error('Airtable: fields must be a JSON object');}
      if(!fields||typeof fields!=='object'||Array.isArray(fields)||Object.keys(fields).length>30)throw Error('Airtable: invalid fields');
+     // Resolve only connected upstream values, never arbitrary block references.
+     fields=Object.fromEntries(Object.entries(fields).map(([key,val])=>[key,typeof val==='string'&&val.includes('{{')?resolveTemplate(val,outputs,input,ancestors.get(id)):val]));
      if(operation==='update_record'){recordId=String(config.recordId||'');if(!/^rec[a-zA-Z0-9]{14}$/.test(recordId))throw Error('Airtable: valid record ID required');}
      if(dryRun){status='simulated';reason='Safe preview: Airtable record not modified';output={source:'airtable',operation,fields,recordId,simulated:true};break;}
     }
