@@ -46,3 +46,26 @@ test('HubSpot search without credentials is skipped',async()=>{
  const result=await executeGraph(graph('hubspot',{operation:'search_contacts',query:'demo@example.com'}),{},{dryRun:true});
  assert.equal(result.trace[0].status,'skipped');
 });
+
+test('Trello read feeds Airtable create preview without Airtable writes',async()=>{
+ const originalFetch=globalThis.fetch;
+ const requests=[];
+ globalThis.fetch=async(url,options={})=>{
+  requests.push({url:String(url),method:options.method||'GET'});
+  assert.match(String(url),/^https:\/\/api\.trello\.com\/1\/lists\//);
+  return {ok:true,json:async()=>[{id:'0123456789abcdef01234567',name:'TEST card',url:'https://trello.com/c/test',idList:'0123456789abcdef01234567'}]};
+ };
+ try{
+  const workflow={version:1,nodes:[
+   {id:'trello1',type:'trello',config:{operation:'read_list',list:'0123456789abcdef01234567'}},
+   {id:'airtable1',type:'airtable',config:{operation:'create_record',baseId:'app12345678901234',tableId:'tbl12345678901234',fields:'{"Name":"Preview only"}'}}
+  ],edges:[{from:'trello1',to:'airtable1'}]};
+  const result=await executeGraph(workflow,{},{dryRun:true,trelloAccessToken:'mock-token'});
+  assert.equal(result.ok,true);
+  assert.deepEqual(result.trace.map(x=>x.status),['completed','simulated']);
+  assert.equal(result.outputs.trello1.items[0].name,'TEST card');
+  assert.equal(result.outputs.airtable1.simulated,true);
+  assert.equal(requests.length,1);
+  assert.equal(requests[0].method,'GET');
+ }finally{globalThis.fetch=originalFetch;}
+});
