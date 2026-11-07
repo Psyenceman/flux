@@ -1,16 +1,26 @@
-/* Flux TEST — read-only Super Admin overview */
-.flux-admin-trigger{min-height:44px;padding:9px 14px;border:1px solid #a88bff;border-radius:10px;background:#3b2b67;color:#fff;cursor:pointer;transition:box-shadow .2s,background .2s}
-.flux-admin-trigger:hover{background:#61479b;box-shadow:0 0 16px #ad8dff77}
-.flux-admin-trigger:focus-visible,.flux-admin-dialog button:focus-visible{outline:3px solid #dbc9ff;outline-offset:2px}
-.flux-admin-dialog{width:min(780px,calc(100vw - 24px));max-height:85dvh;overflow:auto;padding:24px;border:1px solid #8d79cb;border-radius:18px;background:#1b2039;color:#f3efff;box-shadow:0 30px 90px #0009}
-.flux-admin-dialog::backdrop{background:#06071ac9}
-.flux-admin-dialog h2{font-size:20px;margin:0 0 10px}
-.flux-admin-dialog p,.flux-admin-dialog small{color:#d1cce5}
+/* Flux Studio TEST — neutral graphite, crisp blue accents, accessible contrast */
+.flux-admin-trigger{min-height:44px;padding:10px 16px;border:1px solid #426b9d;border-radius:11px;background:#152b46;color:#eaf4ff;font-weight:650;cursor:pointer;transition:background .2s,box-shadow .2s,transform .2s}
+.flux-admin-trigger:hover{background:#1c426b;box-shadow:0 0 0 3px #4f9efb26,0 5px 18px #3b82f633;transform:translateY(-1px)}
+.flux-admin-trigger:focus-visible,.flux-admin-dialog button:focus-visible,.flux-admin-dialog input:focus-visible{outline:3px solid #6bb5ff;outline-offset:2px}
+.flux-admin-dialog{box-sizing:border-box;width:min(760px,calc(100vw - 24px));max-height:88dvh;overflow:auto;padding:28px;border:1px solid #34455c;border-radius:18px;background:#101b2b;color:#f2f7fd;box-shadow:0 30px 90px #020914b8;color-scheme:dark}
+.flux-admin-dialog::backdrop{background:#060d18c9;backdrop-filter:blur(3px)}
+.flux-admin-dialog h2{font-size:21px;letter-spacing:-.02em;margin:0 0 10px;color:#f7faff}
+.flux-admin-dialog p,.flux-admin-dialog small{color:#afc1d6;line-height:1.55}
+.flux-admin-dialog [role="status"]{color:#d8e9fb}
 .flux-admin-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:20px 0}
-.flux-admin-metric{padding:16px;background:#2b2c4c;border:1px solid #55527f;border-radius:12px;display:flex;flex-direction:column;gap:6px}
-.flux-admin-metric strong{font-size:24px;color:#e7d9ff;font-variant-numeric:tabular-nums}
-.flux-admin-metric span{font-size:12px;color:#d1cce5}
-.flux-admin-dialog button{min-height:44px;margin:10px 8px 0 0;padding:9px 16px;border:1px solid #a88bff;border-radius:10px;background:#44356c;color:#fff;cursor:pointer}
-@media(max-width:550px){.flux-admin-dialog{padding:15px}.flux-admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.flux-admin-metric{padding:11px}.flux-admin-metric strong{font-size:20px}}
-
-.flux-admin-adjustment{margin:20px 0;padding:16px;border:1px solid #655a91;border-radius:12px;background:#242340}.flux-admin-adjustment h3{margin:0 0 8px;font-size:16px}.flux-admin-adjustment input{display:block;width:100%;min-height:44px;margin:9px 0;padding:10px 12px;border:1px solid #7667a3;border-radius:9px;background:#151c32;color:#fff;font:inherit}.flux-admin-adjustment input:focus-visible{outline:2px solid #c4afff;outline-offset:2px}.flux-admin-adjustment button:disabled{opacity:.5;cursor:wait}
+.flux-admin-metric{padding:16px;background:#18283b;border:1px solid #30465f;border-radius:12px;display:flex;flex-direction:column;gap:6px}
+.flux-admin-metric strong{font-size:25px;color:#f1f8ff;font-variant-numeric:tabular-nums}
+.flux-admin-metric span{font-size:12px;color:#adc3dc}
+.flux-admin-dialog button{min-height:44px;margin:10px 8px 0 0;padding:10px 17px;border:1px solid #3f638b;border-radius:10px;background:#1d3856;color:#f3f8ff;font-weight:600;cursor:pointer;transition:background .18s,border-color .18s,box-shadow .18s}
+.flux-admin-dialog button:hover{background:#295078;border-color:#73b7ff;box-shadow:0 0 0 3px #3b82f626}
+.flux-admin-dialog button:disabled{opacity:.55;cursor:wait}
+.flux-admin-adjustment{margin:20px 0;padding:20px;border:1px solid #30465f;border-radius:14px;background:#17263a}
+.flux-admin-adjustment h3{margin:0 0 8px;font-size:16px;color:#e8f3ff}
+.flux-admin-adjustment p{margin:0 0 13px}
+.flux-admin-adjustment input{box-sizing:border-box;display:block;width:100%;min-height:46px;margin:10px 0;padding:11px 13px;border:1px solid #465d77;border-radius:10px;background:#0e1a2b;color:#f3f8ff;font:inherit}
+.flux-admin-adjustment input::placeholder{color:#95a9c0}
+.flux-admin-adjustment input:focus{border-color:#65b0ff}
+.flux-admin-adjustment button{background:#2463a4;border-color:#367bc3}
+.flux-admin-adjustment button:hover{background:#317dc9}
+@media(max-width:550px){.flux-admin-dialog{padding:18px;border-radius:14px}.flux-admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.flux-admin-metric{padding:12px}.flux-admin-metric strong{font-size:21px}.flux-admin-adjustment{padding:14px}}
+@media(prefers-reduced-motion:reduce){.flux-admin-trigger,.flux-admin-dialog button{transition:none}.flux-admin-trigger:hover{transform:none}}
