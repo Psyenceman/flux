@@ -1,0 +1,18 @@
+/* TEST milestone UX-01 — premium responsive guided shell, no production changes */
+.flux-m1-intro{padding:24px clamp(16px,3vw,44px) 16px;background:linear-gradient(110deg,#f7faff 0%,#edf4ff 75%,#e7f0ff 100%);border-bottom:1px solid #dce7f7}
+.flux-m1-eyebrow{display:inline-block;font-size:10px;letter-spacing:.16em;font-weight:800;color:#3566a6;margin-bottom:7px}
+.flux-m1-intro h2{margin:0;font-size:clamp(22px,2.5vw,32px);font-weight:800;letter-spacing:-.035em;color:#142c4a}
+.flux-m1-intro p{margin:7px 0 0;color:#526780;font-size:13px}
+.flux-m1-language{margin-left:12px;border:1px solid #c9d9f0!important;border-radius:20px!important;background:#f4f8ff!important;color:#214b82!important;font-size:11px!important;font-weight:750!important;padding:8px 11px!important;cursor:pointer}
+.flux-m1-safe{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:9px 20px;background:#f5f9ff;border-bottom:1px solid #e1eaf7;color:#345477;font-size:12px;font-weight:700}
+.flux-m1-safe small{color:#617590;font-size:11px;font-weight:500}
+.flux-m1-advanced{margin:12px 0;border:1px solid #dae5f2;border-radius:12px;padding:10px 14px;background:#f7faff}
+.flux-m1-advanced summary{cursor:pointer;color:#325783;font-weight:700;font-size:12px}
+.flux-m1-advanced[open] .field{margin-top:14px}
+#canvas-shell .compact-actions #execute{background:#2563eb!important;color:#fff!important;border-radius:11px!important;padding:11px 18px!important;font-weight:750!important;box-shadow:0 5px 16px #2563eb24}
+#canvas-shell .compact-actions #execute:hover{background:#174dc6!important;transform:translateY(-1px)}
+#flux-block-picker .flux-picker-item[data-ready=planned]{background:#f6f7f9!important;border-style:dashed!important;opacity:.75}
+#flux-block-picker .flux-picker-item[data-ready=planned] small{color:#795b36!important}
+#flux-block-picker .flux-picker-item:focus-visible,.flux-m1-language:focus-visible,#canvas-shell .compact-actions button:focus-visible{outline:3px solid #7bb4ff!important;outline-offset:2px}
+@media(max-width:680px){.flux-m1-intro{padding:17px 16px}.flux-m1-safe{padding:9px 14px}.flux-m1-safe small{flex-basis:100%}.flux-m1-language{margin-left:auto}}
+@media(prefers-reduced-motion:reduce){#canvas-shell .compact-actions #execute:hover{transform:none}}
