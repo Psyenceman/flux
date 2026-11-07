@@ -40,3 +40,10 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 #flux-wallet-dock{box-shadow:0 8px 28px #25204418!important;border:1px solid #e5e0f4!important;background:#fff!important;color:var(--fx-ink)!important;border-radius:14px!important;transform:scale(.85);transform-origin:bottom left}
 @media(max-width:680px){body>header{padding:14px 16px!important}.workspace-bar{padding:10px!important}.flux-mode-tabs button{padding:9px 10px!important;font-size:11px!important}.flux-m1-intro{padding:22px 16px!important}.flux-m1-intro h2{font-size:25px!important}#canvas-shell .compact-actions,.flux-m1-safe,.canvas-tools{margin-left:10px!important;margin-right:10px!important}#flux-editor-stage{margin:0 10px 14px!important;width:calc(100% - 20px)!important}#flux-automation-library{margin:0 10px 20px!important;padding:16px!important}#flux-block-results{grid-template-columns:1fr!important}.fx-map-row{grid-template-columns:1fr 1fr auto}#flux-module-config .fm-body{padding:18px!important}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+#canvas-shell #nodes .node{background:#fff!important;border-color:#dedfee!important;border-radius:20px!important;box-shadow:0 8px 22px #3029540c!important}
+#canvas-shell #nodes .node.selected{border-color:#8572e9!important;box-shadow:0 0 0 4px #6957e819,0 10px 26px #30295412!important}
+#canvas-shell #nodes .node .node-delete{opacity:0!important}#canvas-shell #nodes .node:hover .node-delete,#canvas-shell #nodes .node:focus-within .node-delete{opacity:1!important}
+#canvas-shell .flux-edge-remove{opacity:0!important}#canvas-shell .flux-edge-remove:hover,#canvas-shell .flux-edge-remove:focus-visible{opacity:1!important}
+#canvas-shell #flux-new-scenario{display:none!important}
+#canvas-shell .flux-mode-tabs button[aria-current=true]{border-bottom:0!important;box-shadow:none!important}
+#canvas-shell .workspace-bar>button:not(.flux-m1-language){background:#fff!important;color:#68617f!important;border:1px solid #e7e8f0!important;border-radius:9px!important;font-size:12px!important}

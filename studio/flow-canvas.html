@@ -439,7 +439,7 @@ runLive.addEventListener('click',()=>{
  byId('run-now').click();
 });
 byId('execute').insertAdjacentElement('afterend',runLive);
-byId('execute').addEventListener('click',()=>{byId('run-dry').checked=true;byId('runner').style.display='block';fluxFeedback('Testing workflow… Trello will be read without changing cards.');byId('run-now').click();});
+byId('execute').addEventListener('click',()=>{byId('run-dry').checked=true;byId('runner').style.display='block';fluxFeedback('Testing your workflow… External writes are disabled in safe test mode.');byId('run-now').click();});
 byId('run-now').addEventListener('click',async()=>{
  const token=byId('run-token').value,output=byId('run-output'),dryRun=byId('run-dry').checked;
 

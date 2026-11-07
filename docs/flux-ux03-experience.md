@@ -14,3 +14,6 @@
 
 ## Still open
 This does not complete every connector. Miro/Slack/email/Drive/GitHub/WordPress/WhatsApp/Discord/Notion/Calendar/Stripe/Shopify/OpenAI/Cloudflare and repeated loop execution remain incomplete. Several existing connector forms still require technical resource setup. No simulated provider response is presented as actual integration. Provider OAuth applications and owner-scoped resources must be integrated before calling those blocks operational. Stripe and per-block billing deferred by owner. Production excluded.
+
+## Published browser verification
+Deploy 6aef5e43b3d0e127ede56d72 ready at 245924dcfcaf9d912c5919f3c4b03a2003046561. Authenticated browser: opened Mapper guided form, saved, executed starter: 4 completed / 0 simulated / 0 skipped. Added Router using Log → plus → Router; executed modified graph: 5 completed / 0 simulated / 0 skipped. No external changes. Dashboard/canvas screenshot inspected at desktop size. Final polish strengthens cascade precedence for white nodes, hides destructive controls until hover/focus, removes duplicate new-canvas toolbar control and removes hardcoded Trello test message. Mobile visual QA and remaining external integrations are still open.
