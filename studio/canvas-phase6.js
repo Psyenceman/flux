@@ -11,7 +11,32 @@
  const note=document.createElement('small');note.textContent='TEST environment only.';
  const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Refresh';
  const close=document.createElement('button');close.type='button';close.textContent='Close';close.addEventListener('click',()=>dialog.close());
- dialog.append(heading,explanation,status,metrics,note,refresh,close);bar.append(button);document.body.append(dialog);
+ const adjustment=document.createElement('section');adjustment.className='flux-admin-adjustment';
+ const adjustmentTitle=document.createElement('h3');adjustmentTitle.textContent='FluxCoins · manual adjustment (TEST)';
+ const adjustmentHelp=document.createElement('p');adjustmentHelp.textContent='Requires the approved TEST database migration. All changes are audited; no payment is processed.';
+ const target=document.createElement('input');target.placeholder='Target user UUID';target.setAttribute('aria-label','Target user UUID');
+ const delta=document.createElement('input');delta.type='number';delta.min='-100000';delta.max='100000';delta.step='1';delta.placeholder='Coins to add (+) or remove (-)';delta.setAttribute('aria-label','FluxCoins adjustment');
+ const reason=document.createElement('input');reason.maxLength=240;reason.placeholder='Reason (at least 8 characters)';reason.setAttribute('aria-label','Adjustment reason');
+ const submit=document.createElement('button');submit.type='button';submit.textContent='Apply adjustment';
+ const resultText=document.createElement('p');resultText.setAttribute('role','status');
+ adjustment.append(adjustmentTitle,adjustmentHelp,target,delta,reason,submit,resultText);
+ submit.addEventListener('click',async()=>{
+  const value=Number(delta.value),why=reason.value.trim(),id=target.value.trim();
+  if(!/^[a-f0-9-]{36}$/i.test(id)||!Number.isSafeInteger(value)||!value||Math.abs(value)>100000||why.length<8)return resultText.textContent='Enter a valid user UUID, non-zero integer amount and reason (8+ characters).';
+  if(!confirm('Apply '+value+' FluxCoins to user '+id+' in TEST? This creates an audit entry.'))return;
+  submit.disabled=true;resultText.textContent='Applying…';
+  const requestId=crypto.randomUUID();
+  try{
+   const headers=await window.fluxExecutionHeaders('');
+   const response=await fetch('/.netlify/functions/flux-admin-credits',{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify({targetUserId:id,delta:value,reason:why,requestId})});
+   const payload=await response.json();
+   if(!response.ok)throw Error(payload.error||'Adjustment failed');
+   resultText.textContent='Saved. New balance: '+payload.balance+' FCX'+(payload.duplicate?' (already processed)':'');
+   delta.value='';reason.value='';window.dispatchEvent(new Event('flux:coins-refresh'));load();
+  }catch(error){resultText.textContent='No confirmed adjustment: '+error.message+'; verify audit before retrying.';}
+  finally{submit.disabled=false;}
+ });
+  dialog.append(heading,explanation,status,metrics,note,adjustment,refresh,close);bar.append(button);document.body.append(dialog);
  const labels={creditAccounts:'Credit accounts',coinsRemaining:'FluxCoins available',coinsUsed:'FluxCoins consumed',automations:'Saved automations',activeAutomations:'Active automations',scheduledAutomations:'Scheduled automations',recentRuns:'Recent runs (max 500)',successfulRuns:'Successful runs',failedRuns:'Failed runs',activeWebhooks:'Active webhooks'};
  async function load(){
   if(typeof window.fluxExecutionHeaders!=='function'){status.textContent='Sign in first.';return;}
