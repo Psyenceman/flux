@@ -7,13 +7,19 @@ export async function handler(event){
   const userId=await owner(getBearer(event));
   if(!userId)return json(401,{ok:false,error:'Sign in required'});
   stage='role_lookup';
+  // Use the caller's verified JWT to read their own profile through RLS.
+  // This avoids coupling role lookup to service-role PostgREST permissions.
+  const jwt=getBearer(event);
   let profiles;
   try{
-   profiles=await db('profiles?id=eq.'+encodeURIComponent(userId)+'&select=role');
+   const response=await fetch('https://sgxinvmfkznzoueqjzop.supabase.co/rest/v1/profiles?id=eq.'+encodeURIComponent(userId)+'&select=role',{
+    headers:{apikey:'sb_publishable_vcqHLVzTy3u1Ozk9N1YBiQ_iuIhsOHu',authorization:'Bearer '+jwt},
+    signal:AbortSignal.timeout(8000)
+   });
+   if(!response.ok)return json(503,{ok:false,error:'Role lookup unavailable',stage:'role_lookup',upstreamStatus:response.status,reason:'upstream_http'});
+   profiles=await response.json();
   }catch(error){
-   // Safe diagnostics: HTTP status only, never the service key, JWT or database response body.
-   const match=String(error?.message||'').match(/Database error (\\d{3})/);
-   return json(503,{ok:false,error:'Role lookup unavailable',stage:'role_lookup',upstreamStatus:match?Number(match[1]):null,reason,serviceKeyConfigured:Boolean(process.env.FLUX_SUPABASE_SERVICE_ROLE_KEY)});
+   return json(503,{ok:false,error:'Role lookup unavailable',stage:'role_lookup',reason:error?.name==='TimeoutError'?'upstream_timeout':'upstream_network'});
   }
   if(profiles?.length!==1||profiles[0].role!=='super_admin')return json(403,{ok:false,error:'Super Admin access required'});
   // After the server-side authorization succeeds, failures may be reported by stage.
