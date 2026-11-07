@@ -31,10 +31,15 @@ managePanel.setAttribute('aria-label','Manage selected automation');
 const manageTitle=document.createElement('strong');manageTitle.textContent='Manage selected automation';
 const manageState=document.createElement('p');manageState.setAttribute('role','status');
 const pauseButton=document.createElement('button');pauseButton.type='button';pauseButton.textContent='Pause';
+const scheduleLabel=document.createElement('label');scheduleLabel.className='flux-manage-schedule';scheduleLabel.textContent='Start mode';
+const scheduleSelect=document.createElement('select');scheduleSelect.setAttribute('aria-label','Automation start mode');
+for(const [value,label] of [['manual','Manual'],['schedule:5','Every 5 minutes'],['schedule:15','Every 15 minutes'],['schedule:60','Every hour'],['schedule:1440','Every day']])scheduleSelect.add(new Option(label,value));
+scheduleLabel.append(scheduleSelect);
+const scheduleSave=document.createElement('button');scheduleSave.type='button';scheduleSave.textContent='Save schedule';
 const renameButton=document.createElement('button');renameButton.type='button';renameButton.textContent='Rename';
 const deleteButton=document.createElement('button');deleteButton.type='button';deleteButton.textContent='Delete';
 deleteButton.className='flux-manage-danger';
-managePanel.append(manageTitle,manageState,pauseButton,renameButton,deleteButton);
+managePanel.append(manageTitle,manageState,scheduleLabel,scheduleSave,pauseButton,renameButton,deleteButton);
 cards?.after(managePanel);
 let manageBusy=false;
 function renderManage(){
@@ -43,6 +48,10 @@ function renderManage(){
  if(!available)return;
  manageState.textContent=(row.enabled?'Active':'Paused')+' · '+(row.trigger_type||'manual')+' trigger';
  pauseButton.textContent=row.enabled?'Pause automation':'Resume automation';
+ scheduleSelect.value=row.trigger_type==='schedule'?'schedule:'+row.trigger_config?.interval_minutes:'manual';
+ if(!Array.from(scheduleSelect.options).some(o=>o.value===scheduleSelect.value))scheduleSelect.value='manual';
+ scheduleSelect.disabled=manageBusy||row.enabled;
+ scheduleSave.disabled=manageBusy||row.enabled;
  for(const button of [pauseButton,renameButton,deleteButton])button.disabled=manageBusy;
 }
 async function manageChange(action){
@@ -82,6 +91,20 @@ async function manageChange(action){
  }catch(error){status('Could not '+action+' automation: '+error.message);}
  finally{manageBusy=false;renderManage();}
 }
+scheduleSave.addEventListener('click',async()=>{
+ const row=selection();if(!row||!client||!user||manageBusy||row.enabled)return;
+ const mode=scheduleSelect.value,interval=mode.startsWith('schedule:')?Number(mode.slice(9)):null;
+ const trigger_type=interval?'schedule':'manual',trigger_config=interval?{interval_minutes:interval}:{};
+ const safe=new Set(['manual','schedule','webhook','filter','router','mapper','merge','flux','log']);
+ if(interval&&(!row.action_config?.graph||row.action_config.graph.nodes?.some(n=>!safe.has(n.type))))return status('Scheduling external connectors is disabled until verified.');
+ manageBusy=true;renderManage();
+ try{
+  const {data,error}=await client.from('automations').update({trigger_type,trigger_config,enabled:false,updated_at:new Date().toISOString()}).eq('id',row.id).eq('owner_id',user.id).select('id,trigger_type,trigger_config,enabled');
+  if(error)throw error;if(!data?.length)throw Error('Automation not found');
+  Object.assign(row,data[0]);status(interval?'Saved schedule: every '+interval+' minutes. Resume to activate.':'Manual start saved.');
+ }catch(error){status('Schedule save failed: '+error.message);}
+ finally{manageBusy=false;renderManage();}
+});
 pauseButton.addEventListener('click',()=>manageChange(selection()?.enabled?'pause':'resume'));
 renameButton.addEventListener('click',()=>manageChange('rename'));
 deleteButton.addEventListener('click',()=>manageChange('delete'));
