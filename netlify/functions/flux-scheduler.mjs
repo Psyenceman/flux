@@ -18,7 +18,7 @@ export async function handler(){
    ok=result.ok===true&&!result.trace.some(x=>x.status==='skipped'||x.status==='simulated');
    if(!ok)error='Scheduled internal workflow failed';
   }catch{error='Invalid or unsupported scheduled workflow';}
-  try{await db('rpc/flux_finish_scheduled_test','POST',{p_run_id:job.run_id,p_ok:ok,p_error:error});}
+  try{const finished=await db('rpc/flux_finish_scheduled_test','POST',{p_run_id:job.run_id,p_ok:ok,p_error:error});if(finished!==true){failed++;continue;}}
   catch{failed++;continue;}
   if(ok)success++;else failed++;
  }
