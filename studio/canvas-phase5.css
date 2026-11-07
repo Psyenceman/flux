@@ -12,3 +12,5 @@
 .flux-state-active{color:#b8f4e3;background:#175647}
 .flux-state-paused{color:#e2d4fc;background:#4d3c6c}
 @media(max-width:550px){.flux-manage-panel{padding:12px}.flux-manage-panel button{width:100%;margin:4px 0}}
+
+.flux-manage-schedule{display:flex;flex-direction:column;gap:6px;max-width:300px;margin:10px 0;color:#d9d3f5;font-size:12px;font-weight:600}.flux-manage-schedule select{min-height:44px;padding:9px 12px;background:#191c38;color:#fff;border:1px solid #8b75cb;border-radius:10px}.flux-manage-schedule select:focus-visible{outline:2px solid #d5bcff;outline-offset:2px}
