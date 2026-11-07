@@ -245,7 +245,7 @@ async function refreshFluxCoins(){
  ]);
  window.dispatchEvent(new CustomEvent('flux:coins-loaded',{detail:{
   signedIn:true,userId:user.id,unlimited:!profileError&&profile?.role==='super_admin',
-  balance:walletError?null:(wallet?.balance??100),used:wallet?.lifetime_used??0,
+  balance:walletError?null:(wallet?.balance??null),used:walletError?null:(wallet?.lifetime_used??null),
   entries:ledgerError?[]:(ledger||[]),error:walletError?.message||ledgerError?.message||null
  }}));
 }
