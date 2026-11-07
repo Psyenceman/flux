@@ -6,7 +6,7 @@
  const info=document.createElement('p');info.textContent='TEST only. Credentials are encrypted server-side and scoped to your account. Credentials are checked with a read-only provider request before saving. Use test-only restricted tokens.';
  const status=document.createElement('p');status.setAttribute('role','status');
  const list=document.createElement('div'),close=document.createElement('button');close.textContent='Close';close.addEventListener('click',()=>dialog.close());dialog.append(heading,info,list,status,close);document.body.append(dialog);
- const providers=[['airtable','Airtable'],['hubspot','HubSpot'],['notion','Notion (storage only)']];
+ const providers=[['airtable','Airtable'],['hubspot','HubSpot'],['notion','Notion · page search']];
  async function call(method,body){if(typeof window.fluxExecutionHeaders!=='function')throw Error('Sign in first');const h=await window.fluxExecutionHeaders('');const r=await fetch('/.netlify/functions/flux-connector-connections',{method,headers:{...h,...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});const data=await r.json();if(!r.ok)throw Error(data.error||'Request failed');return data;}
  async function refresh(){
   list.replaceChildren();status.textContent='Loading…';

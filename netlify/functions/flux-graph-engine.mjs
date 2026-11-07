@@ -1,3 +1,4 @@
+import {readGithubIssues,searchNotionPages} from './flux-reader-connectors.mjs';
 // Flux graph executor v0.1. No eval, arbitrary code execution or user-defined outbound URLs.
 export function validateGraph(graph){
  if(!graph||graph.version!==1||!Array.isArray(graph.nodes)||!Array.isArray(graph.edges))throw Error('Invalid graph');
@@ -28,7 +29,7 @@ function applyMapping(mapping,outputs,input,allowed){
  const result={};for(const [key,val] of Object.entries(spec)){if(!/^[a-zA-Z_][\w]{0,63}$/.test(key)||typeof val!=='string')throw Error('Invalid Data Mapper field');result[key]=resolveTemplate(val,outputs,input,allowed);}
  return result;
 }
-export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom,airtableToken,googleSheetsToken,supabaseUrl,supabaseServiceToken,hubspotToken}={}){
+export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom,airtableToken,googleSheetsToken,supabaseUrl,supabaseServiceToken,hubspotToken,notionToken}={}){
  const {order,adj}=validateGraph(graph),byId=new Map(graph.nodes.map(n=>[n.id,n]));
  const received=new Map(),trace=[],outputs={};let calls=0;const ancestors=new Map();for(const id of order){const set=new Set();for(const e of graph.edges.filter(e=>e.to===id)){set.add(e.from);for(const a of ancestors.get(e.from)||[])set.add(a);}ancestors.set(id,set);}
  for(const id of order){
@@ -70,6 +71,8 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
     else throw Error('Unsupported Flux transform at '+id+'. Use pass, pick or count');
     break;
    }
+   case 'github':{if(++calls>3)throw Error('External read limit exceeded');output=await readGithubIssues(config);break;}
+   case 'notion':{if(++calls>3)throw Error('External read limit exceeded');output=await searchNotionPages(config,notionToken);break;}
    case 'hubspot':{
     const operation=String(config.operation||'search_contacts');
     if(!['search_contacts','create_contact'].includes(operation))throw Error('HubSpot: unsupported operation');

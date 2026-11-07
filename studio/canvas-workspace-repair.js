@@ -231,9 +231,9 @@
  flux:[['pass','Pass through'],['pick','Pick field'],['count','Count items']],database:[['select','Read rows'],['insert','Create row'],['update','Update row'],['delete','Delete row']],
  router:[['branch','Choose branch']],loop:[['iterate','For each item']],mapper:[['map','Map fields']],merge:[['combine','Combine']],delay:[['wait','Wait']],log:[['record','Record event']],
  http:[['post','Send POST']],webhook:[['receive','Receive event']],email:[['send','Send email']],slack:[['send','Send message']],
- sheets:[['read_rows','Read rows'],['append_row','Append row']],drive:[['find_file','Find file'],['create_file','Create file']],github:[['list_issues','List issues'],['create_issue','Create issue']],
+ sheets:[['read_rows','Read rows'],['append_row','Append row']],drive:[['find_file','Find file'],['create_file','Create file']],github:[['list_issues','Read public repository issues']],
  wordpress:[['read_posts','Read posts'],['create_post','Create post']],whatsapp:[['send_template','Send template'],['receive_message','Receive message']],telegram:[['send_message','Send message'],['receive_update','Receive update']],
- discord:[['send_message','Send message']],notion:[['search_pages','Search pages'],['create_page','Create page']],calendar:[['list_events','List events'],['create_event','Create event']],
+ discord:[['send_message','Send message']],notion:[['search_pages','Search shared pages']],calendar:[['list_events','List events'],['create_event','Create event']],
  stripe:[['payment_event','Payment event'],['create_checkout','Create checkout']],hubspot:[['search_contacts','Find contacts'],['create_contact','Create contact']],shopify:[['order_event','Order trigger'],['list_orders','List orders']],
  openai:[['generate_text','Generate text'],['classify_text','Classify text']],resend:[['send_email','Send email']],supabase:[['select_rows','Read rows'],['insert_row','Insert row']],cloudflare:[['trigger_worker','Call Worker']]
  };
@@ -398,6 +398,12 @@
   else if(internal.has(node.type)){cTitle.textContent='Execution not enabled';cText.textContent='You can design the module now; automatic execution is still in development.';}
   else{cTitle.textContent='Account not connected';cText.textContent='Secure OAuth / server authorization for '+node.label+' is not yet available in Flux Studio.';}
   connection.append(cTitle,cText);
+  if(['airtable','hubspot','notion'].includes(node.type)){
+   cTitle.textContent='Personal connection required';cText.textContent='Connect your own account using My connections in the top navigation. Test workflow reads real data without changing it.';
+  }
+  if(node.type==='github'){
+   cTitle.textContent='Public repositories · ready';cText.textContent='Enter owner/repository. No account connection is needed for public issues. Private repositories and writes are not enabled.';
+  }
   if(node.type==='trello'){
    cTitle.textContent='Trello account · TEST';
    cText.textContent='Connect once, then reuse your account in your automations.';
@@ -406,7 +412,9 @@
    const dispose=window.FluxTrelloConnect({button:btn,title:cTitle,status:cText,getToken});
    modal.addEventListener('close',dispose,{once:true});
    connection.append(btn);
-  }else if(!internal.has(node.type)){const btn=document.createElement('button');btn.type='button';btn.textContent='Connect account · coming soon';btn.disabled=true;connection.append(btn);}
+  }else if(['airtable','hubspot','notion'].includes(node.type)){
+   const manage=document.createElement('button');manage.type='button';manage.textContent='Manage connection';manage.className='fx-form-button';manage.onclick=()=>{close();[...document.querySelectorAll('.workspace-bar button')].find(b=>b.textContent==='My connections')?.click();};connection.append(manage);
+  }else if(node.type!=='github'&&!internal.has(node.type)){const btn=document.createElement('button');btn.type='button';btn.textContent='Connect account · coming soon';btn.disabled=true;connection.append(btn);}
   body.append(connection);
   const more=document.createElement('details');const summary=document.createElement('summary');summary.textContent='Advanced information';more.append(summary);
   const detail=document.createElement('p');detail.className='fm-help';detail.textContent='Module type: '+node.type+'. Never paste account passwords or API tokens into this form. Settings are saved with the Flux graph; provider authorization is managed separately.';more.append(detail);body.append(more);
