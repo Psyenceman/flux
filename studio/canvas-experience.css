@@ -47,3 +47,23 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 #canvas-shell #flux-new-scenario{display:none!important}
 #canvas-shell .flux-mode-tabs button[aria-current=true]{border-bottom:0!important;box-shadow:none!important}
 #canvas-shell .workspace-bar>button:not(.flux-m1-language){background:#fff!important;color:#68617f!important;border:1px solid #e7e8f0!important;border-radius:9px!important;font-size:12px!important}
+/* Account and contrast repair: neutral surfaces, blue actions, explicit light hero text. */
+:root{--fx-accent:#215bb8;--fx-bg:#f5f6f8;--fx-ink:#172b45;--fx-muted:#5d6b7d;--fx-line:#e0e5eb}
+#flux-automation-library .flux-prototype-hero{background:#17334f!important;background-image:none!important;border-radius:16px!important;padding:30px!important;overflow:hidden!important}
+#flux-automation-library .flux-prototype-hero h3{color:#fff!important;font-size:28px!important;letter-spacing:-.6px!important;line-height:1.2!important}
+#flux-automation-library .flux-prototype-hero p,#flux-automation-library .flux-prototype-hero .flux-hero-eyebrow{color:#d8e6f3!important}
+#flux-automation-library .flux-prototype-hero:before,#flux-automation-library .flux-prototype-hero:after{display:none!important}
+#flux-automation-library .flux-hero-actions button{background:#fff!important;color:#17334f!important;border:1px solid #fff!important;border-radius:9px!important}
+#flux-automation-library .flux-hero-actions button+button{background:transparent!important;color:#fff!important;border-color:#9bb4ca!important}
+#canvas-shell .flux-mode-tabs button[aria-current=true]{background:#eaf0f8!important;color:#1e4f91!important}
+#canvas-shell .compact-actions #execute,#canvas-shell .compact-actions #flux-add-block,#flux-module-config .fm-primary{background:#215bb8!important;border-color:#215bb8!important;color:#fff!important}
+#canvas-shell .workspace-bar #flux-account-button{background:#17334f!important;color:#fff!important;border-color:#17334f!important;font-weight:700!important}
+#flux-wallet-value{background:transparent!important;color:#17334f!important;border:0!important;font-size:16px!important;font-weight:750!important;cursor:pointer!important;text-decoration:underline;text-underline-offset:3px}
+#flux-wallet-value:focus-visible,#flux-account-button:focus-visible{outline:3px solid #709de0;outline-offset:3px}
+#flux-account-dialog{width:min(480px,calc(100vw - 28px));max-height:88dvh;overflow:auto;border:1px solid #dce3eb;border-radius:18px;padding:26px;background:#fff;color:#172b45;box-shadow:0 30px 100px #172b4540;font:14px system-ui,sans-serif}
+#flux-account-dialog::backdrop{background:#172b4580;backdrop-filter:blur(4px)}
+.fx-account-head{display:flex;justify-content:space-between;gap:15px;align-items:center;border-bottom:1px solid #e0e5eb;padding-bottom:16px}.fx-account-head h2{margin:0;font-size:22px;color:#172b45}
+#flux-account-dialog p{color:#5d6b7d;line-height:1.6;font-size:14px}.fx-account-status{min-height:20px}
+.fx-account-login label{display:block;margin:16px 0;color:#172b45;font-weight:650}.fx-account-login input{display:block;width:100%;box-sizing:border-box;padding:13px;margin-top:7px;border:1px solid #bdcbd9;border-radius:9px;background:#fff;color:#172b45;font:16px system-ui}
+#flux-account-dialog button{padding:10px 16px;border:1px solid #bdcbd9;border-radius:9px;background:#f5f7fa;color:#17334f;cursor:pointer;font-weight:650}#flux-account-dialog .fx-account-primary{background:#215bb8;color:#fff;border-color:#215bb8;width:100%;padding:13px}
+#flux-account-dialog [hidden]{display:none!important}.fx-account-private h3{color:#172b45}.fx-account-private p{padding:12px 14px;background:#f5f7fa;border-radius:9px}

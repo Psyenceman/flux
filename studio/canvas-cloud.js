@@ -1,7 +1,9 @@
+import {mountAccount} from './canvas-account.js';
 import { supabaseUrl, supabasePublishableKey } from './supabase-config.js';
 const $ = id => document.getElementById(id);
 const status = text => { $('canvas-cloud-status').textContent = text; };
 let client, user, rows = [];
+const account=mountAccount(()=>client);
 const cards = $('flux-automation-cards');
 const libraryStatus = $('flux-automation-library-status');
 function drawLibrary(){
@@ -402,8 +404,9 @@ newScenarioButton.addEventListener('click',async()=>{
 try {
   const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2.49.10');
   client=createClient(supabaseUrl,supabasePublishableKey);
+  await account.refresh();
   await refresh();
-  client.auth.onAuthStateChange(()=>queueMicrotask(refresh));
+  client.auth.onAuthStateChange(()=>queueMicrotask(()=>{void account.refresh();void refresh();}));
 } catch(error){status('Cloud connection failed: '+error.message);}
 
 window.addEventListener('flux:session-request',async()=>{if(!client){window.dispatchEvent(new CustomEvent('flux:session-response',{detail:null}));return;}const {data}=await client.auth.getSession();window.dispatchEvent(new CustomEvent('flux:session-response',{detail:data?.session?.access_token||null}));});
