@@ -49,7 +49,7 @@
    const response=await fetch('/.netlify/functions/flux-admin-overview',{headers,cache:'no-store'});
    const data=await response.json();
    if(response.status===403){button.hidden=true;dialog.close();return;}
-   if(!response.ok)throw Error((data.error||'Unavailable')+(data.stage?' ('+data.stage+')':''));
+   if(!response.ok)throw Error((data.error||'Unavailable')+(data.stage?' ('+data.stage+')':'')+(data.upstreamStatus?' — Supabase HTTP '+data.upstreamStatus:''));
    if(data.environment!=='test')throw Error('Unexpected environment');
    for(const [key,label] of Object.entries(labels)){
     const card=document.createElement('div');card.className='flux-admin-metric';
