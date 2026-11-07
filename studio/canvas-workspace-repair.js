@@ -231,9 +231,9 @@
  flux:[['pass','Pass through'],['pick','Pick field'],['count','Count items']],database:[['select','Read rows'],['insert','Create row'],['update','Update row'],['delete','Delete row']],
  router:[['branch','Choose branch']],loop:[['iterate','For each item']],mapper:[['map','Map fields']],merge:[['combine','Combine']],delay:[['wait','Wait']],log:[['record','Record event']],
  http:[['post','Send POST']],webhook:[['receive','Receive event']],email:[['send','Send email']],slack:[['send','Send message']],
- sheets:[['read_rows','Read rows'],['append_row','Append row']],drive:[['find_file','Find file'],['create_file','Create file']],github:[['list_issues','Read public repository issues']],
+ sheets:[['read_rows','Read rows'],['append_row','Append row']],drive:[['find_file','Find file'],['create_file','Create file']],github:[['list_issues','Read public repository issues'],['create_issue','Create issue · execution pending']],
  wordpress:[['read_posts','Read posts'],['create_post','Create post']],whatsapp:[['send_template','Send template'],['receive_message','Receive message']],telegram:[['send_message','Send message'],['receive_update','Receive update']],
- discord:[['send_message','Send message']],notion:[['search_pages','Search shared pages']],calendar:[['list_events','List events'],['create_event','Create event']],
+ discord:[['send_message','Send message']],notion:[['search_pages','Search shared pages'],['create_page','Create page · execution pending']],calendar:[['list_events','List events'],['create_event','Create event']],
  stripe:[['payment_event','Payment event'],['create_checkout','Create checkout']],hubspot:[['search_contacts','Find contacts'],['create_contact','Create contact']],shopify:[['order_event','Order trigger'],['list_orders','List orders']],
  openai:[['generate_text','Generate text'],['classify_text','Classify text']],resend:[['send_email','Send email']],supabase:[['select_rows','Read rows'],['insert_row','Insert row']],cloudflare:[['trigger_worker','Call Worker']]
  };
@@ -292,11 +292,13 @@
    const choices=actions[node.type]||[];
    const action=choices.length?field(body,'Action','',choices.some(c=>c[0]===draft.operation)?draft.operation:choices[0][0],choices):null;
    const inputs=document.createElement('div');body.append(inputs);
+   let structuredChecks=[];
    function drawFields(){
-    inputs.replaceChildren();
+    inputs.replaceChildren();structuredChecks=[];
     const fields=schemas[node.type]?.[action?.el.value]||[];
     for(const spec of fields){
      if(node.type==='trello'&&spec.key==='list'||node.type==='mapper')continue;
+     if(['fields','properties','values'].includes(spec.key)||spec.key==='body'&&/JSON/.test(spec.label)){structuredChecks.push(window.FluxStructuredFields(inputs,draft,spec.key,spec.label,spec.key==='values'));continue;}
      const row=document.createElement('label');row.className='fm-row';row.textContent=spec.label+(spec.required?' *':'');
      const input=document.createElement(spec.type==='textarea'?'textarea':'input');if(spec.type!=='textarea')input.type=spec.type;
      if(spec.type==='textarea')input.rows=3;
@@ -383,6 +385,7 @@
     void controller.refresh();
    }
    validate.push(()=>{
+    for(const check of structuredChecks){const error=check();if(error)return error;}
     const fields=schemas[node.type]?.[action?.el.value]||[];
     for(const spec of fields){if(node.type==='mapper')continue;const v=String(draft[spec.key]??'').trim();if(spec.required&&!v)return 'Required: '+spec.label;
       if(spec.type==='url'&&v&&!v.startsWith('https://'))return 'Use a secure https:// URL';
@@ -398,6 +401,10 @@
   else if(internal.has(node.type)){cTitle.textContent='Execution not enabled';cText.textContent='You can design the module now; automatic execution is still in development.';}
   else{cTitle.textContent='Account not connected';cText.textContent='Secure OAuth / server authorization for '+node.label+' is not yet available in Flux Studio.';}
   connection.append(cTitle,cText);
+  if(window.FluxConnectorCatalog?.[node.type]){
+   const spec=window.FluxConnectorCatalog[node.type];
+   cTitle.textContent=spec.connection==='token'?'Personal connection':'Connection setup';cText.textContent=spec.execution+'. '+spec.help;
+  }
   if(['airtable','hubspot','notion'].includes(node.type)){
    cTitle.textContent='Personal connection required';cText.textContent='Connect your own account using My connections in the top navigation. Test workflow reads real data without changing it.';
   }
@@ -412,7 +419,7 @@
    const dispose=window.FluxTrelloConnect({button:btn,title:cTitle,status:cText,getToken});
    modal.addEventListener('close',dispose,{once:true});
    connection.append(btn);
-  }else if(['airtable','hubspot','notion'].includes(node.type)){
+  }else if(window.FluxConnectorCatalog?.[node.type]){
    const manage=document.createElement('button');manage.type='button';manage.textContent='Manage connection';manage.className='fx-form-button';manage.onclick=()=>{close();[...document.querySelectorAll('.workspace-bar button')].find(b=>b.textContent==='My connections')?.click();};connection.append(manage);
   }else if(node.type!=='github'&&!internal.has(node.type)){const btn=document.createElement('button');btn.type='button';btn.textContent='Connect account · coming soon';btn.disabled=true;connection.append(btn);}
   body.append(connection);

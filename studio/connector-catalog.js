@@ -1,0 +1,27 @@
+// Public product metadata only. Never add client secrets or credentials here.
+export const CONNECTORS=Object.freeze({
+ trello:{name:'Trello',connection:'oauth',actions:'Read cards, create a card',execution:'Read tested; card creation restricted',help:'Connect from a Trello step, then choose your board and list.'},
+ airtable:{name:'Airtable',connection:'token',actions:'Find, create and update records',execution:'Reads implemented; writes preview only',help:'Personal access token restricted to your own bases, with data.records:read and schema.bases:read.'},
+ hubspot:{name:'HubSpot',connection:'token',actions:'Find and create contacts',execution:'Reads implemented; writes preview only',help:'Private app token with contact read permission. Only your own connection is used.'},
+ notion:{name:'Notion',connection:'token',actions:'Search shared pages',execution:'Page search implemented',help:'Internal integration token. Share the required pages with your integration.'},
+ github:{name:'GitHub',connection:'token',actions:'Read repository issues',execution:'Public reads tested; private execution pending',help:'Public issue reading needs no token. A personal token can be verified and stored for future private actions.'},
+ miro:{name:'Miro',connection:'token',actions:'Find items, create and update cards',execution:'Action execution pending',help:'Access token for your own Miro app with boards:read permission.'},
+ slack:{name:'Slack',connection:'token',actions:'Send a channel message',execution:'Action execution pending',help:'Workspace bot token from your Slack app. Verification checks its identity without posting messages.'},
+ openai:{name:'OpenAI',connection:'token',actions:'Generate and classify text',execution:'Action execution pending',help:'Project API key. Verification lists models without generating paid output.'},
+ cloudflare:{name:'Cloudflare',connection:'token',actions:'Call a Worker',execution:'Action execution pending',help:'User API token. Verification checks token status; it does not deploy or change resources.'},
+ resend:{name:'Resend',connection:'token',actions:'Send an email',execution:'Existing sender uses server setup; personal execution pending',help:'API key with domain-read permission for verification. No email is sent when connecting.'},
+ sheets:{name:'Google Sheets',connection:'oauth_setup',actions:'Read rows, append a row',execution:'Server-configured executor; personal OAuth pending',help:'Flux needs its Google OAuth app configured. Users will authorize their own spreadsheets.'},
+ drive:{name:'Google Drive',connection:'oauth_setup',actions:'Find and create files',execution:'Action execution pending',help:'Flux needs its Google OAuth app configured. No Google password or token belongs in a workflow.'},
+ calendar:{name:'Google Calendar',connection:'oauth_setup',actions:'List and create events',execution:'Action execution pending',help:'Flux needs Google Calendar OAuth credentials and scopes configured.'},
+ wordpress:{name:'WordPress',connection:'service_setup',actions:'Read and create posts',execution:'Action execution pending',help:'Site-specific application password integration and destination validation must be enabled first.'},
+ whatsapp:{name:'WhatsApp Business',connection:'oauth_setup',actions:'Receive messages, send approved templates',execution:'Action execution pending',help:'Flux needs its Meta app and webhook verification configured; users connect their own business account.'},
+ telegram:{name:'Telegram',connection:'service_setup',actions:'Send messages, receive updates',execution:'Server-configured send executor; personal setup pending',help:'Personal bot token and approved chat resources require the bot connection adapter.'},
+ discord:{name:'Discord',connection:'oauth_setup',actions:'Send messages',execution:'Action execution pending',help:'Flux needs a Discord app installation flow and channel permissions configured.'},
+ stripe:{name:'Stripe',connection:'oauth_setup',actions:'Payment events, create Checkout',execution:'Deferred; no payment processing enabled',help:'Stripe Connect application and TEST configuration are required. Platform billing is separate.'},
+ shopify:{name:'Shopify',connection:'oauth_setup',actions:'Order events, list orders',execution:'Action execution pending',help:'Flux needs its Shopify app credentials and approved scopes configured.'},
+ supabase:{name:'Supabase',connection:'service_setup',actions:'Read and insert rows',execution:'Server allowlisted executor; personal setup pending',help:'Requires a personal project adapter with table permissions. Never put service-role keys into block fields.'},
+ email:{name:'Email',connection:'service_setup',actions:'Send an email',execution:'Action execution pending',help:'Sender-domain verification and personal email connection are required.'},
+ http:{name:'HTTP API',connection:'service_setup',actions:'Send a POST request',execution:'Only server-approved destinations',help:'Arbitrary destinations are not enabled. A validated destination adapter is required.'},
+ database:{name:'Database',connection:'service_setup',actions:'Read, create, update and delete rows',execution:'Action execution pending',help:'Requires a server database adapter with restricted credentials and resource selection.'}
+});
+if(typeof window!=='undefined')window.FluxConnectorCatalog=CONNECTORS;
