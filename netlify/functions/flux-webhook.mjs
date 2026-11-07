@@ -19,6 +19,11 @@ export async function handler(event){
   const result=await claim.json();
   if(!result.ok){const status=result.reason==='rate_limited'?429:result.reason==='insufficient_credits'?402:result.reason==='disabled'?403:404;return response(status,{ok:false,error:result.reason});}
   try{validateGraph(result.graph);}catch{return response(422,{ok:false,error:'Saved workflow invalid'});}
+  // Until per-user credentials and live writes are fully verified, webhooks
+  // may execute only deterministic internal blocks. Reject before any side effect.
+  const safeBlocks=new Set(['webhook','manual','filter','router','mapper','merge','flux','log']);
+  const unsupported=result.graph.nodes.filter(node=>!safeBlocks.has(node.type));
+  if(unsupported.length)return response(409,{ok:false,error:'Webhook workflow contains connectors not yet approved for unattended execution',blocks:unsupported.map(n=>({id:n.id,type:n.type}))});
   const run=await executeGraph(result.graph,input,{dryRun:false,notificationUrl:process.env.FLUX_NOTIFICATION_WEBHOOK_URL,trelloKey:process.env.FLUX_TRELLO_API_KEY,trelloToken:process.env.FLUX_TRELLO_TOKEN,telegramToken:process.env.FLUX_TELEGRAM_BOT_TOKEN,telegramChatId:process.env.FLUX_TELEGRAM_CHAT_ID,resendApiKey:process.env.FLUX_RESEND_API_KEY,resendFrom:process.env.FLUX_RESEND_FROM});
   // Persist a sanitized run summary server-side; never store webhook payloads or secrets.
   const steps=Array.isArray(run.trace)?run.trace.slice(0,100).map(step=>({id:String(step.id||'').slice(0,80),status:String(step.status||'').slice(0,30)})):[];
