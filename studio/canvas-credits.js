@@ -55,7 +55,7 @@
  badge.addEventListener('click',()=>{if(!walletSignedIn){window.dispatchEvent(new Event('flux:account-open'));return;}details.showModal();window.dispatchEvent(new Event('flux:coins-refresh'));});
  window.addEventListener('flux:coins-loaded',event=>{
   const data=event.detail||{};walletSignedIn=Boolean(data.signedIn);const next='fcx-position-'+(data.userId||'guest');if(next!==key){key=next;dock.style.left='12px';dock.style.top='';dock.style.bottom='12px';restore();}dock.style.visibility='visible';
-  if(!data.signedIn){walletValue.textContent='Sign in';walletFill.style.width='0%';badge.textContent='◈ FluxCoins · Sign in';balance.textContent='Sign in to view your balance';history.replaceChildren();return;}
+  if(!data.signedIn){walletTrack.setAttribute('aria-valuenow','0');walletTrack.setAttribute('aria-valuetext','Sign in to view balance');walletValue.textContent='Sign in';walletFill.style.width='0%';badge.textContent='◈ FluxCoins · Sign in';balance.textContent='Sign in to view your balance';history.replaceChildren();return;}
   if(data.error){walletValue.textContent='—';walletFill.style.width='0%';badge.textContent='◈ FluxCoins · —';balance.textContent='Balance unavailable';history.replaceChildren();return;}
   const value=data.unlimited?'Unlimited':String(data.balance);
   badge.textContent='◈ FluxCoins · '+value;balance.textContent=value;walletValue.textContent=data.unlimited?'∞':value;const percent=data.unlimited?100:Math.max(0,Math.min(100,Number(data.balance)||0));walletFill.style.width=percent+'%';walletFill.style.background=percent<=20?'#dc7979':percent<=50?'#e5ab55':'#69baf0';walletTrack.setAttribute('aria-valuenow',String(percent));walletTrack.setAttribute('aria-valuetext',data.unlimited?'Unlimited':value+' FCX remaining');

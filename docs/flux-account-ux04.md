@@ -10,3 +10,6 @@ Palette: neutral surfaces and blue action accent; dashboard hero uses navy with 
 
 ## Validation
 117 automated tests pass, Studio build passes. Login tests verify client reuse, credential validation and safe actionable errors. Published browser checks pending. No production changes. Signup/reset, full IT localization of new account dialog and paid subscription management remain separate work.
+
+## Published browser QA
+Deploy 6aef61a286109342208b5277 ready at a639db0. Account button opened verified signed-in identity. Sign out completed; private account section hidden and sign-in form displayed. Closed account dialog then clicked FCX balance button: sign-in form opened correctly. No credential submission required for these checks. Follow-up fixes use server-authorized coins event for unlimited Super Admin display and clear old automation options / wallet progress accessibility values after logout. 117 tests and build pass after these changes. Final palette removes remaining purple primary actions. Real login through new dialog remains separately unverified (existing session restored for signed-in QA).

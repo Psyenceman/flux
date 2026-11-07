@@ -67,3 +67,7 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 .fx-account-login label{display:block;margin:16px 0;color:#172b45;font-weight:650}.fx-account-login input{display:block;width:100%;box-sizing:border-box;padding:13px;margin-top:7px;border:1px solid #bdcbd9;border-radius:9px;background:#fff;color:#172b45;font:16px system-ui}
 #flux-account-dialog button{padding:10px 16px;border:1px solid #bdcbd9;border-radius:9px;background:#f5f7fa;color:#17334f;cursor:pointer;font-weight:650}#flux-account-dialog .fx-account-primary{background:#215bb8;color:#fff;border-color:#215bb8;width:100%;padding:13px}
 #flux-account-dialog [hidden]{display:none!important}.fx-account-private h3{color:#172b45}.fx-account-private p{padding:12px 14px;background:#f5f7fa;border-radius:9px}
+#flux-automation-library .flux-home-header button{background:#215bb8!important;border-color:#215bb8!important;color:#fff!important;border-radius:9px!important}
+#flux-module-config .fm-connect{background:#f1f5fa!important;border-color:#d8e2ed!important}
+.fx-form-button{background:#eef3fa!important;border-color:#c9d8e9!important;color:#214f8c!important}
+#flux-block-categories button[aria-pressed=true]{background:#17334f!important;color:#fff!important;border-color:#17334f!important}

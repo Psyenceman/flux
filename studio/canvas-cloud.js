@@ -219,7 +219,7 @@ async function refresh() {
   if (authError || !user) {
     $('canvas-cloud-user').textContent = 'Sign in from Flux Studio to use cloud automations';
     status('Local canvas is still available.');
-    rows=[];drawLibrary();renderManage();updateApiPanel();updateWebhookPanel();refreshFluxCoins();
+    rows=[];$('canvas-automation').replaceChildren(new Option('Select saved automation',''));drawLibrary();renderManage();updateApiPanel();updateWebhookPanel();refreshFluxCoins();
     return;
   }
   $('canvas-cloud-user').textContent = user.email;
