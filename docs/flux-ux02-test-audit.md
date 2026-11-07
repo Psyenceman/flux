@@ -70,3 +70,6 @@ Do not unlock external unattended writes to make demonstrations appear operation
 
 ## Authenticated follow-up
 Flux login succeeded. Expired Trello connection was reauthorized in a separate popup; callback closed popup and automatically loaded real boards. Board/list discovery succeeded. Switching to Create card and selecting Backlog preserved the card title. Reopening exposed a duplicate-refresh race clearing the saved list; fixed with a persistent desired selection across refresh requests and added regression coverage. Full suite: 106 passed; Studio build passed. No Trello card created. Recheck published fix before marking reopen acceptance passed.
+
+## Published fix acceptance
+Deploy 6aef5ce6b004bd0227f9a63d ready at source 2fc68deaaf3b26a8561cac22a62be8415074b077. Browser reloaded published TEST, authenticated session restored. Selected FLUX board / Backlog, saved block, reopened and waited for both connection/resource refreshes: Backlog retained and Ready state shown. This authenticated picker acceptance passes. Live workflow execution, external writes, mobile and two-account isolation remain separate unverified gates.
