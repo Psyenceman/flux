@@ -66,4 +66,37 @@ begin
 end $$;
 revoke all on function public.flux_admin_adjust_coins_test(uuid,integer,text,uuid) from public,anon;
 grant execute on function public.flux_admin_adjust_coins_test(uuid,integer,text,uuid) to authenticated;
--- Plan limits are a proposed TEST policy; enforcement must be integrated into create/run RPCs before launch.
+
+-- Transactional quota guard for user-authored automation INSERT/UPDATE.
+-- The existing owner RLS policies remain the primary authorization boundary.
+create or replace function public.flux_enforce_plan_automation_limits_test()
+returns trigger language plpgsql security definer set search_path='' as $
+declare max_total integer;max_active integer;total_count integer;active_count integer;
+begin
+ if auth.role()='service_role' then return new;end if;
+ if auth.uid() is null or new.owner_id<>auth.uid() then raise exception 'Forbidden' using errcode='42501';end if;
+ if exists(select 1 from public.profiles where id=new.owner_id and role='super_admin') then return new;end if;
+ -- Lock the owner row to serialize concurrent creates/enables for this user.
+ perform 1 from auth.users where id=new.owner_id for update;
+ select p.max_automations,p.max_active_automations into max_total,max_active
+ from public.flux_plan_catalog p
+ where p.plan_id=coalesce((select u.plan_id from public.flux_user_plans u where u.user_id=new.owner_id),'free');
+ if max_total is null then raise exception 'Plan not configured';end if;
+ if tg_op='INSERT' then
+  select count(*),count(*) filter(where enabled) into total_count,active_count
+  from public.automations where owner_id=new.owner_id;
+  if total_count>=max_total then raise exception 'Plan automation limit reached' using errcode='23514';end if;
+  if new.enabled and active_count>=max_active then raise exception 'Plan active automation limit reached' using errcode='23514';end if;
+ elsif new.enabled and (old.enabled is distinct from new.enabled) then
+  select count(*) into active_count from public.automations where owner_id=new.owner_id and enabled and id<>new.id;
+  if active_count>=max_active then raise exception 'Plan active automation limit reached' using errcode='23514';end if;
+ end if;
+ return new;
+end $;
+revoke all on function public.flux_enforce_plan_automation_limits_test() from public,anon,authenticated;
+drop trigger if exists flux_automations_plan_limit_test on public.automations;
+create trigger flux_automations_plan_limit_test before insert or update of enabled on public.automations
+for each row execute function public.flux_enforce_plan_automation_limits_test();
+
+-- Monthly execution limits are defined in the catalog but NOT YET enforced by every execution entrypoint.
+-- Do not sell or enable paid plans until run metering, tests and role verification are complete.
