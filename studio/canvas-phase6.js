@@ -49,14 +49,14 @@
    const response=await fetch('/.netlify/functions/flux-admin-overview',{headers,cache:'no-store'});
    const data=await response.json();
    if(response.status===403){button.hidden=true;dialog.close();return;}
-   if(!response.ok)throw Error(data.error||'Unavailable');
+   if(!response.ok)throw Error((data.error||'Unavailable')+(data.stage?' ('+data.stage+')':''));
    if(data.environment!=='test')throw Error('Unexpected environment');
    for(const [key,label] of Object.entries(labels)){
     const card=document.createElement('div');card.className='flux-admin-metric';
     const value=document.createElement('strong');value.textContent=String(data.metrics[key]??'—');
     const caption=document.createElement('span');caption.textContent=label;card.append(value,caption);metrics.append(card);
    }
-   status.textContent='Updated '+new Date(data.snapshotAt).toLocaleString();
+   status.textContent=(data.unavailable?.length?'Partial data — unavailable: '+data.unavailable.join(', ')+'. ':'')+'Updated '+new Date(data.snapshotAt).toLocaleString();
    note.textContent=(data.notes||[]).join(' ');
   }catch(error){status.textContent='Could not load overview: '+error.message;}
   finally{refresh.disabled=false;}
