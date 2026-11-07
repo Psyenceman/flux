@@ -33,7 +33,7 @@
    const headers=await window.fluxExecutionHeaders('');
    const response=await fetch('/.netlify/functions/flux-admin-credits',{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify({targetUserId:id,delta:value,reason:why,requestId})});
    const payload=await response.json();
-   if(!response.ok)throw Error(payload.error||'Adjustment failed');
+   if(!response.ok)throw Error((payload.error||'Adjustment failed')+(payload.databaseCode?' (PostgreSQL '+payload.databaseCode+')':''));
    resultText.textContent='Saved. New balance: '+payload.balance+' FCX'+(payload.duplicate?' (already processed)':'');
    delta.value='';reason.value='';pendingAdjustment=null;window.dispatchEvent(new Event('flux:coins-refresh'));load();
   }catch(error){resultText.textContent='No confirmed adjustment: '+error.message+'; verify audit before retrying.';}
