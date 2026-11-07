@@ -9,8 +9,8 @@ function setup({blocked=false,fail=false}={}){
  const button={dataset:{},setAttribute(){},addEventListener:(n,f)=>clicks.set(n,f),removeEventListener:n=>clicks.delete(n)};
  const title={},status={};let saved=false;
  const popup={document:{body:{}},closed:false,focus(){},close(){this.closed=true;},location:{replace(url){calls.push(['navigate-popup',url]);}}};
- const window={open(){calls.push(['open']);return blocked?null:popup;},addEventListener:(n,f)=>events.set(n,f),removeEventListener:n=>events.delete(n)};
- const context={window,location:{origin:'https://flux-studio-test.netlify.app'},URL,Date,Error,setInterval:f=>{intervals.add(f);return f;},clearInterval:f=>intervals.delete(f),fetch:async url=>{
+ const window={dispatchEvent(event){calls.push(['event',event.type]);},open(){calls.push(['open']);return blocked?null:popup;},addEventListener:(n,f)=>events.set(n,f),removeEventListener:n=>events.delete(n)};
+ const context={window,Event,location:{origin:'https://flux-studio-test.netlify.app'},URL,Date,Error,setInterval:f=>{intervals.add(f);return f;},clearInterval:f=>intervals.delete(f),fetch:async url=>{
   calls.push(['fetch',url]);
   return {ok:!fail,json:async()=>url.endsWith('start')?{authorizeUrl:'https://auth.atlassian.com/authorize?test=1'}:{connections:saved?[{status:'connected',provider_account_label:'Test account'}]:[]}};
  }};

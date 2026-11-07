@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+const code=readFileSync('studio/trello-resource-picker.js','utf8');
+function setup(load,draft={}){const window={};vm.runInNewContext(code,{window});let state;const controller=window.FluxTrelloResources({draft,load,render:s=>state=s});return {controller,draft,state:()=>state};}
+test('board changes clear stale list and connection; foreign lists rejected',async()=>{const s=setup(async kind=>kind==='boards'?[{id:'b'}]:[{id:'l'}],{board:'b',list:'l',title:'Keep title'});await s.controller.refresh();assert.equal(s.controller.validate(),'');await s.controller.selectBoard('b');assert.equal(s.draft.list,'');s.controller.selectList('foreign');assert.notEqual(s.controller.validate(),'');s.controller.selectList('l');assert.equal(s.draft.connection,'l');assert.equal(s.draft.title,'Keep title');});
+test('out of order list responses cannot overwrite current board',async()=>{let resolve;const s=setup((_,board)=>board==='a'?new Promise(r=>resolve=r):Promise.resolve([{id:'new'}]));const old=s.controller.selectBoard('a');await s.controller.selectBoard('b');resolve([{id:'old'}]);await old;assert.equal(s.state().board,'b');assert.equal(s.state().lists[0].id,'new');});
+test('clearing board invalidates an in-flight request',async()=>{let resolve;const s=setup(()=>new Promise(r=>resolve=r));const old=s.controller.selectBoard('a');await s.controller.selectBoard('');resolve([{id:'old'}]);await old;assert.equal(s.state().lists.length,0);assert.equal(s.state().ready,false);});
+test('errors support retry and disposed dialogs reject late responses',async()=>{let fail=true;const s=setup(async()=>{if(fail)throw Error('Reconnect Trello');return [];});await s.controller.refresh();assert.equal(s.state().error,'Reconnect Trello');fail=false;await s.controller.refresh();assert.equal(s.state().error,'');let resolve;const late=setup(()=>new Promise(r=>resolve=r));const request=late.controller.refresh();late.controller.dispose();resolve([{id:'b'}]);await request;assert.equal(late.state().boards.length,0);});

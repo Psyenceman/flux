@@ -296,6 +296,7 @@
     inputs.replaceChildren();
     const fields=schemas[node.type]?.[action?.el.value]||[];
     for(const spec of fields){
+     if(node.type==='trello'&&spec.key==='list')continue;
      const row=document.createElement('label');row.className='fm-row';row.textContent=spec.label+(spec.required?' *':'');
      const input=document.createElement(spec.type==='textarea'?'textarea':'input');if(spec.type!=='textarea')input.type=spec.type;
      if(spec.type==='textarea')input.rows=3;
@@ -335,25 +336,32 @@
     setOptions(boardSelect,[],'Loading boards…');setOptions(listSelect,[],'Choose a board first');
     boardLabel.append(boardSelect);listLabel.append(listSelect);picker.append(boardLabel,listLabel,feedback);
     inputs.after(picker);
-    let request=0;
-    const getToken=()=>new Promise(resolve=>{const handler=e=>{window.removeEventListener('flux:session-response',handler);clearTimeout(timer);resolve(e.detail);};const timer=setTimeout(()=>{window.removeEventListener('flux:session-response',handler);resolve(null);},5000);window.addEventListener('flux:session-response',handler);window.dispatchEvent(new Event('flux:session-request'));});
-    const load=async(kind,board)=>{
-     const current=++request;feedback.textContent='Loading Trello '+kind+'…';
-     try{
-      const token=await getToken();if(!token)throw Error('Sign in to Flux Studio first');
+    boardSelect.disabled=true;listSelect.disabled=true;
+    const retry=document.createElement('button');retry.type='button';retry.textContent='Refresh boards';picker.append(retry);
+    const controller=window.FluxTrelloResources({draft,
+     load:async(kind,board)=>{
+      const headers=await window.fluxExecutionHeaders('');
       const params=new URLSearchParams({kind});if(board)params.set('board',board);
-      const response=await fetch('/.netlify/functions/trello-resources?'+params,{headers:{authorization:'Bearer '+token},cache:'no-store'});
-      const data=await response.json();if(!response.ok)throw Error(data.error||'Unable to load Trello '+kind);
-      if(current!==request||!modal.open)return;
-      if(kind==='boards'){setOptions(boardSelect,data.items,'Choose a board');if(draft.board&&data.items.some(x=>x.id===draft.board)){boardSelect.value=draft.board;await load('lists',draft.board);return;}}
-      else{setOptions(listSelect,data.items,'Choose a list');if(draft.list&&data.items.some(x=>x.id===draft.list))listSelect.value=draft.list;}
-      feedback.textContent=data.items.length?(kind==='lists'&&draft.list?'List selected. Save this block to continue.':'Select a '+(kind==='boards'?'board':'list')+' to continue.'):'No available '+kind+'.';
-     }catch(error){if(current===request)feedback.textContent=error.message;}
-    };
-    boardSelect.addEventListener('change',()=>{draft.board=boardSelect.value;draft.list='';setOptions(listSelect,[],'Choose a board first');if(draft.board)void load('lists',draft.board);});
-    listSelect.addEventListener('change',()=>{draft.list=listSelect.value;const input=inputs.querySelector('input');if(input)input.value=draft.list;feedback.textContent=draft.list?'List selected. Save this block to continue.':'Select a list to continue.';});
-    const onConnected=()=>void load('boards');window.addEventListener('flux:trello-connected',onConnected);modal.addEventListener('close',()=>window.removeEventListener('flux:trello-connected',onConnected),{once:true});
-    void load('boards');
+      const response=await fetch('/.netlify/functions/trello-resources?'+params,{headers,cache:'no-store'});
+      const data=await response.json();if(!response.ok)throw Error(data.error||'Unable to load Trello resources');
+      if(!Array.isArray(data.items))throw Error('Unexpected Trello response');
+      return data.items;
+     },
+     render:state=>{
+      setOptions(boardSelect,state.boards,state.loading&&!state.boards.length?'Loading boards…':'Choose a board');boardSelect.value=state.board;
+      setOptions(listSelect,state.lists,state.loading?'Loading lists…':state.board?'Choose a list':'Choose a board first');listSelect.value=state.list;
+      boardSelect.disabled=!state.boards.length;listSelect.disabled=state.loading||!state.lists.length;retry.disabled=state.loading;
+      picker.setAttribute('aria-busy',String(state.loading));
+      feedback.textContent=state.error|| (state.loading?'Loading your Trello resources…':state.ready?'Ready. Save this step to continue.':!state.boards.length?'No boards available. Connect Trello or refresh.':state.board&&!state.lists.length?'No lists available in this board. Choose another board.':'Choose a board and list.');
+     }
+    });
+    boardSelect.addEventListener('change',()=>void controller.selectBoard(boardSelect.value));
+    listSelect.addEventListener('change',()=>controller.selectList(listSelect.value));
+    retry.addEventListener('click',()=>void controller.refresh());
+    const onConnected=()=>void controller.refresh();window.addEventListener('flux:trello-connected',onConnected);
+    modal.addEventListener('close',()=>{controller.dispose();window.removeEventListener('flux:trello-connected',onConnected);},{once:true});
+    validate.push(controller.validate);
+    void controller.refresh();
    }
    validate.push(()=>{
     const fields=schemas[node.type]?.[action?.el.value]||[];

@@ -1,9 +1,13 @@
 # Flux Studio — development status (TEST)
-Updated: 2026-11-05
+Updated: 2026-11-07
+
+Current authoritative continuity audit: [UX-02](flux-ux02-test-audit.md).
+Release gates and decisions: [Roadmap](FLUX_RELEASE_ROADMAP.md).
+The sections below retain historical implementation context; source inventory and verification limits are in UX-02.
 
 ## Environments
 - Repository: Psyenceman/flux
-- TEST branch: develop-supabase-auth; Netlify PR preview: https://deploy-preview-2--startling-moxie-c2f12e.netlify.app/flow-canvas.html
+- TEST branch: test/trello-popup-feedback; dedicated TEST: https://flux-studio-test.netlify.app/flow-canvas.html
 - Production: https://flux.flussia.it/ — do not modify without explicit approval.
 - Supabase TEST project: flux-test (ref sgxinvmfkznzoueqjzop), owned by info@flussia.it.
 - Changes in TEST do not imply production release.
