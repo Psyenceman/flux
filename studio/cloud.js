@@ -1,3 +1,4 @@
+import {normalizeEmail,registerAccount} from './account-registration.js';
 import { supabaseUrl, supabasePublishableKey } from './supabase-config.js';
 
 let client;
@@ -97,14 +98,23 @@ async function refresh() {
   for (const project of projects) projectSelect.add(new Option(project.name, project.id));
   await refreshAutomations();
 }
+let authenticating=false;
 async function authenticate(mode) {
-  const email = $('#cloud-email').value.trim();
-  const password = $('#cloud-password').value;
-  if (!client) return message('Cloud connection is still loading.');
-  const { error } = mode === 'register'
-    ? await client.auth.signUp({ email, password })
-    : await client.auth.signInWithPassword({ email, password });
-  message(error ? error.message : mode === 'register' ? 'Account created. Check your email if confirmation is required.' : 'Signed in.');
+  if(authenticating)return;
+  const email=normalizeEmail($('#cloud-email').value),password=$('#cloud-password').value;
+  if(!client)return message('Cloud connection is still loading.');
+  authenticating=true;
+  const controls=[...$('#cloud-login').querySelectorAll('button')];controls.forEach(button=>button.disabled=true);
+  try{
+    if(mode==='register'){
+      const result=await registerAccount(client,email,password);message(result.message);
+      if(result.status==='existing')$('#cloud-password').focus();
+    }else{
+      const {error}=await client.auth.signInWithPassword({email,password});
+      message(error?error.message:'Signed in.');
+    }
+  }catch(error){message(error.message||'Authentication unavailable. Please try again.');}
+  finally{authenticating=false;controls.forEach(button=>button.disabled=false);$('#cloud-password').value='';}
 }
 $('#cloud-login').addEventListener('submit', event => { event.preventDefault(); authenticate('login'); });
 $('#cloud-register').addEventListener('click', () => authenticate('register'));

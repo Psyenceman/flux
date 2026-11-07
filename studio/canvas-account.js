@@ -1,8 +1,9 @@
+import {normalizeEmail} from './account-registration.js';
 // Uses the existing Studio client/session, never a second auth store.
 export async function signInAccount(client,email,password){
  if(!client)throw Error('Account service is loading. Please try again.');
  if(!email.trim()||!password)throw Error('Enter your email and password.');
- const {error}=await client.auth.signInWithPassword({email:email.trim(),password});
+ const {error}=await client.auth.signInWithPassword({email:normalizeEmail(email),password});
  if(error)throw Error(error.message==='Invalid login credentials'?'Email or password is incorrect. Please try again.':error.message);
 }
 export function mountAccount(getClient){
