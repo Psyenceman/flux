@@ -56,7 +56,7 @@
     const value=document.createElement('strong');value.textContent=String(data.metrics[key]??'—');
     const caption=document.createElement('span');caption.textContent=label;card.append(value,caption);metrics.append(card);
    }
-   status.textContent=(data.unavailable?.length?'Partial data — unavailable: '+data.unavailable.join(', ')+'. ':'')+'Updated '+new Date(data.snapshotAt).toLocaleString();
+   status.textContent=(data.unavailable?.length?'Partial data — unavailable: '+data.unavailable.map(x=>typeof x==='string'?x:x.source+(x.httpStatus?' (HTTP '+x.httpStatus+')':'')).join(', ')+'. ':'')+'Updated '+new Date(data.snapshotAt).toLocaleString();
    note.textContent=(data.notes||[]).join(' ');
   }catch(error){status.textContent='Could not load overview: '+error.message;}
   finally{refresh.disabled=false;}
