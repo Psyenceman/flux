@@ -12,3 +12,5 @@
 .flux-admin-metric span{font-size:12px;color:#d1cce5}
 .flux-admin-dialog button{min-height:44px;margin:10px 8px 0 0;padding:9px 16px;border:1px solid #a88bff;border-radius:10px;background:#44356c;color:#fff;cursor:pointer}
 @media(max-width:550px){.flux-admin-dialog{padding:15px}.flux-admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.flux-admin-metric{padding:11px}.flux-admin-metric strong{font-size:20px}}
+
+.flux-admin-adjustment{margin:20px 0;padding:16px;border:1px solid #655a91;border-radius:12px;background:#242340}.flux-admin-adjustment h3{margin:0 0 8px;font-size:16px}.flux-admin-adjustment input{display:block;width:100%;min-height:44px;margin:9px 0;padding:10px 12px;border:1px solid #7667a3;border-radius:9px;background:#151c32;color:#fff;font:inherit}.flux-admin-adjustment input:focus-visible{outline:2px solid #c4afff;outline-offset:2px}.flux-admin-adjustment button:disabled{opacity:.5;cursor:wait}
