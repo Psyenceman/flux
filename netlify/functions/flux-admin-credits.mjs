@@ -24,7 +24,9 @@ export async function handler(event){
   if(!response.ok){
    if(response.status===401||response.status===403)return json(403,{ok:false,error:'Super Admin access required'});
    if(response.status===404)return json(503,{ok:false,error:'TEST credit migration not installed'});
-   return json(409,{ok:false,error:'Adjustment rejected by database'});
+   let diagnostic=null;
+   try{const failure=await response.json();diagnostic=typeof failure?.code==='string'&&/^[A-Z0-9]{5}$/.test(failure.code)?failure.code:null;}catch{}
+   return json(409,{ok:false,error:'Adjustment rejected by database',databaseCode:diagnostic});
   }
   const result=await response.json();
   return json(200,{ok:result.ok===true,balance:result.balance,duplicate:result.duplicate===true});
