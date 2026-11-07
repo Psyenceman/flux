@@ -14,8 +14,8 @@ function drawLibrary(){
   const button=document.createElement('button');button.type='button';button.className='flux-automation-card';button.setAttribute('role','listitem');button.setAttribute('aria-current',String(selection()?.id===row.id));
   const title=document.createElement('strong');title.textContent=row.name;
   const subtitle=document.createElement('small');subtitle.textContent=row.action_config?.graph?'Canvas saved · Open editor':'Canvas not saved yet';
-  button.append(title,subtitle);button.addEventListener('click',async()=>{
-   $('canvas-automation').value=row.id;drawLibrary();
+  const indicator=document.createElement('small');indicator.textContent=row.enabled?'Active':'Paused';indicator.className=row.enabled?'flux-state-active':'flux-state-paused';button.append(title,subtitle,indicator);button.addEventListener('click',async()=>{
+   $('canvas-automation').value=row.id;drawLibrary();renderManage();
    if(!row.action_config?.graph){status('This automation has no canvas yet.');return;}
    if(!confirm('Open '+row.name+'? Unsaved canvas changes will be replaced.'))return;
    try{await restoreGraph(row.action_config.graph);status('Opened '+row.name+'.');window.dispatchEvent(new CustomEvent('flux:automation-opened',{detail:{id:row.id,name:row.name}}));}
@@ -25,6 +25,63 @@ function drawLibrary(){
 }
 
 const selection = () => rows.find(row => row.id === $('canvas-automation').value);
+// Phase 5: owner-only workflow management. RLS enforces ownership server-side.
+const managePanel=document.createElement('section');managePanel.className='flux-manage-panel';
+managePanel.setAttribute('aria-label','Manage selected automation');
+const manageTitle=document.createElement('strong');manageTitle.textContent='Manage selected automation';
+const manageState=document.createElement('p');manageState.setAttribute('role','status');
+const pauseButton=document.createElement('button');pauseButton.type='button';pauseButton.textContent='Pause';
+const renameButton=document.createElement('button');renameButton.type='button';renameButton.textContent='Rename';
+const deleteButton=document.createElement('button');deleteButton.type='button';deleteButton.textContent='Delete';
+deleteButton.className='flux-manage-danger';
+managePanel.append(manageTitle,manageState,pauseButton,renameButton,deleteButton);
+cards?.after(managePanel);
+let manageBusy=false;
+function renderManage(){
+ const row=selection(),available=Boolean(user&&row);
+ managePanel.hidden=!available;
+ if(!available)return;
+ manageState.textContent=(row.enabled?'Active':'Paused')+' · '+(row.trigger_type||'manual')+' trigger';
+ pauseButton.textContent=row.enabled?'Pause automation':'Resume automation';
+ for(const button of [pauseButton,renameButton,deleteButton])button.disabled=manageBusy;
+}
+async function manageChange(action){
+ const row=selection();if(!client||!user||!row||manageBusy)return;
+ let name=null;
+ if(action==='delete'){
+  if(!confirm('Delete "'+row.name+'" permanently? Saved graph and its linked records may be removed. This cannot be undone.'))return;
+ }else if(action==='rename'){
+  name=prompt('New automation name',row.name);
+  if(name===null)return;
+  name=name.trim();
+  if(!name||name.length>100)return status('Enter a name between 1 and 100 characters.');
+ }else if(action==='resume'){
+  if(row.trigger_type==='schedule'&&(!Number.isInteger(Number(row.trigger_config?.interval_minutes))||Number(row.trigger_config?.interval_minutes)<5||Number(row.trigger_config?.interval_minutes)>1440))return status('Configure a valid schedule interval (5–1440 minutes) before resuming.');
+  if(!confirm('Resume "'+row.name+'"? Incoming triggers or scheduled runs may execute and consume FluxCoins.'))return;
+ }
+ manageBusy=true;renderManage();
+ try{
+  const query=client.from('automations');
+  const result=action==='delete'
+   ?await query.delete().eq('id',row.id).eq('owner_id',user.id).select('id')
+   :await query.update(action==='rename'?{name,updated_at:new Date().toISOString()}:{enabled:action==='resume',updated_at:new Date().toISOString()}).eq('id',row.id).eq('owner_id',user.id).select('id,name,enabled,trigger_type,trigger_config');
+  if(result.error)throw result.error;
+  if(!result.data?.length)throw Error('No matching automation was changed.');
+  if(action==='delete'){
+   rows=rows.filter(item=>item.id!==row.id);
+   $('canvas-automation').value='';
+   status('Automation deleted.');
+  }else Object.assign(row,result.data[0]);
+  drawLibrary();renderManage();updateApiPanel();refreshRunHistory();
+  if(action!=='delete')status('Automation '+(action==='rename'?'renamed':action==='resume'?'resumed':'paused')+'.');
+ }catch(error){status('Could not '+action+' automation: '+error.message);}
+ finally{manageBusy=false;renderManage();}
+}
+pauseButton.addEventListener('click',()=>manageChange(selection()?.enabled?'pause':'resume'));
+renameButton.addEventListener('click',()=>manageChange('rename'));
+deleteButton.addEventListener('click',()=>manageChange('delete'));
+$('canvas-automation')?.addEventListener('change',renderManage);
+
 const apiPanel=document.createElement('div');apiPanel.className='flux-api-endpoint';
 const apiLabel=document.createElement('strong');apiLabel.textContent='Workflow API · authenticated test';
 const apiInput=document.createElement('input');apiInput.readOnly=true;apiInput.setAttribute('aria-label','Generated workflow API URL');
@@ -132,11 +189,11 @@ async function refresh() {
   if (authError || !user) {
     $('canvas-cloud-user').textContent = 'Sign in from Flux Studio to use cloud automations';
     status('Local canvas is still available.');
-    rows=[];drawLibrary();updateApiPanel();updateWebhookPanel();refreshFluxCoins();
+    rows=[];drawLibrary();renderManage();updateApiPanel();updateWebhookPanel();refreshFluxCoins();
     return;
   }
   $('canvas-cloud-user').textContent = user.email;
-  const { data, error } = await client.from('automations').select('id,name,action_config,project_id').order('updated_at',{ascending:false});
+  const { data, error } = await client.from('automations').select('id,name,enabled,trigger_type,trigger_config,action_config,project_id').order('updated_at',{ascending:false});
   if (error) return status(error.message);
   rows = data || [];
   const chosen = $('canvas-automation').value;
@@ -147,7 +204,7 @@ async function refresh() {
     const requested = new URLSearchParams(location.search).get('automation');
     if (requested && rows.some(row=>row.id===requested)) $('canvas-automation').value=requested;
   }
-  drawLibrary();updateApiPanel();
+  drawLibrary();updateApiPanel();renderManage();
   refreshFluxCoins();
   status(rows.length+' automation(s) available. Select one to load or save its canvas.');
 }
@@ -211,7 +268,7 @@ window.addEventListener('flux:create-scenario',async event=>{
   const graph={version:1,nodes:[],edges:[]};
   const created=await client.from('automations').insert({owner_id:user.id,project_id:projectId,name,enabled:false,trigger_type:'manual',trigger_config:{},action_config:{graph,version:2}}).select('id,name,action_config,project_id').single();
   if(created.error)throw created.error;
-  rows.unshift(created.data);
+  rows.unshift({...created.data,enabled:false,trigger_type:'manual',trigger_config:{}});
   $('canvas-automation').add(new Option(name,created.data.id));
   $('canvas-automation').value=created.data.id;
   try{await restoreGraph(graph);}catch(error){status('Scenario created, but opening the empty canvas failed: '+error.message);return;}
