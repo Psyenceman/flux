@@ -57,3 +57,13 @@ Do not unlock external unattended writes to make demonstrations appear operation
 - Popup VM harness now implements browser Event/dispatchEvent used by the existing connection callback.
 - Syntax and diff whitespace checks passed.
 - Deployment and authenticated browser acceptance must be recorded after publication.
+
+## Published TEST verification — 2026-11-07
+- Netlify deploy `6aef59c725f35370597ac226`: ready, branch test/trello-popup-feedback, source commit `1fc382b2fee63929a698c0b296c6f86f0664c93d`.
+- Browser at https://flux-studio-test.netlify.app/flow-canvas.html: Scenario builder → Add a step → Trello → configuration verified.
+- Named board/list selectors present; raw list ID input absent. Unauthenticated selectors disabled with sign-in error and enabled Refresh boards recovery button.
+- Save without valid board/list rejected; modal stays open with actionable validation.
+- Switching to Create card shows title/description fields alongside the same board/list picker.
+- Authenticated E2E blocked: login returned Invalid login credentials; no provider authorization or card creation claimed.
+- Production published deploy remains `6aedc72f553859dcc804e34c`; no production mutation.
+- Owner deferred Stripe and per-block billing gaps; these remain open and outside this deployment/QA slice.
