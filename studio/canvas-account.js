@@ -22,21 +22,23 @@ export function mountAccount(getClient){
  const note=document.createElement('p');note.textContent='TEST workspace · subscriptions and purchases are not enabled.';
  const logout=document.createElement('button');logout.type='button';logout.textContent='Sign out';
  privateArea.append(greeting,identity,plan,coins,note,logout);dialog.append(head,status,form,privateArea);document.body.append(dialog);
- let revision=0,disposed=false;
+ let revision=0,disposed=false,currentUserId=null,walletState=null;
+ const renderAdminWallet=()=>{if(walletState?.signedIn&&walletState.userId===currentUserId&&walletState.unlimited){plan.textContent='Account: Super Admin · TEST';coins.textContent='FluxCoins: unlimited (Super Admin)';}};
+ window.addEventListener('flux:coins-loaded',event=>{walletState=event.detail||null;renderAdminWallet();});
  async function refresh(){
   const current=++revision;const client=getClient();if(!client){status.textContent='Account service is loading. Please try again shortly.';return;}
   const {data,error}=await client.auth.getUser();if(disposed||current!==revision)return;
   const user=data?.user;
-  if(!user||error){form.hidden=false;privateArea.hidden=true;identity.textContent='';plan.textContent='';coins.textContent='';password.value='';button.textContent='Sign in';status.textContent='';return;}
-  form.hidden=true;privateArea.hidden=false;button.textContent='My account';greeting.textContent='Account overview';identity.textContent=user.email||'Signed in';status.textContent='';
+  if(!user||error){currentUserId=null;form.hidden=false;privateArea.hidden=true;identity.textContent='';plan.textContent='';coins.textContent='';password.value='';button.textContent='Sign in';status.textContent='';return;}
+  currentUserId=user.id;form.hidden=true;privateArea.hidden=false;button.textContent='My account';greeting.textContent='Account overview';identity.textContent=user.email||'Signed in';status.textContent='';
   plan.textContent='Loading plan…';coins.textContent='Loading balance…';
   const [entitlement,wallet]=await Promise.all([client.from('flux_user_plans').select('plan_id').eq('user_id',user.id).maybeSingle(),client.from('flux_credit_accounts').select('balance,lifetime_used').eq('user_id',user.id).maybeSingle()]);
   if(disposed||current!==revision)return;
   plan.textContent=entitlement.error?'Plan unavailable':entitlement.data?.plan_id?'Plan: '+entitlement.data.plan_id:'Plan not assigned';
-  coins.textContent=wallet.error?'Balance unavailable':wallet.data?'FluxCoins: '+wallet.data.balance+' · Used: '+wallet.data.lifetime_used:'No wallet record available';
+  coins.textContent=wallet.error?'Balance unavailable':wallet.data?'FluxCoins: '+wallet.data.balance+' · Used: '+wallet.data.lifetime_used:'No wallet record available';renderAdminWallet();
  }
  form.addEventListener('submit',async event=>{event.preventDefault();submit.disabled=true;status.textContent='Signing in…';try{await signInAccount(getClient(),email.value,password.value);await refresh();window.dispatchEvent(new Event('flux:coins-refresh'));}catch(error){status.textContent=error.message;}finally{password.value='';submit.disabled=false;}});
- logout.addEventListener('click',async()=>{logout.disabled=true;try{const client=getClient();if(!client)throw Error('Account service unavailable');const {error}=await client.auth.signOut();if(error)throw error;revision++;privateArea.hidden=true;identity.textContent='';plan.textContent='';coins.textContent='';form.hidden=false;button.textContent='Sign in';status.textContent='Signed out.';window.dispatchEvent(new Event('flux:coins-refresh'));}catch(error){status.textContent=error.message;}finally{logout.disabled=false;}});
+ logout.addEventListener('click',async()=>{logout.disabled=true;try{const client=getClient();if(!client)throw Error('Account service unavailable');const {error}=await client.auth.signOut();if(error)throw error;revision++;currentUserId=null;walletState=null;privateArea.hidden=true;identity.textContent='';plan.textContent='';coins.textContent='';form.hidden=false;button.textContent='Sign in';status.textContent='Signed out.';window.dispatchEvent(new Event('flux:coins-refresh'));}catch(error){status.textContent=error.message;}finally{logout.disabled=false;}});
  const open=()=>{if(!dialog.open)dialog.showModal();void refresh();};button.addEventListener('click',open);window.addEventListener('flux:account-open',open);
  dialog.addEventListener('close',()=>{password.value='';});
  return {refresh};
