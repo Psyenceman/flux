@@ -69,3 +69,30 @@ test('Trello read feeds Airtable create preview without Airtable writes',async()
   assert.equal(requests[0].method,'GET');
  }finally{globalThis.fetch=originalFetch;}
 });
+
+test('Airtable preview resolves connected Trello output without writing',async()=>{
+ const previous=globalThis.fetch;
+ const requests=[];
+ globalThis.fetch=async(url,options={})=>{
+  requests.push({url:String(url),method:options.method||'GET'});
+  return {ok:true,json:async()=>[{id:'a'.repeat(24),name:'Card',idList:'b'.repeat(24)}]};
+ };
+ try{
+  const graph={version:1,nodes:[
+   {id:'trello1',type:'trello',config:{operation:'read_list',list:'b'.repeat(24)}},
+   {id:'airtable1',type:'airtable',config:{operation:'create_record',baseId:'app'+'1'.repeat(14),tableId:'tbl'+'2'.repeat(14),fields:'{"Count":"{{trello1.count}}","Label":"TEST"}'}}
+  ],edges:[{from:'trello1',to:'airtable1'}]};
+  const result=await executeGraph(graph,{},{dryRun:true,trelloAccessToken:'mock-token'});
+  assert.equal(result.ok,true);
+  assert.equal(result.outputs.airtable1.fields.Count,1);
+  assert.equal(result.outputs.airtable1.simulated,true);
+  assert.equal(requests.length,1);
+  assert.equal(requests[0].method,'GET');
+ }finally{globalThis.fetch=previous;}
+});
+test('Airtable mapping rejects unconnected node references',async()=>{
+ const graph={version:1,nodes:[{id:'airtable1',type:'airtable',config:{operation:'create_record',baseId:'app'+'1'.repeat(14),tableId:'tbl'+'2'.repeat(14),fields:'{"Name":"{{other.email}}"}'}}],edges:[]};
+ const result=await executeGraph(graph,{},{dryRun:true});
+ assert.equal(result.ok,false);
+ assert.equal(result.trace[0].status,'failed');
+});
