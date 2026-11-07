@@ -67,3 +67,6 @@ Do not unlock external unattended writes to make demonstrations appear operation
 - Authenticated E2E blocked: login returned Invalid login credentials; no provider authorization or card creation claimed.
 - Production published deploy remains `6aedc72f553859dcc804e34c`; no production mutation.
 - Owner deferred Stripe and per-block billing gaps; these remain open and outside this deployment/QA slice.
+
+## Authenticated follow-up
+Flux login succeeded. Expired Trello connection was reauthorized in a separate popup; callback closed popup and automatically loaded real boards. Board/list discovery succeeded. Switching to Create card and selecting Backlog preserved the card title. Reopening exposed a duplicate-refresh race clearing the saved list; fixed with a persistent desired selection across refresh requests and added regression coverage. Full suite: 106 passed; Studio build passed. No Trello card created. Recheck published fix before marking reopen acceptance passed.
