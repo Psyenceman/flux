@@ -21,3 +21,6 @@ GitHub public issues is executable and provider-read verified; Notion reader is 
 ## References
 https://docs.github.com/en/rest/issues/issues
 https://developers.notion.com/reference/post-search
+
+## Published authenticated acceptance
+Deploy 6aef603e481f6313491d691f ready at acdea8df408a9db1fb3553568c734c311692be5b. Browser: add GitHub after Log, configure Psyenceman/flux, save and Test workflow. Result: manual + mapper + filter + log + github = 5 completed, 0 simulated, 0 filtered, 0 skipped. GitHub public reader passes published authenticated E2E. Personal Notion/Airtable/HubSpot connections remain absent; no live verification claimed for them. No production changes.
