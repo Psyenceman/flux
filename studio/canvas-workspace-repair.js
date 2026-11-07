@@ -195,16 +195,16 @@
  schedule:{},
  webhook:{receive:[f('event','Event label')]},
  trello:{read_list:[f('list','List ID','text',true)],create_card:[f('list','Destination list ID','text',true),f('title','Card title','text',true),f('description','Card description','textarea')]},
- airtable:{find_records:[f('base','Base ID','text',true),f('table','Table','text',true),f('filter','Search filter')],create_record:[f('base','Base ID','text',true),f('table','Table','text',true),f('body','Fields (JSON)','textarea',true)],update_record:[f('base','Base ID','text',true),f('table','Table','text',true),f('recordId','Record ID','text',true),f('body','Changes (JSON)','textarea',true)]},
+ airtable:{find_records:[f('baseId','Base ID','text',true),f('tableId','Table ID','text',true),f('filter','Search filter')],create_record:[f('baseId','Base ID','text',true),f('tableId','Table ID','text',true),f('fields','Fields (JSON)','textarea',true)],update_record:[f('baseId','Base ID','text',true),f('tableId','Table ID','text',true),f('recordId','Record ID','text',true),f('fields','Changes (JSON)','textarea',true)]},
  miro:{create_card:[f('board','Board ID','text',true),f('title','Card title','text',true),f('message','Description','textarea')],find_items:[f('board','Board ID','text',true),f('query','Search')],update_item:[f('board','Board ID','text',true),f('itemId','Item ID','text',true),f('title','New title')]},
- sheets:{read_rows:[f('spreadsheet','Spreadsheet ID','text',true),f('range','Range','text',true)],append_row:[f('spreadsheet','Spreadsheet ID','text',true),f('range','Range','text',true),f('body','Row (JSON)','textarea',true)]},
+ sheets:{read_rows:[f('spreadsheetId','Spreadsheet ID','text',true),f('range','Range','text',true)],append_row:[f('spreadsheetId','Spreadsheet ID','text',true),f('range','Range','text',true),f('values','Row (JSON)','textarea',true)]},
  drive:{find_file:[f('query','File name / query','text',true),f('folder','Folder ID')],create_file:[f('title','File name','text',true),f('folder','Folder ID')]},
  github:{list_issues:[f('repository','Repository (owner/name)','text',true)],create_issue:[f('repository','Repository (owner/name)','text',true),f('title','Issue title','text',true),f('message','Description','textarea')]},
  wordpress:{read_posts:[f('site','Website URL','url',true)],create_post:[f('site','Website URL','url',true),f('title','Post title','text',true),f('message','Post content','textarea',true)]},
- filter:{always:[],approved:[f('field','Approval field')],rejected:[f('field','Approval field')],'status=approved':[f('field','Status field')]},
+ filter:{always:[],approved:[],rejected:[],'status=approved':[]},
  flux:{pass:[],pick:[f('mapping','Field to select','text',true)],count:[f('mapping','Items field')]},
  mapper:{map:[f('mapping','Input field','text',true),f('target','Output field','text',true)]},
- router:{branch:[f('route','Branch rule','text',true)]},
+ router:{branch:[]},
  loop:{iterate:[f('items','Collection field','text',true)]},
  merge:{combine:[]},log:{record:[f('message','Log message','textarea')]},
  delay:{wait:[f('duration','Duration','number',true),f('unit','Unit')]},
@@ -219,10 +219,10 @@
  notion:{search_pages:[f('query','Search query','text',true)],create_page:[f('databaseId','Database ID','text',true),f('title','Page title','text',true)]},
  calendar:{list_events:[f('calendarId','Calendar ID','text',true)],create_event:[f('calendarId','Calendar ID','text',true),f('title','Event title','text',true),f('start','Start','datetime-local',true),f('end','End','datetime-local',true)]},
  stripe:{payment_event:[f('event','Event name')],create_checkout:[f('priceId','Price ID','text',true)]},
- hubspot:{search_contacts:[f('property','Search field','text',true),f('value','Search value','text',true)],create_contact:[f('body','Contact JSON','textarea',true)]},
+ hubspot:{search_contacts:[f('query','Contact email','email',true)],create_contact:[f('properties','Contact JSON','textarea',true)]},
  shopify:{order_event:[f('store','Store domain','text',true)],list_orders:[f('store','Store domain','text',true),f('orderStatus','Status')]},
  openai:{generate_text:[f('model','Model'),f('prompt','Prompt','textarea',true)],classify_text:[f('prompt','Text','textarea',true),f('categories','Categories','text',true)]},
- supabase:{select_rows:[f('table','Table','text',true),f('filter','Filter')],insert_row:[f('table','Table','text',true),f('body','Row JSON','textarea',true)]},
+ supabase:{select_rows:[f('table','Table','text',true),f('filter','Filter')],insert_row:[f('table','Table','text',true),f('fields','Row JSON','textarea',true)]},
  cloudflare:{trigger_worker:[f('worker','Worker name','text',true),f('event','Event')] }
  };
  const actions={
@@ -237,7 +237,7 @@
  stripe:[['payment_event','Payment event'],['create_checkout','Create checkout']],hubspot:[['search_contacts','Find contacts'],['create_contact','Create contact']],shopify:[['order_event','Order trigger'],['list_orders','List orders']],
  openai:[['generate_text','Generate text'],['classify_text','Classify text']],resend:[['send_email','Send email']],supabase:[['select_rows','Read rows'],['insert_row','Insert row']],cloudflare:[['trigger_worker','Call Worker']]
  };
- const connectedLocal=new Set(['manual','filter','flux','merge','log']);
+ const connectedLocal=new Set(['manual','filter','flux','merge','log','mapper','router']);
  const limited=new Set(['trello','http','webhook']);
  const internal=new Set(['manual','filter','flux','merge','log','delay','mapper','router','loop','schedule','webhook']);
  const close=()=>{if(modal.open)modal.close();};
@@ -296,7 +296,7 @@
     inputs.replaceChildren();
     const fields=schemas[node.type]?.[action?.el.value]||[];
     for(const spec of fields){
-     if(node.type==='trello'&&spec.key==='list')continue;
+     if(node.type==='trello'&&spec.key==='list'||node.type==='mapper')continue;
      const row=document.createElement('label');row.className='fm-row';row.textContent=spec.label+(spec.required?' *':'');
      const input=document.createElement(spec.type==='textarea'?'textarea':'input');if(spec.type!=='textarea')input.type=spec.type;
      if(spec.type==='textarea')input.rows=3;
@@ -307,6 +307,25 @@
    }
    if(action){draft.operation=action.el.value;action.el.addEventListener('change',()=>{draft.operation=action.el.value;drawFields();});}
    drawFields();
+   if(node.type==='mapper'){
+    const explanation=document.createElement('p');explanation.className='fm-help';explanation.textContent='Choose the output field names and their values. Use {{input.name}} or {{blockId.name}} to reuse incoming data.';inputs.append(explanation);
+    const rows=document.createElement('div');inputs.append(rows);
+    const fields=[];
+    const add=(name='',value='')=>{
+     const row=document.createElement('div');row.className='fx-map-row';
+     const key=document.createElement('input');key.placeholder='Output field';key.setAttribute('aria-label','Output field');key.value=name;
+     const val=document.createElement('input');val.placeholder='Value or incoming field';val.setAttribute('aria-label','Mapped value');val.value=typeof value==='string'?value:JSON.stringify(value);
+     const remove=document.createElement('button');remove.type='button';remove.className='fx-form-button';remove.textContent='×';remove.setAttribute('aria-label','Remove field');row.append(key,val,remove);rows.append(row);
+     const item={key,val,row,original:value};fields.push(item);remove.onclick=()=>{fields.splice(fields.indexOf(item),1);row.remove();};
+    };
+    let existing={};try{existing=JSON.parse(draft.mapping||'{}');}catch{}
+    if(existing&&typeof existing==='object'&&!Array.isArray(existing)&&Object.keys(existing).length)Object.entries(existing).forEach(([key,value])=>add(key,value));else add();
+    const plus=document.createElement('button');plus.type='button';plus.className='fx-form-button';plus.textContent='+ Add field';plus.onclick=()=>add();inputs.append(plus);
+    validate.push(()=>{
+     const result=Object.create(null);for(const item of fields){const name=item.key.value.trim();if(!/^[a-zA-Z_][\w]{0,63}$/.test(name))return 'Use a field name starting with a letter, with no spaces';if(Object.hasOwn(result,name))return 'Output field names must be unique';result[name]=item.val.value;}
+     if(!fields.length)return 'Add at least one output field';draft.mapping=JSON.stringify(result);return '';
+    });
+   }
    if(node.type==='filter'){
     const conditionFields=document.createElement('div');conditionFields.className='fm-condition-fields';body.append(conditionFields);
     const updateConditionFields=()=>{
@@ -365,7 +384,7 @@
    }
    validate.push(()=>{
     const fields=schemas[node.type]?.[action?.el.value]||[];
-    for(const spec of fields){const v=String(draft[spec.key]??'').trim();if(spec.required&&!v)return 'Required: '+spec.label;
+    for(const spec of fields){if(node.type==='mapper')continue;const v=String(draft[spec.key]??'').trim();if(spec.required&&!v)return 'Required: '+spec.label;
       if(spec.type==='url'&&v&&!v.startsWith('https://'))return 'Use a secure https:// URL';
       if(spec.key==='body'&&v&&spec.label.includes('JSON')){try{JSON.parse(v)}catch{return 'Invalid JSON in '+spec.label;}}
     }

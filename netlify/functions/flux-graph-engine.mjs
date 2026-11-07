@@ -37,7 +37,7 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
   const value=incoming.length>1?{items:incoming}:incoming.length===1?incoming[0]:input;
   const config=n.config||{};let output=value,active=true,status='completed',reason;
   try{switch(n.type){
-   case 'webhook':case 'manual':break;
+   case 'webhook':case 'manual':case 'router':break;
    case 'mapper':output=applyMapping(String(config.mapping||'{}'),outputs,input,ancestors.get(id));break;
    case 'filter':{
     if(config.field){
