@@ -12,3 +12,6 @@ Shared normalizeEmail trims outer spaces and lowercases email for signup and bot
 
 ## Limits
 Existing Supabase-managed API uniqueness applies to current non-SSO email/password flow. Future SSO/OAuth providers require identity linking review. Plus addressing and dot aliases are not collapsed; they may be distinct addresses.
+
+## Deployment verification
+Netlify TEST deploy 6aef634dbb72e8b3c90dfc4e ready, source 64df80847816744bb7c802761fcc57f639aa8942. Duplicate signup behavior verified by automated provider-response tests; no live signup submitted. DB uniqueness and absence of existing duplicate groups verified separately.
