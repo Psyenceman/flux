@@ -72,7 +72,9 @@ async function manageChange(action){
   if(!result.data?.length)throw Error('No matching automation was changed.');
   if(action==='delete'){
    rows=rows.filter(item=>item.id!==row.id);
+   const option=$('canvas-automation').querySelector('option[value="'+row.id+'"]');if(option)option.remove();
    $('canvas-automation').value='';
+   window.dispatchEvent(new CustomEvent('flux:persistent-runs',{detail:{automationId:null,runs:[]}}));
    status('Automation deleted.');
   }else Object.assign(row,result.data[0]);
   drawLibrary();renderManage();updateApiPanel();refreshRunHistory();
