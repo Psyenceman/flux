@@ -7,7 +7,14 @@ export async function handler(event){
   const userId=await owner(getBearer(event));
   if(!userId)return json(401,{ok:false,error:'Sign in required'});
   stage='role_lookup';
-  const profiles=await db('profiles?id=eq.'+encodeURIComponent(userId)+'&select=role');
+  let profiles;
+  try{
+   profiles=await db('profiles?id=eq.'+encodeURIComponent(userId)+'&select=role');
+  }catch(error){
+   // Safe diagnostics: HTTP status only, never the service key, JWT or database response body.
+   const match=String(error?.message||'').match(/Database error (\\d{3})/);
+   return json(503,{ok:false,error:'Role lookup unavailable',stage:'role_lookup',upstreamStatus:match?Number(match[1]):null,serviceKeyConfigured:Boolean(process.env.FLUX_SUPABASE_SERVICE_ROLE_KEY)});
+  }
   if(profiles?.length!==1||profiles[0].role!=='super_admin')return json(403,{ok:false,error:'Super Admin access required'});
   // After the server-side authorization succeeds, failures may be reported by stage.
   const read=async (name,path)=>{try{return await db(path);}catch(error){return {error:true,source:name};}};
