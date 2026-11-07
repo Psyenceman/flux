@@ -3,7 +3,7 @@
  const button=document.createElement('button');button.type='button';button.textContent='My connections';button.style.cssText='padding:9px;border-radius:8px;border:1px solid #9279cf;background:#35265c;color:#fff;cursor:pointer';bar.append(button);
  const dialog=document.createElement('dialog');dialog.style.cssText='width:min(480px,calc(100vw - 24px));border:1px solid #7466a2;border-radius:14px;padding:22px;background:#1d1a33;color:white';
  const heading=document.createElement('h2');heading.textContent='My connections';
- const info=document.createElement('p');info.textContent='TEST only. Credentials are encrypted server-side and scoped to your account. Saving does not verify access. Use test-only restricted tokens.';
+ const info=document.createElement('p');info.textContent='TEST only. Credentials are encrypted server-side and scoped to your account. Credentials are checked with a read-only provider request before saving. Use test-only restricted tokens.';
  const status=document.createElement('p');status.setAttribute('role','status');
  const list=document.createElement('div'),close=document.createElement('button');close.textContent='Close';close.addEventListener('click',()=>dialog.close());dialog.append(heading,info,list,status,close);document.body.append(dialog);
  const providers=[['airtable','Airtable'],['hubspot','HubSpot'],['notion','Notion (storage only)']];
@@ -13,7 +13,7 @@
   try{const result=await call('GET');const connected=new Map(result.connections.map(c=>[c.provider,c]));
    for(const [provider,name] of providers){
     const existing=connected.get(provider),row=document.createElement('section');row.style.cssText='padding:12px 0;border-top:1px solid #655d80';
-    const label=document.createElement('strong');label.textContent=name+' · '+(existing?'Saved, not verified':'Not connected');row.append(label);
+    const label=document.createElement('strong');label.textContent=name+' · '+(existing?'Saved (verified when connected)':'Not connected');row.append(label);
     const form=document.createElement('form');form.style.cssText='display:grid;gap:8px;margin:8px 0';
     const input=document.createElement('input');input.type='password';input.autocomplete='off';input.required=true;input.minLength=12;input.placeholder='Personal access token';input.style.cssText='padding:10px;border-radius:7px';
     const save=document.createElement('button');save.type='submit';save.textContent=existing?'Replace token':'Save token';form.append(input,save);
