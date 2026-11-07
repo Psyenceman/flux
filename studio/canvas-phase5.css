@@ -1,0 +1,14 @@
+/* Flux TEST: automation management, clear state and accessible actions. */
+.flux-manage-panel{margin:12px 0;padding:14px;border:1px solid #655a91;border-radius:14px;background:linear-gradient(145deg,#1b2945,#242344);box-shadow:0 8px 22px #0d102b25}
+.flux-manage-panel>strong{display:block;color:#f1eaff;margin-bottom:5px;font-size:14px}
+.flux-manage-panel>p{margin:4px 0 12px;color:#c8c7e6;font-size:12px}
+.flux-manage-panel button{min-height:44px;padding:10px 13px;margin:3px 5px 3px 0;border:1px solid #8b75cb;border-radius:10px;background:#3c315f;color:#fff;cursor:pointer;transition:background .18s ease,box-shadow .18s ease,transform .18s ease}
+.flux-manage-panel button:hover:not(:disabled){background:#6049a0;box-shadow:0 0 14px #a78bfa55;transform:translateY(-1px)}
+.flux-manage-panel button:focus-visible{outline:3px solid #d5bcff;outline-offset:2px}
+.flux-manage-panel button:disabled{opacity:.55;cursor:wait}
+.flux-manage-panel .flux-manage-danger{border-color:#9d586c;background:#512d41}
+.flux-manage-panel .flux-manage-danger:hover:not(:disabled){background:#803b55}
+.flux-state-active,.flux-state-paused{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:20px;font-size:11px;font-weight:700}
+.flux-state-active{color:#b8f4e3;background:#175647}
+.flux-state-paused{color:#e2d4fc;background:#4d3c6c}
+@media(max-width:550px){.flux-manage-panel{padding:12px}.flux-manage-panel button{width:100%;margin:4px 0}}
