@@ -56,6 +56,9 @@ async function manageChange(action){
   name=name.trim();
   if(!name||name.length>100)return status('Enter a name between 1 and 100 characters.');
  }else if(action==='resume'){
+  const allowed=new Set(['manual','schedule','webhook','filter','router','mapper','merge','flux','log']);
+  const graph=row.action_config?.graph;
+  if(!graph||!Array.isArray(graph.nodes)||graph.nodes.some(node=>!allowed.has(node.type)))return status('Cannot resume: unattended external connectors are not approved yet. Use a safe internal-only workflow.');
   if(row.trigger_type==='schedule'&&(!Number.isInteger(Number(row.trigger_config?.interval_minutes))||Number(row.trigger_config?.interval_minutes)<5||Number(row.trigger_config?.interval_minutes)>1440))return status('Configure a valid schedule interval (5–1440 minutes) before resuming.');
   if(!confirm('Resume "'+row.name+'"? Incoming triggers or scheduled runs may execute and consume FluxCoins.'))return;
  }
