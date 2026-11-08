@@ -42,3 +42,9 @@ GitHub installation verification currently reads the first 100 accessible instal
 Graphical scope is the connections experience and homepage cleanup. It does not establish platform-wide premium UX or mobile acceptance. Other connector provider tests and the broader roadmap retain their previous documented status.
 
 Rollback: keep the credential-envelope decoder while any GitHub App credentials remain stored, or explicitly disconnect/replace those credentials first. Do not roll back to a plain-PAT-only reader against OAuth envelopes.
+
+## Published verification
+
+Source commit `e4963fbf727ea6afc1d1a2068f3c69fde2c437e3`; TEST deploy `6af09c228032d7df5d0bf9bf` ready, exact commit match. `npm run build:studio`, `git diff --check`, and **181 tests passed, 0 failed**.
+Published API checks: status 200 with configured=false and connected=false; anonymous start 401; callback without state safely rejects verification. Browser guest QA: root resolves to the automation home, one primary new-automation CTA, connection search filters to one GitHub card, Advanced opens/closes the credential field, close/reopen retains a functioning search/controller, Connect GitHub is disabled and explicitly reports setup pending. Screenshot captured of the published filtered connection card. Actual provider popup consent, connected feedback, private reads/writes and mobile viewport acceptance remain pending; automated popup tests do not replace those provider checks.
+Production deploy remained `6aedc72f553859dcc804e34c`, unchanged.
