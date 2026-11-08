@@ -433,7 +433,7 @@ runLive.addEventListener('click',()=>{
  if(runLive.disabled||byId('execute').disabled)return;
  const graph=snapshot();
  if(!liveWorkflowKind(graph)){
-  fluxFeedback('Live TEST supports one Trello Create card, or one Slack/Miro action with supported read and local steps.','error');return;
+  fluxFeedback('Live TEST supports one Trello Create card, or one Slack/Miro/GitHub action with supported read and local steps.','error');return;
  }
  byId('run-dry').checked=false;
  byId('runner').style.display='block';
@@ -451,6 +451,9 @@ byId('run-now').addEventListener('click',async()=>{
  if(kind==='trello'){
   const cfg=graph.nodes[0].config||{};
   if(!confirm('Create a REAL Trello card?\n\nTitle: '+String(cfg.title||'')+'\nDestination list: '+String(cfg.list||'')+'\n\nThis changes Trello and cannot be undone automatically.'))return;
+ }else if(kind==='github'){
+  const cfg=graph.nodes.find(n=>n.type==='github'&&n.config?.operation==='create_issue').config||{};
+  if(!confirm('Create a REAL GitHub issue?\n\nRepository: '+String(cfg.repository||'Selected repository')+'\nTitle template: '+String(cfg.title||'')+'\n\nIncoming fields will be substituted. Check your safe-test preview first. This creates an issue in GitHub.'))return;
  }else if(kind==='miro'){
   const cfg=graph.nodes.find(n=>n.type==='miro'&&['create_card','update_item'].includes(n.config?.operation)).config||{};
   if(!confirm((cfg.operation==='create_card'?'Create a REAL Miro card?':'Update a REAL Miro card?')+'\n\nBoard: '+String(cfg.boardName||'Selected board')+(cfg.operation==='update_item'?'\nCard: '+String(cfg.cardName||'Selected card'):'')+'\nTitle template: '+String(cfg.title||'')+'\n\nIncoming fields will be substituted. Check your safe-test preview first. This changes Miro.'))return;
@@ -460,7 +463,7 @@ byId('run-now').addEventListener('click',async()=>{
  }
 }
  const button=byId('run-now'),primary=byId('execute');if(button.disabled||primary.disabled)return;button.disabled=true;primary.disabled=true;runLive.disabled=true;primary.textContent=dryRun?'Testing…':'Running…';output.textContent='Executing…';note('Testing workflow…');
- try{const response=await fetch('/.netlify/functions/flux-graph',{method:'POST',headers:await window.fluxExecutionHeaders(token),body:JSON.stringify({graph:executionGraph,input,dryRun,confirmLiveTrello:!dryRun&&liveWorkflowKind(executionGraph)==='trello',confirmLiveSlack:!dryRun&&liveWorkflowKind(executionGraph)==='slack',confirmLiveMiro:!dryRun&&liveWorkflowKind(executionGraph)==='miro'})});const data=await response.json();output.textContent='HTTP '+response.status+'\n'+JSON.stringify(data,null,2);note(data.ok?'Test complete: '+(data.trace?.filter(item=>item.status==='completed'||item.status==='simulated').length||0)+' blocks executed.':('Test failed: '+(data.error||'Check execution results.')));fluxFeedback(data.ok?'Workflow test complete. '+(data.trace?.length||0)+' blocks processed. Open the results below for details.':'Test failed: '+(data.error||'Check execution results.'),data.ok?'success':'error');window.dispatchEvent(new CustomEvent('flux:run-completed',{detail:{...data,httpStatus:response.status}}));if(response.ok&&data.credits?.ok)window.dispatchEvent(new CustomEvent('flux:run-summary',{detail:data}));}
+ try{const response=await fetch('/.netlify/functions/flux-graph',{method:'POST',headers:await window.fluxExecutionHeaders(token),body:JSON.stringify({graph:executionGraph,input,dryRun,confirmLiveTrello:!dryRun&&liveWorkflowKind(executionGraph)==='trello',confirmLiveSlack:!dryRun&&liveWorkflowKind(executionGraph)==='slack',confirmLiveMiro:!dryRun&&liveWorkflowKind(executionGraph)==='miro',confirmLiveGithub:!dryRun&&liveWorkflowKind(executionGraph)==='github'})});const data=await response.json();output.textContent='HTTP '+response.status+'\n'+JSON.stringify(data,null,2);note(data.ok?'Test complete: '+(data.trace?.filter(item=>item.status==='completed'||item.status==='simulated').length||0)+' blocks executed.':('Test failed: '+(data.error||'Check execution results.')));fluxFeedback(data.ok?'Workflow test complete. '+(data.trace?.length||0)+' blocks processed. Open the results below for details.':'Test failed: '+(data.error||'Check execution results.'),data.ok?'success':'error');window.dispatchEvent(new CustomEvent('flux:run-completed',{detail:{...data,httpStatus:response.status}}));if(response.ok&&data.credits?.ok)window.dispatchEvent(new CustomEvent('flux:run-summary',{detail:data}));}
  catch(e){output.textContent='Execution error: '+e.message;note('Test failed: '+e.message);fluxFeedback('Test failed: '+e.message,'error');}
  finally{button.disabled=false;primary.disabled=false;runLive.disabled=false;primary.textContent='Test workflow';byId('run-token').value='';}
 });

@@ -10,6 +10,7 @@ export function liveWorkflowKind(graph){
   if(local.has(n.type))continue;
   external++;
   if(n.type==='slack'&&['send','list_channels'].includes(n.config?.operation||'send')){if((n.config?.operation||'send')==='send'){sends++;kind='slack';}continue;}
+  if(n.type==='github'&&n.config?.operation==='create_issue'){sends++;kind='github';continue;}
   if(n.type==='miro'&&['create_card','update_item'].includes(n.config?.operation)){sends++;kind='miro';continue;}
   if(!reads[n.type]||(n.config?.operation||reads[n.type])!==reads[n.type])return null;
  }

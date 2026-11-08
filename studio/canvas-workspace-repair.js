@@ -232,7 +232,7 @@
  flux:[['pass','Pass through'],['pick','Pick field'],['count','Count items']],database:[['select','Read rows'],['insert','Create row'],['update','Update row'],['delete','Delete row']],
  router:[['branch','Choose branch']],loop:[['iterate','For each item']],mapper:[['map','Map fields']],merge:[['combine','Combine']],delay:[['wait','Wait']],log:[['record','Record event']],
  http:[['post','Send POST']],webhook:[['receive','Receive event']],email:[['send','Send email']],slack:[['send','Send message'],['list_channels','List joined public channels']],
- sheets:[['read_rows','Read rows'],['append_row','Append row']],drive:[['find_file','Find file'],['create_file','Create file']],github:[['list_issues','Read public repository issues'],['create_issue','Create issue · execution pending']],
+ sheets:[['read_rows','Read rows'],['append_row','Append row']],drive:[['find_file','Find file'],['create_file','Create file']],github:[['list_issues','Read repository issues'],['create_issue','Create issue']],
  wordpress:[['read_posts','Read posts'],['create_post','Create post']],whatsapp:[['send_template','Send template'],['receive_message','Receive message']],telegram:[['send_message','Send message'],['receive_update','Receive update']],
  discord:[['send_message','Send message']],notion:[['search_pages','Search shared pages'],['create_page','Create page · execution pending']],calendar:[['list_events','List events'],['create_event','Create event']],
  stripe:[['payment_event','Payment event'],['create_checkout','Create checkout']],hubspot:[['search_contacts','Find contacts'],['create_contact','Create contact']],shopify:[['order_event','Order trigger'],['list_orders','List orders']],
@@ -293,13 +293,13 @@
    const choices=actions[node.type]||[];
    const action=choices.length?field(body,'Action','',choices.some(c=>c[0]===draft.operation)?draft.operation:choices[0][0],choices):null;
    const inputs=document.createElement('div');body.append(inputs);
-   let structuredChecks=[],disposeSlack=()=>{},disposeMiro=()=>{};
-   modal.addEventListener('close',()=>{disposeSlack();disposeMiro();},{once:true});
+   let structuredChecks=[],disposeSlack=()=>{},disposeMiro=()=>{},disposeGithub=()=>{};
+   modal.addEventListener('close',()=>{disposeSlack();disposeMiro();disposeGithub();},{once:true});
    function drawFields(){
-    disposeSlack();disposeMiro();inputs.replaceChildren();structuredChecks=[];
+    disposeSlack();disposeMiro();disposeGithub();inputs.replaceChildren();structuredChecks=[];
     const fields=schemas[node.type]?.[action?.el.value]||[];
     for(const spec of fields){
-     if(node.type==='trello'&&spec.key==='list'||node.type==='slack'&&spec.key==='channel'||node.type==='miro'&&['board','itemId'].includes(spec.key)||node.type==='mapper')continue;
+     if(node.type==='trello'&&spec.key==='list'||node.type==='slack'&&spec.key==='channel'||node.type==='miro'&&['board','itemId'].includes(spec.key)||node.type==='github'&&spec.key==='repository'||node.type==='mapper')continue;
      if(['fields','properties','values'].includes(spec.key)||spec.key==='body'&&/JSON/.test(spec.label)){structuredChecks.push(window.FluxStructuredFields(inputs,draft,spec.key,spec.label,spec.key==='values'));continue;}
      const row=document.createElement('label');row.className='fm-row';row.textContent=spec.label+(spec.required?' *':'');
      const input=document.createElement(spec.type==='textarea'?'textarea':'input');if(spec.type!=='textarea')input.type=spec.type;
@@ -307,6 +307,33 @@
      input.value=draft[spec.key]??'';input.placeholder=spec.label;
      input.addEventListener('input',()=>{draft[spec.key]=input.value;});
      row.append(input);inputs.append(row);
+    }
+    if(node.type==='github'){
+     const picker=document.createElement('section');inputs.prepend(picker);
+     const creating=action?.el.value==='create_issue';
+     const source=field(picker,'Repository access','',creating?'connected':draft.repositorySource||'public',creating?[['connected','My connected repositories']]:[['public','Public repository'],['connected','My connected repositories']]);
+     const selection=document.createElement('div');picker.append(selection);let controller;
+     const renderSource=()=>{
+      controller?.dispose();selection.replaceChildren();draft.repositorySource=source.el.value;
+      if(source.el.value==='public'){
+       const repo=field(selection,'Public GitHub repository','text',draft.repository||'');repo.el.placeholder='https://github.com/owner/repository';repo.el.oninput=()=>{draft.repository=repo.el.value.trim();};controller=null;return;
+      }
+      const row=document.createElement('label');row.className='fm-row';row.textContent='Repository *';const select=document.createElement('select');select.setAttribute('aria-label','Choose GitHub repository');row.append(select);
+      const status=document.createElement('p');status.className='fm-help';status.setAttribute('role','status');
+      const refresh=document.createElement('button');refresh.type='button';refresh.className='fx-form-button';refresh.textContent='Refresh repositories';
+      const more=document.createElement('button');more.type='button';more.className='fx-form-button';more.textContent='Load more repositories';selection.append(row,status,refresh,more);
+      controller=window.FluxGithubRepositories({draft,load:async cursor=>{
+       const headers=await window.fluxExecutionHeaders('');const response=await fetch('/.netlify/functions/github-resources?'+new URLSearchParams({cursor:cursor||'1'}),{headers,cache:'no-store'});
+       const data=await response.json();if(!response.ok)throw Error(data.error||'GitHub repositories unavailable');if(!Array.isArray(data.items))throw Error('Unexpected repository response');return data;
+      },render:state=>{
+       select.replaceChildren(new Option(state.loading?'Loading repositories…':'Choose a repository',''));for(const item of state.items)select.add(new Option(item.name,item.id));select.value=state.selected;
+       select.disabled=state.loading||!state.items.length;refresh.disabled=state.loading;more.disabled=state.loading;more.hidden=!state.more;
+       status.textContent=state.error||(state.loading?'Loading your repositories…':state.ready?'Repository selected. Safe test previews new issues without creating them.':state.more?'Choose a repository or load more.':'Connect GitHub, grant access to your repositories, then refresh.');
+      }});
+      select.onchange=()=>controller.select(select.value);refresh.onclick=()=>void controller.refresh();more.onclick=()=>void controller.more();void controller.refresh();
+     };
+     source.el.onchange=renderSource;renderSource();disposeGithub=()=>controller?.dispose();
+     structuredChecks.push(()=>controller?controller.validate():'');
     }
     if(node.type==='miro'){
      const needsCard=action?.el.value==='update_item',picker=document.createElement('section');inputs.prepend(picker);
@@ -466,7 +493,7 @@
    cTitle.textContent='Personal connection required';cText.textContent='Connect your own account using My connections in the top navigation. Test workflow reads real data without changing it.';
   }
   if(node.type==='github'){
-   cTitle.textContent='Public repositories · ready';cText.textContent='Enter owner/repository. No account connection is needed for public issues. Private repositories and writes are not enabled.';
+   cTitle.textContent='GitHub account';cText.textContent='Public reads need no connection. For private repositories or issue creation, connect your own account and grant Issues read/write permission on the selected repositories. Creation is implemented in TEST; real account acceptance is pending.';
   }
   if(node.type==='trello'){
    cTitle.textContent='Trello account · TEST';

@@ -1,3 +1,4 @@
+import {validateGithubConfig,createGithubIssue} from './github-connector.mjs';
 import {validateMiroConfig,executeMiro} from './miro-connector.mjs';
 import {validateSlackConfig,listSlackChannels,sendSlackMessage} from './slack-connector.mjs';
 import {readGithubIssues,searchNotionPages} from './flux-reader-connectors.mjs';
@@ -31,7 +32,7 @@ function applyMapping(mapping,outputs,input,allowed){
  const result={};for(const [key,val] of Object.entries(spec)){if(!/^[a-zA-Z_][\w]{0,63}$/.test(key)||typeof val!=='string')throw Error('Invalid Data Mapper field');result[key]=resolveTemplate(val,outputs,input,allowed);}
  return result;
 }
-export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom,airtableToken,googleSheetsToken,supabaseUrl,supabaseServiceToken,hubspotToken,notionToken,slackToken,miroToken}={}){
+export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom,airtableToken,googleSheetsToken,supabaseUrl,supabaseServiceToken,hubspotToken,notionToken,slackToken,miroToken,githubToken}={}){
  const {order,adj}=validateGraph(graph),byId=new Map(graph.nodes.map(n=>[n.id,n]));
  const received=new Map(),trace=[],outputs={};let calls=0;const ancestors=new Map();for(const id of order){const set=new Set();for(const e of graph.edges.filter(e=>e.to===id)){set.add(e.from);for(const a of ancestors.get(e.from)||[])set.add(a);}ancestors.set(id,set);}
  for(const id of order){
@@ -93,7 +94,16 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
     output=operation==='list_channels'?await listSlackChannels(slackToken):await sendSlackMessage(resolved,slackToken);
     reason=operation==='list_channels'?'Slack channels retrieved':'Slack message sent';break;
    }
-   case 'github':{if(++calls>3)throw Error('External read limit exceeded');output=await readGithubIssues(config);break;}
+   case 'github':{
+    const operation=config.operation||'list_issues',resolved={...config,operation};
+    if(operation==='create_issue')for(const key of ['title','message'])resolved[key]=String(resolveTemplate(String(config[key]||''),outputs,input,ancestors.get(id))??'');
+    validateGithubConfig(resolved);
+    if(operation==='create_issue'&&dryRun){status='simulated';reason='Safe preview: GitHub issue not created';output={source:'github',operation,repository:config.repository,title:resolved.title,description:resolved.message,simulated:true};break;}
+    const personal=operation==='create_issue'||config.repositorySource==='connected';
+    if(personal&&!githubToken)throw Error('Connect GitHub in My connections before running this step');
+    if(++calls>3)throw Error('External action limit exceeded');
+    output=operation==='create_issue'?await createGithubIssue(resolved,githubToken):await readGithubIssues(config,personal?githubToken:undefined);break;
+   }
    case 'notion':{if(++calls>3)throw Error('External read limit exceeded');output=await searchNotionPages(config,notionToken);break;}
    case 'hubspot':{
     const operation=String(config.operation||'search_contacts');

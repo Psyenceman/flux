@@ -1,10 +1,10 @@
+import {githubRepository} from './github-connector.mjs';
 // Fixed provider endpoints; graph data never supplies request URLs or credentials.
-export async function readGithubIssues(config){
- const repository=String(config.repository||'').trim().replace(/^https:\/\/github\.com\//,'').replace(/\/$/,'');
- if(!/^[A-Za-z0-9][A-Za-z0-9-]{0,38}\/[A-Za-z0-9_.-]{1,100}$/.test(repository)||repository.split('/')[1]==='..')throw Error('GitHub: enter a public repository as owner/name');
- if(config.operation&&config.operation!=='list_issues')throw Error('GitHub: only reading public issues is enabled');
- const response=await fetch('https://api.github.com/repos/'+repository+'/issues?state=open&per_page=20',{headers:{accept:'application/vnd.github+json','User-Agent':'Flux-Studio-TEST','X-GitHub-Api-Version':'2022-11-28'},redirect:'error',signal:AbortSignal.timeout(10000)});
- if(!response.ok)throw Error(response.status===404?'GitHub: public repository not found':response.status===403||response.status===429?'GitHub: request limit reached. Try again later.':'GitHub read failed (HTTP '+response.status+')');
+export async function readGithubIssues(config,token){
+ const repository=githubRepository(config.repository);
+ if(config.operation&&config.operation!=='list_issues')throw Error('GitHub: only reading issues is enabled');
+ const response=await fetch('https://api.github.com/repos/'+repository+'/issues?state=open&per_page=20',{headers:{...(token?{authorization:'Bearer '+token}:{}),accept:'application/vnd.github+json','User-Agent':'Flux-Studio-TEST','X-GitHub-Api-Version':'2022-11-28'},redirect:'error',signal:AbortSignal.timeout(10000)});
+ if(!response.ok)throw Error(response.status===404?'GitHub: repository not found or access denied':response.status===403||response.status===429?'GitHub: request limit reached. Try again later.':'GitHub read failed (HTTP '+response.status+')');
  const rows=await response.json();if(!Array.isArray(rows))throw Error('GitHub: invalid issues response');
  const items=rows.filter(x=>!x.pull_request).slice(0,20).map(x=>({id:x.id,number:x.number,title:String(x.title||'').slice(0,500),state:x.state,url:x.html_url}));
  return {source:'github',operation:'list_issues',repository,items,count:items.length,hasMore:response.headers.get('link')?.includes('rel="next"')||false};

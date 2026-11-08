@@ -8,7 +8,7 @@ window.addEventListener('DOMContentLoaded',()=>{
    const type=button.dataset.type||[...document.querySelectorAll('#palette button')].find(x=>x.textContent.includes(button.textContent.trim()))?.dataset.type;
    if(!type)continue;
    let note=button.querySelector('.fx-availability');if(!note){note=document.createElement('small');note.className='fx-availability';button.append(note);}
-   note.textContent=internal.has(type)?'Built-in · runs in Flux':type==='github'?'Public issues · no connection needed':connected.has(type)?'App · connection required':type==='schedule'?'Scheduled runs · setup required':type==='delay'?'Built-in · bounded wait':'Integration in development';
+   note.textContent=internal.has(type)?'Built-in · runs in Flux':type==='github'?'Public reads / personal account':connected.has(type)?'App · connection required':type==='schedule'?'Scheduled runs · setup required':type==='delay'?'Built-in · bounded wait':'Integration in development';
   }
  };
  const results=document.getElementById('flux-block-results');if(results)new MutationObserver(mark).observe(results,{childList:true});mark();

@@ -156,6 +156,12 @@ if(output){
     if(step.reason){const reason=document.createElement('p');reason.textContent=step.reason;item.append(reason);}
     if(result.outputs&&Object.hasOwn(result.outputs,step.id)){
      const stepOutput=result.outputs[step.id];
+     if(step.type==='github'){
+      const summary=document.createElement('p');summary.textContent=stepOutput?.simulated?'GitHub issue preview · '+stepOutput.repository+' · not created':stepOutput?.created?'Issue #'+stepOutput.number+' created in '+stepOutput.repository:(stepOutput?.count||0)+' open issues retrieved';item.append(summary);
+      if(stepOutput?.title){const title=document.createElement('p');title.textContent=stepOutput.title;item.append(title);}
+      if(stepOutput?.simulated&&stepOutput.description){const text=document.createElement('p');text.style.whiteSpace='pre-wrap';text.textContent=stepOutput.description;item.append(text);}
+      if(stepOutput?.created&&stepOutput.url?.startsWith('https://github.com/')){const link=document.createElement('a');link.href=stepOutput.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open created issue';item.append(link);}
+     }
      if(step.type==='miro'){
       const summary=document.createElement('p');summary.textContent=stepOutput?.simulated?'Miro preview · '+stepOutput.boardName+' · no changes made':stepOutput?.created?'Miro card created':stepOutput?.updated?'Miro card updated':(stepOutput?.count||0)+' Miro cards retrieved';item.append(summary);
       if(stepOutput?.title){const title=document.createElement('p');title.textContent=stepOutput.title;item.append(title);}
