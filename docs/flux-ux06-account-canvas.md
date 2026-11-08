@@ -28,3 +28,15 @@ Ordinary execution summary uses human block names and distinguishes actual compl
 188 automated tests passed before deployment, including seven added regressions for stable auth metadata, late guest-session autofill preservation, reopening after signup, workflow cancellation/focus, whitespace name rejection, concurrent dialogs and explicit confirmation. Existing registration duplicate handling and connector tests pass. Build and whitespace checks passed.
 
 Browser acceptance to record after deployment: primary dialogs, cancellation, saved workflow selection, repeated-save behavior; account sign-in metadata, signup/close/reopen, actual sign-in if credentials supplied securely. The macOS iCloud saved-account popup requires user verification on the Mac; remote-browser secure credential entry does not establish iCloud acceptance. No new real provider write is part of this milestone.
+
+## Published acceptance — 2026-11-08
+
+Source `097ea631fe435e4398005ab34a26859a186371dc`; TEST deploy `6af0a6817ff5cec1e585043a` ready at the exact commit. Production remains on `6aedc72f553859dcc804e34c` (read-only verification, unchanged).
+
+Browser PASS: new-draft modal and Cancel; saved GitHub card opening modal; cancelling opening leaves cloud selection empty/unchanged; confirming restores the saved graph. Starting Blank canvas then confirming clears the prior cloud selection and graph. Added a Manual Trigger to a separate draft. Cancelled its Save naming dialog with no record created. Created paused `UX-06 · Canvas check`: dropdown increased from five to six options (placeholder included), selected the new record; repeated Save preserved the same selected record and count. Existing GitHub workflow and other saved automations remain intact. No external provider writes or trigger activation.
+
+Account browser PASS: signed out of TEST session, switched to Create account without submitting registration, closed/reopened from Sign in. The heading returned to Sign in to Flux; inputs exposed stable email/password ids and username/current-password hints. Secure credential request completed real sign-in; account overview showed the original Super Admin TEST user. No registration or password reset was performed and no credentials were inspected. Browser session left signed in. Native iCloud password chooser acceptance remains to be verified on the user Mac.
+
+Reopened the saved UX-06 draft after login and ran it: one completed Manual trigger, zero simulated/filtered/skipped, success summary with the revised copy and human block label. Screenshot captured of successful authenticated account overview. Mobile viewport and iCloud chooser are not claimed tested.
+
+Local source synchronization used a reversible path-scoped stash backup and fast-forward merge. An attempted hard-reset synchronization was rejected by automatic approval review; it was not retried. All authored changes were preserved.
