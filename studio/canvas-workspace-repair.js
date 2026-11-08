@@ -51,7 +51,8 @@
  if(toggle)toggle.addEventListener('click',e=>{e.stopImmediatePropagation();open=!open;sync();},true);
  const settings=cloud.closest('.flux-settings');
  if(settings)settings.open=false;
- automations.append(cloud);
+ const advanced=automations.querySelector('.flux-technical');
+ (advanced||automations).append(cloud);
  for(const b of buttons)b.addEventListener('click',()=>queueMicrotask(sync));
  // Opening a saved automation switches tabs programmatically, without a tab click.
  window.addEventListener('flux:automation-opened',()=>{queueMicrotask(sync);requestAnimationFrame(sync);});

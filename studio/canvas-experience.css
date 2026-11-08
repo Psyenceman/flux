@@ -81,3 +81,5 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 
 /* Honor semantic hidden fields despite legacy !important form layout rules. */
 #flux-module-config [hidden]{display:none!important}
+
+.flux-technical:not([open]) #canvas-cloud{display:none!important}
