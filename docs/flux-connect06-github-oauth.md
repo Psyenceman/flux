@@ -48,3 +48,7 @@ Rollback: keep the credential-envelope decoder while any GitHub App credentials 
 Source commit `e4963fbf727ea6afc1d1a2068f3c69fde2c437e3`; TEST deploy `6af09c228032d7df5d0bf9bf` ready, exact commit match. `npm run build:studio`, `git diff --check`, and **181 tests passed, 0 failed**.
 Published API checks: status 200 with configured=false and connected=false; anonymous start 401; callback without state safely rejects verification. Browser guest QA: root resolves to the automation home, one primary new-automation CTA, connection search filters to one GitHub card, Advanced opens/closes the credential field, close/reopen retains a functioning search/controller, Connect GitHub is disabled and explicitly reports setup pending. Screenshot captured of the published filtered connection card. Actual provider popup consent, connected feedback, private reads/writes and mobile viewport acceptance remain pending; automated popup tests do not replace those provider checks.
 Production deploy remained `6aedc72f553859dcc804e34c`, unchanged.
+
+## Provider registration update
+
+2026-11-08: user registered GitHub App `flux-studio-test` under Psyenceman and added the three GitHub App environment keys to the TEST Netlify site (presence verified without logging values). Rebuild requested to load these settings. Provider acceptance remains pending; presence of credentials does not prove validity or consent completion.
