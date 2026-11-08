@@ -114,3 +114,19 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 .flux-prototype-hero{border-radius:22px!important}
 @media(max-width:600px){#flux-connections-dialog{padding:20px;border-radius:19px}.fx-connections-grid{grid-template-columns:1fr;max-height:55dvh}.fx-connection-card{padding:17px}}
 @media(prefers-reduced-motion:reduce){.fx-oauth-connect{transition:none;transform:none!important}}
+
+/* UX-06: native password-manager semantics and calm workflow decisions. */
+.fx-account-login input{font:inherit;min-height:46px}
+.fx-account-login button[type=submit]{margin-top:4px}
+.fx-workflow-dialog{width:min(480px,calc(100vw - 32px));box-sizing:border-box;border:1px solid #dce5f0;border-radius:22px;padding:30px;background:#fff;color:#19304d;box-shadow:0 28px 90px #142b4940}
+.fx-workflow-dialog::backdrop{background:#13294066;backdrop-filter:blur(5px)}
+.fx-workflow-dialog h2{font-size:24px;letter-spacing:-.5px;margin:0 0 12px;color:#19304d}
+.fx-workflow-dialog p{color:#5c6d83;font-size:14px;line-height:1.65;margin:0 0 22px}
+.fx-workflow-dialog label{display:grid;gap:9px;font-size:13px;font-weight:650}
+.fx-workflow-dialog input{box-sizing:border-box;width:100%;border:1px solid #b9cbe1;border-radius:11px;padding:13px;background:#fff;color:#19304d;font:inherit;min-height:46px}
+.fx-workflow-dialog input:focus{outline:3px solid #dbeafe;border-color:#2563eb}
+.fx-dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:26px;flex-wrap:wrap}
+.fx-dialog-actions button{border:1px solid #d2ddeb;background:#f7f9fc;color:#19304d;padding:11px 18px;border-radius:10px;font:inherit;font-size:14px;font-weight:650;cursor:pointer;min-height:44px}
+.fx-dialog-actions .primary{background:#2563eb;border-color:#2563eb;color:#fff}
+.fx-dialog-actions button:focus-visible{outline:3px solid #93b9fb;outline-offset:3px}
+@media(max-width:520px){.fx-workflow-dialog{padding:24px}.fx-dialog-actions button{flex:1}}

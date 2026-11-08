@@ -13,5 +13,5 @@ window.addEventListener('DOMContentLoaded',()=>{
  };
  const results=document.getElementById('flux-block-results');if(results)new MutationObserver(mark).observe(results,{childList:true});mark();
  const toolbar=document.querySelector('.compact-actions');
- if(toolbar){const blank=document.createElement('button');blank.type='button';blank.textContent='Blank canvas';blank.title='Create a workflow from scratch';blank.onclick=()=>{if(!confirm('Start a blank canvas? Save your current work first.'))return;window.dispatchEvent(new CustomEvent('flux:canvas-restore-request',{detail:{version:1,nodes:[],edges:[]}}));window.dispatchEvent(new Event('flux:guided-build-complete'));};toolbar.prepend(blank);}
+ if(toolbar){const blank=document.createElement('button');blank.type='button';blank.textContent='Blank canvas';blank.title='Create a workflow from scratch';blank.onclick=()=>window.dispatchEvent(new Event('flux:guided-blank'));toolbar.prepend(blank);}
 });

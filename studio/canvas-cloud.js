@@ -1,3 +1,4 @@
+import {workflowDialog,confirmWorkflow} from './canvas-dialogs.js';
 import {mountAccount} from './canvas-account.js';
 import { supabaseUrl, supabasePublishableKey } from './supabase-config.js';
 const $ = id => document.getElementById(id);
@@ -17,10 +18,11 @@ function drawLibrary(){
   const title=document.createElement('strong');title.textContent=row.name;
   const subtitle=document.createElement('small');subtitle.textContent=row.action_config?.graph?'Canvas saved · Open editor':'Canvas not saved yet';
   const indicator=document.createElement('small');indicator.textContent=row.enabled?'Active':'Paused';indicator.className=row.enabled?'flux-state-active':'flux-state-paused';button.append(title,subtitle,indicator);button.addEventListener('click',async()=>{
-   $('canvas-automation').value=row.id;drawLibrary();renderManage();
+   const openingOwner=user?.id;
    if(!row.action_config?.graph){status('This automation has no canvas yet.');return;}
-   if(!confirm('Open '+row.name+'? Unsaved canvas changes will be replaced.'))return;
-   try{await restoreGraph(row.action_config.graph);status('Opened '+row.name+'.');window.dispatchEvent(new CustomEvent('flux:automation-opened',{detail:{id:row.id,name:row.name}}));}
+   if(!await confirmWorkflow({title:'Open automation?',message:'Open “'+row.name+'”? Save your current canvas first if you want to keep its changes.',confirmLabel:'Open automation'}))return;
+   if(!openingOwner||user?.id!==openingOwner)return status('Your account changed. Open the automation again.');
+   try{await restoreGraph(row.action_config.graph);$('canvas-automation').value=row.id;drawLibrary();renderManage();status('Opened '+row.name+'.');window.dispatchEvent(new CustomEvent('flux:automation-opened',{detail:{id:row.id,name:row.name}}));}
    catch(error){status('Open failed: '+error.message);}
   });cards.append(button);
  }
@@ -62,7 +64,7 @@ async function manageChange(action){
  if(action==='delete'){
   if(!confirm('Delete "'+row.name+'" permanently? Saved graph and its linked records may be removed. This cannot be undone.'))return;
  }else if(action==='rename'){
-  name=prompt('New automation name',row.name);
+  name=await workflowDialog({title:'Rename automation',value:row.name,confirmLabel:'Save name'});
   if(name===null)return;
   name=name.trim();
   if(!name||name.length>100)return status('Enter a name between 1 and 100 characters.');
@@ -316,7 +318,7 @@ $('canvas-cloud-save').addEventListener('click',async()=>{
     const action_config={...row.action_config,graph,version:2};
     const {data,error}=await client.from('automations').update({action_config,enabled:false,updated_at:new Date().toISOString()}).eq('id',row.id).select('id').single();
     if(error) throw error;
-    row.action_config=action_config;
+    row.action_config=action_config;row.enabled=false;
     drawLibrary();updateApiPanel();status('Canvas saved to Supabase. Automation remains disabled.');
   } catch(error){status('Save failed: '+error.message);}
 });
@@ -326,21 +328,23 @@ let primarySaveBusy=false;
 if(primarySave)primarySave.addEventListener('click',async event=>{
  event.preventDefault();event.stopImmediatePropagation();
  if(primarySaveBusy)return;
- if(!client||!user){status('Sign in to save your Flux to the cloud.');window.fluxShowFeedback?.('Sign in to save your Flux.','error');return;}
- primarySaveBusy=true;primarySave.disabled=true;primarySave.textContent='Saving…';
+ if(!client||!user){status('Sign in to save your Flux to the cloud.');window.fluxShowFeedback?.('Sign in to save your automation.','error');window.dispatchEvent(new Event('flux:account-open'));return;}
+ const savingOwner=user.id;primarySaveBusy=true;primarySave.disabled=true;primarySave.textContent='Saving…';
  try{
   const graph=await requestSnapshot();
+  if(user?.id!==savingOwner)throw Error('Your account changed. Save again from the correct account.');
   let row=selection();
   if(row){
    const action_config={...row.action_config,graph,version:2};
    const {error}=await client.from('automations').update({action_config,enabled:false,updated_at:new Date().toISOString()}).eq('id',row.id).eq('owner_id',user.id);
    if(error)throw error;
-   row.action_config=action_config;
+   row.action_config=action_config;row.enabled=false;
    status('Saved "'+row.name+'" to Flux TEST.');
    window.fluxShowFeedback?.('Saved "'+row.name+'" to your Flux account.','success');
   }else{
-   const proposed=prompt('Name this Flux before saving','My Trello workflow');
+   const proposed=await workflowDialog({title:'Save automation',message:'Give this automation a name so you can find it later.',value:'My automation',confirmLabel:'Save automation'});
    if(proposed===null){status('Save cancelled. Your canvas is unchanged.');return;}
+   if(user?.id!==savingOwner)throw Error('Your account changed. Save again from the correct account.');
    const name=proposed.trim();if(!name||name.length>100)throw Error('Enter a name between 1 and 100 characters');
    let {data:projects,error:projectError}=await client.from('projects').select('id').eq('owner_id',user.id).order('created_at',{ascending:true}).limit(1);
    if(projectError)throw projectError;
@@ -349,7 +353,7 @@ if(primarySave)primarySave.addEventListener('click',async event=>{
    const payload={name,owner_id:user.id,project_id:projectId,trigger_type:'manual',action_config:{graph,version:2},enabled:false};
    const {data,error}=await client.from('automations').insert(payload).select('id,name,action_config,project_id').single();
    if(error)throw error;
-   rows.unshift(data);$('canvas-automation').value=data.id;
+   rows.unshift({...data,enabled:false});$('canvas-automation').add(new Option(data.name,data.id));$('canvas-automation').value=data.id;
    window.dispatchEvent(new CustomEvent('flux:automation-opened',{detail:{id:data.id,name:data.name}}));
    status('Created and saved "'+name+'" in Flux TEST.');
    window.fluxShowFeedback?.('Created and saved "'+name+'" to your Flux account.','success');
@@ -368,11 +372,12 @@ let scenarioBusy=false;
 newScenarioButton.addEventListener('click',async()=>{
  if(scenarioBusy)return;
  if(!client||!user){status('Sign in to Flux Studio to create a saved scenario.');return;}
- const proposed=prompt('Name your new Flux','My new Flux');
+ const creatingOwner=user.id;
+ const proposed=await workflowDialog({title:'New automation',message:'Create a separate draft. Save your current canvas first to keep any changes.',value:'My automation',confirmLabel:'Create automation'});
  if(proposed===null)return;
+ if(user?.id!==creatingOwner)return status('Your account changed. Create the automation again.');
  const name=proposed.trim();
  if(!name||name.length>100){status('Enter a Flux name between 1 and 100 characters.');return;}
- if(!confirm('Create a new empty Flux? Unsaved changes in the current canvas will be replaced. Your saved scenarios will remain unchanged.'))return;
  scenarioBusy=true;newScenarioButton.disabled=true;
  try{
   const graph={version:1,nodes:[],edges:[]};
@@ -454,3 +459,6 @@ window.addEventListener('flux:run-summary',async event=>{
  if(error)status('Run history could not be saved: '+error.message);
  else refreshRunHistory();
 });
+
+// A fresh draft must never keep the previous cloud automation selected.
+window.addEventListener('flux:new-draft',()=>{$('canvas-automation').value='';drawLibrary();renderManage();updateApiPanel();});

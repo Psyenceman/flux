@@ -112,7 +112,7 @@
  const homeHeader=document.createElement('div');homeHeader.className='flux-home-header';
  const homeIntro=document.createElement('p');homeIntro.textContent='Create and manage automations. Open one to edit its workflow.';
  const start=document.createElement('button');start.type='button';start.className='primary';start.textContent='+ Create automation';
- start.addEventListener('click',()=>{window.dispatchEvent(new Event('flux:guided-blank'));activate('editor');});
+ start.addEventListener('click',()=>window.dispatchEvent(new Event('flux:guided-blank')));
  homeHeader.append(homeIntro,start);homeHeader.hidden=true;library.prepend(homeHeader);
  const hero=document.createElement('section');hero.className='flux-prototype-hero';
  const eyebrow=document.createElement('span');eyebrow.className='flux-hero-eyebrow';eyebrow.textContent='YOUR AUTOMATIONS · TEST';
@@ -136,6 +136,7 @@
  for(const details of main.querySelectorAll('.flux-drawer'))details.remove();
  activate('automations');
  window.addEventListener('flux:automation-opened',()=>activate('editor'));
+ window.addEventListener('flux:new-draft',()=>activate('editor'));
  const inspector=document.getElementById('inspector-panel');
  const libraryPanel=document.getElementById('library-panel');
  // A closed sidebar is available through the existing toolbar toggle.

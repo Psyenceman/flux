@@ -97,7 +97,7 @@ if(output){
   // Flux Explain: actionable diagnostics derived only from actual execution results.
   const explain=document.createElement('section');explain.className='flux-explain';explain.setAttribute('aria-label','Flux Explain');
   const explainHeader=document.createElement('div');explainHeader.className='flux-explain-header';
-  const explainTitle=document.createElement('strong');explainTitle.textContent='Flux Explain';
+  const explainTitle=document.createElement('strong');explainTitle.textContent='Execution summary';
   const explainState=document.createElement('span');explainState.className='flux-explain-state';
   const trace=Array.isArray(result.trace)?result.trace:[];
   const errors=trace.filter(step=>step.status==='error'||step.status==='failed');
@@ -115,7 +115,7 @@ if(output){
    explainText.textContent=successes.length+' block(s) completed; '+skipped.length+' skipped and '+filtered.length+' filtered. Skipped or filtered steps do not perform their downstream actions.';
   }else{
    explainState.textContent=safePreview?'Test completed':'Execution completed';explainState.dataset.kind='success';
-   explainText.textContent=successes.length+' block(s) completed'+(simulated.length?' and '+simulated.length+' simulated':'')+'. '+(safePreview?'This was a safe test: simulated actions did not change external services.':'Check the individual block outputs for the actions performed.');
+   explainText.textContent=successes.length+' block(s) completed'+(simulated.length?' and '+simulated.length+' simulated':'')+'. '+(safePreview?(simulated.length?'External writes were previewed. Connected services may have been read.':'No actions were simulated. Connected services may have been read; external writes were disabled.'):'Check the individual block outputs for the actions performed.');
   }
   explainHeader.append(explainTitle,explainState);explain.append(explainHeader,explainText);
   const advice=document.createElement('ul');advice.className='flux-explain-advice';
@@ -150,7 +150,7 @@ if(output){
    const list=document.createElement('ol');list.className='flux-test-steps';
    for(const step of result.trace){
     const item=document.createElement('li');
-    const title=document.createElement('strong');title.textContent=step.type+' ('+step.id+')';
+    const title=document.createElement('strong');title.textContent=({manual:'Manual trigger',mapper:'Data mapping',filter:'Condition',log:'Log',github:'GitHub',trello:'Trello',slack:'Slack',miro:'Miro',router:'Router',merge:'Merge',delay:'Delay',http:'HTTP request',flux:'Transform data'}[step.type]||step.type);
     const status=document.createElement('span');status.className='flux-step-status '+step.status;status.textContent=step.status;
     item.append(title,status);
     if(step.reason){const reason=document.createElement('p');reason.textContent=step.reason;item.append(reason);}
