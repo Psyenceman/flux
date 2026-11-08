@@ -78,3 +78,6 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 .flux-product-home{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:#182c48!important;font-size:18px}
 .flux-product-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:#255cda;color:white;font-weight:800}
 .flux-environment-label{font-size:12px;color:#5a6c84;padding:6px 10px;border:1px solid #d5dfed;border-radius:20px}
+
+/* Honor semantic hidden fields despite legacy !important form layout rules. */
+#flux-module-config [hidden]{display:none!important}
