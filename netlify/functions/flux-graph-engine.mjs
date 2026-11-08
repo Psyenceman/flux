@@ -1,3 +1,4 @@
+import {validateMiroConfig,executeMiro} from './miro-connector.mjs';
 import {validateSlackConfig,listSlackChannels,sendSlackMessage} from './slack-connector.mjs';
 import {readGithubIssues,searchNotionPages} from './flux-reader-connectors.mjs';
 // Flux graph executor v0.1. No eval, arbitrary code execution or user-defined outbound URLs.
@@ -30,7 +31,7 @@ function applyMapping(mapping,outputs,input,allowed){
  const result={};for(const [key,val] of Object.entries(spec)){if(!/^[a-zA-Z_][\w]{0,63}$/.test(key)||typeof val!=='string')throw Error('Invalid Data Mapper field');result[key]=resolveTemplate(val,outputs,input,allowed);}
  return result;
 }
-export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom,airtableToken,googleSheetsToken,supabaseUrl,supabaseServiceToken,hubspotToken,notionToken,slackToken}={}){
+export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trelloAccessToken,telegramToken,telegramChatId,resendApiKey,resendFrom,airtableToken,googleSheetsToken,supabaseUrl,supabaseServiceToken,hubspotToken,notionToken,slackToken,miroToken}={}){
  const {order,adj}=validateGraph(graph),byId=new Map(graph.nodes.map(n=>[n.id,n]));
  const received=new Map(),trace=[],outputs={};let calls=0;const ancestors=new Map();for(const id of order){const set=new Set();for(const e of graph.edges.filter(e=>e.to===id)){set.add(e.from);for(const a of ancestors.get(e.from)||[])set.add(a);}ancestors.set(id,set);}
  for(const id of order){
@@ -71,6 +72,15 @@ export async function executeGraph(graph,input,{dryRun=true,notificationUrl,trel
     else if(rule==='pass'||rule==='')output=value;
     else throw Error('Unsupported Flux transform at '+id+'. Use pass, pick or count');
     break;
+   }
+   case 'miro':{
+    const operation=config.operation||'find_items',resolved={...config,operation};
+    for(const key of operation==='find_items'?['query']:['title','message'])resolved[key]=String(resolveTemplate(String(config[key]||''),outputs,input,ancestors.get(id))??'');
+    validateMiroConfig(resolved);
+    if(operation!=='find_items'&&dryRun){status='simulated';reason='Safe preview: Miro board not changed';output={source:'miro',operation,boardName:String(config.boardName||'Selected board').slice(0,150),cardName:String(config.cardName||'Selected card').slice(0,150),title:resolved.title,description:resolved.message,simulated:true};break;}
+    if(!miroToken)throw Error('Connect Miro in My connections before running this step');
+    if(++calls>3)throw Error('External action limit exceeded');
+    output=await executeMiro(resolved,miroToken);reason=operation==='find_items'?'Miro cards retrieved':operation==='create_card'?'Miro card created':'Miro card updated';break;
    }
    case 'slack':{
     const operation=config.operation||'send';

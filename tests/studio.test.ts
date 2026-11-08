@@ -12,8 +12,8 @@ test('Studio worker loads the bundled Flux interpreter', () => {
   assert.match(worker, /import \{ runWorkflow \} from '\.\/dist\/src\/interpreter\.js'/);
   assert.match(worker, /runWorkflow\(source, dryRun\)/);
 });
-test('Studio has code execution and accessible output', () => {
-  const html = readFileSync('studio/index.html', 'utf8');
+test('Developer Lab preserves code execution and accessible output', () => {
+  const html = readFileSync('studio/developer-lab.html', 'utf8');
   assert.match(html, /id="code"/);
   assert.match(html, /id="run"/);
   assert.match(html, /id="output"/);

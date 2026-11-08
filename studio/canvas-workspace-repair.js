@@ -196,7 +196,7 @@
  webhook:{receive:[f('event','Event label')]},
  trello:{read_list:[f('list','List ID','text',true)],create_card:[f('list','Destination list ID','text',true),f('title','Card title','text',true),f('description','Card description','textarea')]},
  airtable:{find_records:[f('baseId','Base ID','text',true),f('tableId','Table ID','text',true),f('filter','Search filter')],create_record:[f('baseId','Base ID','text',true),f('tableId','Table ID','text',true),f('fields','Fields (JSON)','textarea',true)],update_record:[f('baseId','Base ID','text',true),f('tableId','Table ID','text',true),f('recordId','Record ID','text',true),f('fields','Changes (JSON)','textarea',true)]},
- miro:{create_card:[f('board','Board ID','text',true),f('title','Card title','text',true),f('message','Description','textarea')],find_items:[f('board','Board ID','text',true),f('query','Search')],update_item:[f('board','Board ID','text',true),f('itemId','Item ID','text',true),f('title','New title')]},
+ miro:{create_card:[f('board','Board ID','text',true),f('title','Card title','text',true),f('message','Description','textarea')],find_items:[f('board','Board ID','text',true),f('query','Title contains (first 50 cards)')],update_item:[f('board','Board ID','text',true),f('itemId','Card','text',true),f('title','New title','text',true)]},
  sheets:{read_rows:[f('spreadsheetId','Spreadsheet ID','text',true),f('range','Range','text',true)],append_row:[f('spreadsheetId','Spreadsheet ID','text',true),f('range','Range','text',true),f('values','Row (JSON)','textarea',true)]},
  drive:{find_file:[f('query','File name / query','text',true),f('folder','Folder ID')],create_file:[f('title','File name','text',true),f('folder','Folder ID')]},
  github:{list_issues:[f('repository','Repository (owner/name)','text',true)],create_issue:[f('repository','Repository (owner/name)','text',true),f('title','Issue title','text',true),f('message','Description','textarea')]},
@@ -226,7 +226,7 @@
  cloudflare:{trigger_worker:[f('worker','Worker name','text',true),f('event','Event')] }
  };
  const actions={
- manual:[['start','Start manually']],trello:[['read_list','Read list cards'],['create_card','Create card (TEST preview)']],airtable:[['find_records','Find records'],['create_record','Create record'],['update_record','Update record']],miro:[['create_card','Create card'],['find_items','Find items'],['update_item','Update item']],
+ manual:[['start','Start manually']],trello:[['read_list','Read list cards'],['create_card','Create card (TEST preview)']],airtable:[['find_records','Find records'],['create_record','Create record'],['update_record','Update record']],miro:[['find_items','Read cards'],['create_card','Create card'],['update_item','Update card']],
  filter:[['always','Always'],['compare','Compare incoming data'],['approved','Only approved'],['rejected','Only rejected'],['status=approved','Status approved']],
  flux:[['pass','Pass through'],['pick','Pick field'],['count','Count items']],database:[['select','Read rows'],['insert','Create row'],['update','Update row'],['delete','Delete row']],
  router:[['branch','Choose branch']],loop:[['iterate','For each item']],mapper:[['map','Map fields']],merge:[['combine','Combine']],delay:[['wait','Wait']],log:[['record','Record event']],
@@ -292,13 +292,13 @@
    const choices=actions[node.type]||[];
    const action=choices.length?field(body,'Action','',choices.some(c=>c[0]===draft.operation)?draft.operation:choices[0][0],choices):null;
    const inputs=document.createElement('div');body.append(inputs);
-   let structuredChecks=[],disposeSlack=()=>{};
-   modal.addEventListener('close',()=>disposeSlack(),{once:true});
+   let structuredChecks=[],disposeSlack=()=>{},disposeMiro=()=>{};
+   modal.addEventListener('close',()=>{disposeSlack();disposeMiro();},{once:true});
    function drawFields(){
-    disposeSlack();inputs.replaceChildren();structuredChecks=[];
+    disposeSlack();disposeMiro();inputs.replaceChildren();structuredChecks=[];
     const fields=schemas[node.type]?.[action?.el.value]||[];
     for(const spec of fields){
-     if(node.type==='trello'&&spec.key==='list'||node.type==='slack'&&spec.key==='channel'||node.type==='mapper')continue;
+     if(node.type==='trello'&&spec.key==='list'||node.type==='slack'&&spec.key==='channel'||node.type==='miro'&&['board','itemId'].includes(spec.key)||node.type==='mapper')continue;
      if(['fields','properties','values'].includes(spec.key)||spec.key==='body'&&/JSON/.test(spec.label)){structuredChecks.push(window.FluxStructuredFields(inputs,draft,spec.key,spec.label,spec.key==='values'));continue;}
      const row=document.createElement('label');row.className='fm-row';row.textContent=spec.label+(spec.required?' *':'');
      const input=document.createElement(spec.type==='textarea'?'textarea':'input');if(spec.type!=='textarea')input.type=spec.type;
@@ -306,6 +306,37 @@
      input.value=draft[spec.key]??'';input.placeholder=spec.label;
      input.addEventListener('input',()=>{draft[spec.key]=input.value;});
      row.append(input);inputs.append(row);
+    }
+    if(node.type==='miro'){
+     const needsCard=action?.el.value==='update_item',picker=document.createElement('section');inputs.prepend(picker);
+     const boardLabel=document.createElement('label');boardLabel.className='fm-row';boardLabel.textContent='Board *';
+     const board=document.createElement('select');board.setAttribute('aria-label','Choose Miro board');boardLabel.append(board);
+     const cardLabel=document.createElement('label');cardLabel.className='fm-row';cardLabel.textContent='Card *';cardLabel.hidden=!needsCard;
+     const card=document.createElement('select');card.setAttribute('aria-label','Choose Miro card');cardLabel.append(card);
+     const feedback=document.createElement('p');feedback.className='fm-help';feedback.setAttribute('role','status');
+     const refresh=document.createElement('button');refresh.type='button';refresh.className='fx-form-button';refresh.textContent='Refresh boards';
+     const moreBoards=document.createElement('button');moreBoards.type='button';moreBoards.className='fx-form-button';moreBoards.textContent='Load more boards';
+     const moreCards=document.createElement('button');moreCards.type='button';moreCards.className='fx-form-button';moreCards.textContent='Load more cards';
+     picker.append(boardLabel,moreBoards,cardLabel,moreCards,feedback,refresh);
+     const options=(select,items,selected,placeholder)=>{select.replaceChildren(new Option(placeholder,''));for(const item of items)select.add(new Option(item.name,item.id));select.value=selected;};
+     const controller=window.FluxMiroResources({draft,needsCard,
+      load:async(kind,board,cursor)=>{
+       const headers=await window.fluxExecutionHeaders('');
+       const response=await fetch('/.netlify/functions/miro-resources?'+new URLSearchParams({kind,board,cursor}),{headers,cache:'no-store'});
+       const data=await response.json();if(!response.ok)throw Error(data.error||'Miro resources unavailable');if(!Array.isArray(data.items))throw Error('Unexpected Miro resource response');return data;
+      },
+      render:state=>{
+       options(board,state.boards,state.board,state.loadingBoards?'Loading boards…':'Choose a board');
+       options(card,state.cards,state.card,state.loadingCards?'Loading cards…':'Choose a card');
+       board.disabled=state.loadingBoards||!state.boards.length;card.disabled=state.loadingCards||!state.cards.length;
+       refresh.disabled=state.loadingBoards||state.loadingCards;moreBoards.hidden=!state.boardCursor;moreBoards.disabled=state.loadingBoards;
+       moreCards.hidden=!needsCard||!state.cardCursor;moreCards.disabled=state.loadingCards;
+       feedback.textContent=state.error||(state.loadingBoards||state.loadingCards?'Loading your Miro resources…':state.ready?'Selection ready. Safe tests preview edits without changing Miro.':'Choose your board'+(needsCard?' and card':'')+'. Connect Miro or refresh if none are available.');
+      }
+     });
+     board.onchange=()=>void controller.selectBoard(board.value);card.onchange=()=>controller.selectCard(card.value);
+     refresh.onclick=()=>void controller.refresh();moreBoards.onclick=()=>void controller.moreBoards();moreCards.onclick=()=>void controller.moreCards();
+     disposeMiro=controller.dispose;structuredChecks.push(controller.validate);void controller.refresh();
     }
     if(node.type==='slack'&&action?.el.value==='send'){
      const row=document.createElement('label');row.className='fm-row';row.textContent='Channel *';

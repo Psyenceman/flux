@@ -1,4 +1,4 @@
-import {normalizeEmail} from './account-registration.js';
+import {normalizeEmail,registerAccount} from './account-registration.js';
 // Uses the existing Studio client/session, never a second auth store.
 export async function signInAccount(client,email,password){
  if(!client)throw Error('Account service is loading. Please try again.');
@@ -18,6 +18,9 @@ export function mountAccount(getClient){
  const label=(name,type,autocomplete)=>{const row=document.createElement('label');row.textContent=name;const input=document.createElement('input');input.type=type;input.autocomplete=autocomplete;input.required=true;row.append(input);form.append(row);return input;};
  form.append(intro);const email=label('Email','email','username'),password=label('Password','password','current-password');
  const submit=document.createElement('button');submit.type='submit';submit.className='fx-account-primary';submit.textContent='Sign in';form.append(submit);
+ const toggle=document.createElement('button');toggle.type='button';toggle.textContent='Create account';form.append(toggle);
+ let mode='signin';const setMode=value=>{mode=value;password.value='';password.autocomplete=mode==='signup'?'new-password':'current-password';password.minLength=mode==='signup'?6:0;submit.textContent=mode==='signup'?'Create account':'Sign in';toggle.textContent=mode==='signup'?'Already registered? Sign in':'Create account';intro.textContent=mode==='signup'?'Create your Flux account to save automations and connect your apps. Confirm your email before signing in.':'Sign in to save your automations, manage connections and view your FluxCoins.';status.textContent='';};
+ toggle.addEventListener('click',()=>setMode(mode==='signup'?'signin':'signup'));
  const privateArea=document.createElement('section');privateArea.className='fx-account-private';privateArea.hidden=true;
  const greeting=document.createElement('h3'),identity=document.createElement('p'),plan=document.createElement('p'),coins=document.createElement('p');
  const note=document.createElement('p');note.textContent='TEST workspace · subscriptions and purchases are not enabled.';
@@ -38,8 +41,8 @@ export function mountAccount(getClient){
   plan.textContent=entitlement.error?'Plan unavailable':entitlement.data?.plan_id?'Plan: '+entitlement.data.plan_id:'Plan not assigned';
   coins.textContent=wallet.error?'Balance unavailable':wallet.data?'FluxCoins: '+wallet.data.balance+' · Used: '+wallet.data.lifetime_used:'No wallet record available';renderAdminWallet();
  }
- form.addEventListener('submit',async event=>{event.preventDefault();submit.disabled=true;status.textContent='Signing in…';try{await signInAccount(getClient(),email.value,password.value);await refresh();window.dispatchEvent(new Event('flux:coins-refresh'));}catch(error){status.textContent=error.message;}finally{password.value='';submit.disabled=false;}});
- logout.addEventListener('click',async()=>{logout.disabled=true;try{const client=getClient();if(!client)throw Error('Account service unavailable');const {error}=await client.auth.signOut();if(error)throw error;revision++;currentUserId=null;walletState=null;privateArea.hidden=true;identity.textContent='';plan.textContent='';coins.textContent='';form.hidden=false;button.textContent='Sign in';status.textContent='Signed out.';window.dispatchEvent(new Event('flux:coins-refresh'));}catch(error){status.textContent=error.message;}finally{logout.disabled=false;}});
+ form.addEventListener('submit',async event=>{event.preventDefault();if(submit.disabled)return;submit.disabled=true;toggle.disabled=true;status.textContent=mode==='signup'?'Creating account…':'Signing in…';try{if(mode==='signup'){const result=await registerAccount(getClient(),email.value,password.value);if(result.status==='signed_in'){await refresh();window.dispatchEvent(new Event('flux:coins-refresh'));}else{setMode('signin');status.textContent=result.message;}}else{await signInAccount(getClient(),email.value,password.value);await refresh();window.dispatchEvent(new Event('flux:coins-refresh'));}}catch(error){status.textContent=error.message;}finally{password.value='';submit.disabled=false;toggle.disabled=false;}});
+ logout.addEventListener('click',async()=>{logout.disabled=true;try{const client=getClient();if(!client)throw Error('Account service unavailable');const {error}=await client.auth.signOut();if(error)throw error;revision++;setMode('signin');currentUserId=null;walletState=null;privateArea.hidden=true;identity.textContent='';plan.textContent='';coins.textContent='';form.hidden=false;button.textContent='Sign in';status.textContent='Signed out.';window.dispatchEvent(new Event('flux:coins-refresh'));}catch(error){status.textContent=error.message;}finally{logout.disabled=false;}});
  const open=()=>{if(!dialog.open)dialog.showModal();void refresh();};button.addEventListener('click',open);window.addEventListener('flux:account-open',open);
  dialog.addEventListener('close',()=>{password.value='';});
  return {refresh};

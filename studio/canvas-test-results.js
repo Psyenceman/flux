@@ -156,6 +156,12 @@ if(output){
     if(step.reason){const reason=document.createElement('p');reason.textContent=step.reason;item.append(reason);}
     if(result.outputs&&Object.hasOwn(result.outputs,step.id)){
      const stepOutput=result.outputs[step.id];
+     if(step.type==='miro'){
+      const summary=document.createElement('p');summary.textContent=stepOutput?.simulated?'Miro preview · '+stepOutput.boardName+' · no changes made':stepOutput?.created?'Miro card created':stepOutput?.updated?'Miro card updated':(stepOutput?.count||0)+' Miro cards retrieved';item.append(summary);
+      if(stepOutput?.title){const title=document.createElement('p');title.textContent=stepOutput.title;item.append(title);}
+      if(Array.isArray(stepOutput?.items)){const cards=document.createElement('ul');for(const card of stepOutput.items){const line=document.createElement('li');line.textContent=card.title||card.name;cards.append(line);}item.append(cards);if(stepOutput.hasMore){const more=document.createElement('p');more.textContent='Results cover the first 50 cards. More cards are available on the board.';item.append(more);}}
+      if(stepOutput?.url&&stepOutput.url.startsWith('https://miro.com/app/board/')){const link=document.createElement('a');link.href=stepOutput.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open Miro board';item.append(link);}
+     }
      if(step.type==='slack'){
       const summary=document.createElement('p');
       summary.textContent=stepOutput?.delivered===true?'Message delivered to #'+stepOutput.channelName:stepOutput?.simulated===true?'Message preview for #'+stepOutput.channelName+' · not sent':(stepOutput?.count||0)+' available Slack channels';
