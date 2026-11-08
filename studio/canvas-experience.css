@@ -130,3 +130,6 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 .fx-dialog-actions .primary{background:#2563eb;border-color:#2563eb;color:#fff}
 .fx-dialog-actions button:focus-visible{outline:3px solid #93b9fb;outline-offset:3px}
 @media(max-width:520px){.fx-workflow-dialog{padding:24px}.fx-dialog-actions button{flex:1}}
+
+/* Keep the optional example reachable without exposing JSON tools. */
+#canvas-shell .compact-actions #reset{display:inline-flex!important}
