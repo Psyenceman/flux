@@ -326,7 +326,7 @@
        const headers=await window.fluxExecutionHeaders('');const response=await fetch('/.netlify/functions/github-resources?'+new URLSearchParams({cursor:cursor||'1'}),{headers,cache:'no-store'});
        const data=await response.json();if(!response.ok)throw Error(data.error||'GitHub repositories unavailable');if(!Array.isArray(data.items))throw Error('Unexpected repository response');return data;
       },render:state=>{
-       select.replaceChildren(new Option(state.loading?'Loading repositories…':'Choose a repository',''));for(const item of state.items)select.add(new Option(item.name,item.id));select.value=state.selected;
+       select.replaceChildren(new Option(state.loading?'Loading repositories…':'Choose a repository',''));for(const item of state.items)select.add(new Option(item.name,item.id));select.value=state.items.some(item=>item.id===state.selected)?state.selected:'';
        select.disabled=state.loading||!state.items.length;refresh.disabled=state.loading;more.disabled=state.loading;more.hidden=!state.more;
        status.textContent=state.error||(state.loading?'Loading your repositories…':state.ready?'Repository selected. Safe test previews new issues without creating them.':state.more?'Choose a repository or load more.':'Connect GitHub, grant access to your repositories, then refresh.');
       }});
@@ -382,7 +382,7 @@
       render:state=>{
        select.replaceChildren(new Option(state.loading?'Loading channels…':'Choose a channel',''));
        for(const item of state.items)select.add(new Option('#'+item.name,item.id));
-       select.value=state.selected;select.disabled=state.loading||!state.items.length;
+       select.value=state.items.some(item=>item.id===state.selected)?state.selected:'';select.disabled=state.loading||!state.items.length;
        refresh.disabled=state.loading;more.disabled=state.loading;more.hidden=!state.more;
        feedback.textContent=state.error||(state.loading?'Loading your Slack channels…':state.ready?'Channel selected. Safe test previews your message without sending.':state.more?'Choose a channel or load the next page.':'Invite your bot to a public channel, then refresh and choose it.');
       }
