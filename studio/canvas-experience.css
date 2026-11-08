@@ -17,7 +17,7 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 .canvas-tools{margin:0 24px!important;background:#fff!important;border:1px solid var(--fx-line)!important;border-top:0!important;padding:9px 16px!important}.canvas-tools button{background:#f6f6fb!important;border:1px solid var(--fx-line)!important;color:var(--fx-muted)!important;border-radius:7px!important}
 #flux-flow-overview{display:none!important}
 #flux-editor-stage{margin:0 24px 24px!important;width:calc(100% - 48px)!important;border:1px solid var(--fx-line)!important;border-top:0!important;border-radius:0 0 16px 16px!important;overflow:hidden!important}
-#flux-editor-stage #viewport{background-color:#f8f9fd!important;background-image:radial-gradient(#d8dbea .8px,transparent .8px)!important;background-size:24px 24px!important;min-height:560px!important}
+#flux-editor-stage #viewport{background-color:#edf4fc!important;background-image:radial-gradient(#bed0e6 .8px,transparent .8px)!important;background-size:24px 24px!important;min-height:560px!important}
 #nodes .node{background:#fff!important;border:1px solid #dedfee!important;border-radius:20px!important;box-shadow:0 8px 22px #3029540c!important;transition:box-shadow .16s,border-color .16s!important}
 #nodes .node.selected{border-color:var(--fx-accent)!important;box-shadow:0 0 0 4px #6957e819,0 10px 26px #30295412!important}
 #nodes .node .node-head span:not(.block-icon){color:var(--fx-ink)!important;font-size:12px!important}
@@ -48,7 +48,7 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 #canvas-shell .flux-mode-tabs button[aria-current=true]{border-bottom:0!important;box-shadow:none!important}
 #canvas-shell .workspace-bar>button:not(.flux-m1-language){background:#fff!important;color:#68617f!important;border:1px solid #e7e8f0!important;border-radius:9px!important;font-size:12px!important}
 /* Account and contrast repair: neutral surfaces, blue actions, explicit light hero text. */
-:root{--fx-accent:#215bb8;--fx-bg:#f5f6f8;--fx-ink:#172b45;--fx-muted:#5d6b7d;--fx-line:#e0e5eb}
+:root{--fx-accent:#215bb8;--fx-bg:#f1f5fb;--fx-ink:#172b45;--fx-muted:#5d6b7d;--fx-line:#e0e5eb}
 #flux-automation-library .flux-prototype-hero{background:#17334f!important;background-image:none!important;border-radius:16px!important;padding:30px!important;overflow:hidden!important}
 #flux-automation-library .flux-prototype-hero h3{color:#fff!important;font-size:28px!important;letter-spacing:-.6px!important;line-height:1.2!important}
 #flux-automation-library .flux-prototype-hero p,#flux-automation-library .flux-prototype-hero .flux-hero-eyebrow{color:#d8e6f3!important}

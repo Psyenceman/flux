@@ -18,7 +18,7 @@ if (bar) {
   action('import','Import JSON','⇧');
   action('validate','Validate','✓');
   action('execute','Test workflow','▶');
-  action('reset','Reset example','↺');
+  action('reset','Load example','↺');
   const file = document.getElementById('file');
   const group = (title, ids, extraClass = '') => {
     const wrapper = document.createElement('div');
