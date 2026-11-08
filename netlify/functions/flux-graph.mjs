@@ -1,3 +1,4 @@
+import {githubAccessToken} from './github-oauth-shared.mjs';
 import {validateGithubConfig,checkGithubRepository} from './github-connector.mjs';
 import {validateMiroConfig,checkMiroTarget} from './miro-connector.mjs';
 import {liveWorkflowKind} from '../../studio/workflow-live-policy.js';
@@ -54,7 +55,7 @@ export async function handler(event){
     if(!body.graph.nodes.some(n=>n.type===provider&&(provider!=='github'||n.config?.repositorySource==='connected'||n.config?.operation==='create_issue')))continue;
     try{
      const rows=await db('flux_connector_credentials?owner_id=eq.'+sessionOwner+'&provider=eq.'+provider+'&select=token_ciphertext');
-     if(rows?.length!==1)return json(409,{ok:false,error:'Connect '+provider+' in My connections before testing this workflow'});personalCredentials[provider]=decrypt(rows[0].token_ciphertext);
+     if(rows?.length!==1)return json(409,{ok:false,error:'Connect '+provider+' in My connections before testing this workflow'});personalCredentials[provider]=provider==='github'?await githubAccessToken(sessionOwner,rows[0]):decrypt(rows[0].token_ciphertext);
     }catch{return json(503,{ok:false,error:'Cannot load your '+provider+' connection; check TEST setup'});}
    }
   }

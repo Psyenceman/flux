@@ -113,10 +113,10 @@
  const homeIntro=document.createElement('p');homeIntro.textContent='Create and manage automations. Open one to edit its workflow.';
  const start=document.createElement('button');start.type='button';start.className='primary';start.textContent='+ Create automation';
  start.addEventListener('click',()=>{window.dispatchEvent(new Event('flux:guided-blank'));activate('editor');});
- homeHeader.append(homeIntro,start);library.prepend(homeHeader);
+ homeHeader.append(homeIntro,start);homeHeader.hidden=true;library.prepend(homeHeader);
  const hero=document.createElement('section');hero.className='flux-prototype-hero';
  const eyebrow=document.createElement('span');eyebrow.className='flux-hero-eyebrow';eyebrow.textContent='YOUR AUTOMATIONS · TEST';
- const heroTitle=document.createElement('h3');heroTitle.textContent='Build something that works.';
+ const heroTitle=document.createElement('h3');heroTitle.textContent='Your next automation starts here.';
  const heroDescription=document.createElement('p');heroDescription.textContent='Connect your tools, design each step and follow what happens. Start simple. Grow without limits.';
  const heroActions=document.createElement('div');heroActions.className='flux-hero-actions';
  const heroCreate=document.createElement('button');heroCreate.type='button';heroCreate.textContent='+ New automation';heroCreate.addEventListener('click',()=>start.click());

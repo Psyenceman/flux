@@ -332,7 +332,8 @@
       }});
       select.onchange=()=>controller.select(select.value);refresh.onclick=()=>void controller.refresh();more.onclick=()=>void controller.more();void controller.refresh();
      };
-     source.el.onchange=renderSource;renderSource();disposeGithub=()=>controller?.dispose();
+     const onConnected=()=>{if(controller)void controller.refresh();};window.addEventListener('flux:github-connected',onConnected);
+     source.el.onchange=renderSource;renderSource();disposeGithub=()=>{controller?.dispose();window.removeEventListener('flux:github-connected',onConnected);};
      structuredChecks.push(()=>controller?controller.validate():'');
     }
     if(node.type==='miro'){
@@ -493,7 +494,9 @@
    cTitle.textContent='Personal connection required';cText.textContent='Connect your own account using My connections in the top navigation. Test workflow reads real data without changing it.';
   }
   if(node.type==='github'){
-   cTitle.textContent='GitHub account';cText.textContent='Public reads need no connection. For private repositories or issue creation, connect your own account and grant Issues read/write permission on the selected repositories. Creation is implemented in TEST; real account acceptance is pending.';
+   cTitle.textContent='GitHub';cText.textContent='Connect your account, choose your repositories and keep building here.';
+   const githubButton=document.createElement('button');githubButton.type='button';connection.append(githubButton);
+   const dispose=window.FluxGithubConnect({button:githubButton,title:cTitle,status:cText,getToken:async()=>{try{return (await window.fluxExecutionHeaders('')).authorization?.slice(7)||null;}catch{return null;}}});modal.addEventListener('close',dispose,{once:true});
   }
   if(node.type==='trello'){
    cTitle.textContent='Trello account · TEST';

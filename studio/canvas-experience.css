@@ -83,3 +83,34 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 #flux-module-config [hidden]{display:none!important}
 
 .flux-technical:not([open]) #canvas-cloud{display:none!important}
+
+/* Connection experience: one clear action, searchable app cards, no secrets in ordinary fields. */
+.fx-connections-trigger{padding:9px 14px!important;border-radius:10px!important;border:1px solid #d6e0ef!important;background:#fff!important;color:#203552!important;cursor:pointer;font-weight:650}
+#flux-connections-dialog{width:min(960px,calc(100vw - 28px));max-height:90dvh;box-sizing:border-box;padding:28px;border:1px solid #dbe3ef;border-radius:24px;background:#f8fafc!important;color:#182c48!important;box-shadow:0 28px 100px #11264240;font-family:inherit}
+#flux-connections-dialog[open]{display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto auto;gap:12px}
+#flux-connections-dialog::backdrop{background:#12284066;backdrop-filter:blur(5px)}
+#flux-connections-dialog h2{margin:0;font-size:26px;letter-spacing:-.6px;color:#172c49}
+#flux-connections-dialog p{margin:0;color:#62738a;line-height:1.55;font-size:13px}
+#flux-connections-dialog>input{width:100%;box-sizing:border-box;padding:13px 15px;border:1px solid #d5dfec;border-radius:12px;background:#fff;color:#172c49;font-size:14px}
+.fx-connections-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(265px,1fr));gap:14px;overflow:auto;max-height:58dvh;padding:2px}
+.fx-connection-card{display:flex;align-items:flex-start;flex-direction:column;gap:12px;background:white;border:1px solid #e0e7f0;border-radius:16px;padding:20px;min-width:0;box-shadow:0 3px 12px #18375606}
+.fx-connection-card[hidden]{display:none!important}
+.fx-connection-card>strong{font-size:17px;letter-spacing:-.3px;color:#182c48}
+.fx-connection-badge{font-size:11px;line-height:1.4;font-weight:650;color:#6a7a90;background:#f1f4f8;border:1px solid #e4eaf2;border-radius:20px;padding:4px 9px}
+.fx-connection-badge[data-connected=true]{color:#2259b0;background:#eaf2ff;border-color:#ccddfa}
+.fx-connection-card details{width:100%;font-size:12px;color:#63758e}
+.fx-connection-card summary{cursor:pointer;padding:4px 0;color:#526881;font-weight:600}
+.fx-connection-card details p{padding-top:8px}
+.fx-connection-card input{box-sizing:border-box;width:100%;padding:10px;border:1px solid #d4dfed;border-radius:9px;background:white;color:#182c48}
+.fx-connection-card button:not(.fx-oauth-connect),#flux-connections-dialog>button{padding:9px 12px;border:1px solid #cfdbeb;border-radius:9px;background:white;color:#244362;cursor:pointer}
+#flux-connections-dialog>button{justify-self:end;font-weight:650}
+.fx-connection-disconnect[hidden]{display:none!important}
+.fx-oauth-connect{display:inline-flex;align-items:center;justify-content:center;min-height:43px;padding:11px 18px!important;border-radius:11px!important;border:1px solid #255db7!important;background:#245dd6!important;color:white!important;font-weight:700!important;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,background .18s ease;box-shadow:0 4px 11px #245dd620}
+.fx-oauth-connect:hover:not(:disabled){background:#194cbe!important;box-shadow:0 5px 22px #3975eb55;transform:translateY(-1px)}
+.fx-oauth-connect:focus-visible{outline:3px solid #90b5ff;outline-offset:3px}
+.fx-oauth-connect[data-state=connected]{background:#edf4ff!important;border-color:#b9cff2!important;color:#2256a6!important}
+.fx-oauth-connect:disabled{opacity:.55;cursor:default;box-shadow:none;transform:none}
+#canvas-shell main:has(.flux-main-view:not([data-view=editor])) .flux-m1-intro,#canvas-shell main:has(.flux-main-view:not([data-view=editor])) .flux-m1-safe,.flux-home-header[hidden]{display:none!important}
+.flux-prototype-hero{border-radius:22px!important}
+@media(max-width:600px){#flux-connections-dialog{padding:20px;border-radius:19px}.fx-connections-grid{grid-template-columns:1fr;max-height:55dvh}.fx-connection-card{padding:17px}}
+@media(prefers-reduced-motion:reduce){.fx-oauth-connect{transition:none;transform:none!important}}

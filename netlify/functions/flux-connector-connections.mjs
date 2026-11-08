@@ -15,6 +15,7 @@ export async function handler(event){
   const provider=String(data?.provider||'');
   if(!providers.includes(provider))return json(422,{ok:false,error:'Unsupported provider'});
   if(event.httpMethod==='DELETE'){
+   if(provider==='github')await db('flux_github_oauth_states?owner_id=eq.'+id,'DELETE');
    await db('flux_connector_credentials?owner_id=eq.'+id+'&provider=eq.'+provider,'DELETE');
    return json(200,{ok:true,provider,connected:false});
   }
@@ -26,6 +27,7 @@ export async function handler(event){
   let verified;
   try{verified=await verifyCredential(provider,token);}catch{return json(502,{ok:false,error:'Provider verification unavailable. Nothing saved.'});}
   if(!verified)return json(422,{ok:false,error:'Provider rejected the credential or its read permissions. Nothing saved.'});
+  if(provider==='github')await db('flux_github_oauth_states?owner_id=eq.'+id,'DELETE');
   const ciphertext=encrypt(token);
   await db('flux_connector_credentials','POST',{owner_id:id,provider,token_ciphertext:ciphertext,account_label:label,updated_at:new Date().toISOString()});
   return json(200,{ok:true,provider,connected:true,label,verified:true,message:'Credential verified with provider and encrypted on TEST server'});
