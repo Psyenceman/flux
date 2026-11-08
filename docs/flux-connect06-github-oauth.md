@@ -52,3 +52,7 @@ Production deploy remained `6aedc72f553859dcc804e34c`, unchanged.
 ## Provider registration update
 
 2026-11-08: user registered GitHub App `flux-studio-test` under Psyenceman and added the three GitHub App environment keys to the TEST Netlify site (presence verified without logging values). Rebuild requested to load these settings. Provider acceptance remains pending; presence of credentials does not prove validity or consent completion.
+
+### Configuration activation verification
+
+TEST deploy `6af0a0ba00206bd22eca57db` ready at commit `c9da7d063a67dde0a9f763470a8343bee3a2e6c5`. Published status now reports configured=true. Secret flag is enabled for the client secret; all three keys have a value for the active TEST site deploy context. No values were logged or committed. Flux authenticated browser shows Super Admin account. Connect GitHub opened a separate popup and reached the GitHub sign-in page identifying Flux Studio TEST while Flux remained open. OAuth state creation and authorize redirect thus reached the provider. The secure login selector returned Google as the selected method, but automatic browser approval denied observation of accounts.google.com for missing explicit cross-service authorization. Stopped without bypass; awaiting explicit user approval. No GitHub consent, installation or successful callback has yet been verified. Provider credentials presence/configured=true does not validate the client secret exchange. Production untouched.
