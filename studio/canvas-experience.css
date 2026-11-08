@@ -17,7 +17,7 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 .canvas-tools{margin:0 24px!important;background:#fff!important;border:1px solid var(--fx-line)!important;border-top:0!important;padding:9px 16px!important}.canvas-tools button{background:#f6f6fb!important;border:1px solid var(--fx-line)!important;color:var(--fx-muted)!important;border-radius:7px!important}
 #flux-flow-overview{display:none!important}
 #flux-editor-stage{margin:0 24px 24px!important;width:calc(100% - 48px)!important;border:1px solid var(--fx-line)!important;border-top:0!important;border-radius:0 0 16px 16px!important;overflow:hidden!important}
-#flux-editor-stage #viewport{background-color:#edf4fc!important;background-image:radial-gradient(#bed0e6 .8px,transparent .8px)!important;background-size:24px 24px!important;min-height:560px!important}
+#flux-editor-stage #viewport{background-color:#edf4fc!important;background-image:none!important;min-height:560px!important}
 #nodes .node{background:#fff!important;border:1px solid #dedfee!important;border-radius:20px!important;box-shadow:0 8px 22px #3029540c!important;transition:box-shadow .16s,border-color .16s!important}
 #nodes .node.selected{border-color:var(--fx-accent)!important;box-shadow:0 0 0 4px #6957e819,0 10px 26px #30295412!important}
 #nodes .node .node-head span:not(.block-icon){color:var(--fx-ink)!important;font-size:12px!important}
@@ -133,3 +133,6 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 
 /* Keep the optional example reachable without exposing JSON tools. */
 #canvas-shell .compact-actions #reset{display:inline-flex!important}
+
+/* Flat workspace: the workflow provides structure without a drafting grid. */
+#flux-editor-stage #flux-first-block{border:1px solid #cfdbeb!important;border-radius:18px!important;background:#fff!important;box-shadow:0 8px 28px #1739540d!important;font-size:16px!important}
