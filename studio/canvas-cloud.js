@@ -1,3 +1,4 @@
+import {automationLibraryPage} from './automation-library-page.js';
 import {workflowDialog,confirmWorkflow} from './canvas-dialogs.js';
 import {mountAccount} from './canvas-account.js';
 import { supabaseUrl, supabasePublishableKey } from './supabase-config.js';
@@ -7,24 +8,80 @@ let client, user, rows = [];
 const account=mountAccount(()=>client);
 const cards = $('flux-automation-cards');
 const libraryStatus = $('flux-automation-library-status');
+const libraryTools = document.createElement('div');
+libraryTools.className = 'flux-library-tools';
+const librarySearch = document.createElement('input');
+librarySearch.type = 'search';
+librarySearch.placeholder = 'Search automations';
+librarySearch.setAttribute('aria-label', 'Search automations');
+const libraryFilter = document.createElement('select');
+libraryFilter.setAttribute('aria-label', 'Filter by status');
+for (const [value, label] of [['all', 'All statuses'], ['active', 'Active'], ['paused', 'Paused']]) {
+ libraryFilter.add(new Option(label, value));
+}
+libraryTools.append(librarySearch, libraryFilter);
+cards?.before(libraryTools);
+const libraryPager = document.createElement('nav');
+libraryPager.className = 'flux-library-pager';
+libraryPager.setAttribute('aria-label', 'Automation pages');
+const previousPage = document.createElement('button');
+previousPage.type = 'button';
+previousPage.textContent = 'Previous';
+const nextPage = document.createElement('button');
+nextPage.type = 'button';
+nextPage.textContent = 'Next';
+const pageLabel = document.createElement('span');
+libraryPager.append(previousPage, pageLabel, nextPage);
+libraryStatus?.after(libraryPager);
+let libraryPage = 1;
+let libraryOwner;
+for (const control of [librarySearch, libraryFilter]) {
+ control.addEventListener(control === librarySearch ? 'input' : 'change', () => {
+  libraryPage = 1;
+  drawLibrary();
+ });
+}
+previousPage.onclick = () => { libraryPage--; drawLibrary(); };
+nextPage.onclick = () => { libraryPage++; drawLibrary(); };
+
 function drawLibrary(){
  if(!cards)return;
  cards.replaceChildren();
+ if (libraryOwner !== user?.id) {
+  libraryOwner = user?.id;
+  librarySearch.value = '';
+  libraryFilter.value = 'all';
+  libraryPage = 1;
+ }
+ libraryTools.hidden = !user || !rows.length;
+ libraryPager.hidden = true;
  if(!user){libraryStatus.textContent='Sign in to see your saved automations.';return;}
- libraryStatus.textContent=rows.length+' saved automations';
- if(!rows.length){const p=document.createElement('p');p.textContent='No automations yet. Create one in Flux Studio.';cards.append(p);return;}
- for(const row of rows){
-  const button=document.createElement('button');button.type='button';button.className='flux-automation-card';button.setAttribute('role','listitem');button.setAttribute('aria-current',String(selection()?.id===row.id));
+ if(!rows.length){libraryStatus.textContent='No automations yet. Create your first automation to get started.';return;}
+ const result = automationLibraryPage(rows, {query: librarySearch.value, state: libraryFilter.value, page: libraryPage});
+ libraryPage = result.current;
+ if (!result.total) {
+  libraryStatus.textContent = 'No automations match your search or status filter.';
+  return;
+ }
+ libraryStatus.textContent = (result.offset + 1) + '–' + (result.offset + result.items.length) + ' of ' + result.total + ' automations';
+ libraryPager.hidden = result.pages === 1;
+ pageLabel.textContent = 'Page ' + result.current + ' of ' + result.pages;
+ previousPage.disabled = result.current === 1;
+ nextPage.disabled = result.current === result.pages;
+ for(const row of result.items){
+  const item = document.createElement('div');
+  item.setAttribute('role','listitem');
+  const button=document.createElement('button');button.type='button';button.className='flux-automation-card';button.setAttribute('aria-current',String(selection()?.id===row.id));
   const title=document.createElement('strong');title.textContent=row.name;
   const subtitle=document.createElement('small');subtitle.textContent=row.action_config?.graph?'Canvas saved · Open editor':'Canvas not saved yet';
-  const indicator=document.createElement('small');indicator.textContent=row.enabled?'Active':'Paused';indicator.className=row.enabled?'flux-state-active':'flux-state-paused';button.append(title,subtitle,indicator);button.addEventListener('click',async()=>{
+  const indicator=document.createElement('span');indicator.textContent=row.enabled?'Active':'Paused';indicator.className=row.enabled?'flux-state-active':'flux-state-paused';button.append(title,subtitle,indicator);button.addEventListener('click',async()=>{
    const openingOwner=user?.id;
    if(!row.action_config?.graph){status('This automation has no canvas yet.');return;}
    if(!await confirmWorkflow({title:'Open automation?',message:'Open “'+row.name+'”? Save your current canvas first if you want to keep its changes.',confirmLabel:'Open automation'}))return;
    if(!openingOwner||user?.id!==openingOwner)return status('Your account changed. Open the automation again.');
    try{await restoreGraph(row.action_config.graph);$('canvas-automation').value=row.id;drawLibrary();renderManage();status('Opened '+row.name+'.');window.dispatchEvent(new CustomEvent('flux:automation-opened',{detail:{id:row.id,name:row.name}}));}
    catch(error){status('Open failed: '+error.message);}
-  });cards.append(button);
+  });item.append(button);cards.append(item);
  }
 }
 
