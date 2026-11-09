@@ -36,6 +36,14 @@ document.getElementById('zoom-fit').addEventListener('click', () => {
   readout.textContent = Math.round(next * 100) + '%';
   viewport.scrollLeft = Math.max(0, (left + right) / 2 * next - viewport.clientWidth / 2);
   viewport.scrollTop = Math.max(0, (top + bottom) / 2 * next - viewport.clientHeight / 2);
+
+  // The canvas can extend below the visible browser window.
+  const rects = nodes.map(node => node.getBoundingClientRect());
+  const visibleTop = Math.min(...rects.map(rect => rect.top));
+  const visibleBottom = Math.max(...rects.map(rect => rect.bottom));
+  if (visibleTop < 0 || visibleBottom > window.innerHeight) {
+    window.scrollBy(0, (visibleTop + visibleBottom - window.innerHeight) / 2);
+  }
 });
 viewport.addEventListener('wheel', event => {
   if (event.target.closest('input,select,textarea')) return;
