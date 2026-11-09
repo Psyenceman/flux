@@ -17,7 +17,7 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 .canvas-tools{margin:0 24px!important;background:#fff!important;border:1px solid var(--fx-line)!important;border-top:0!important;padding:9px 16px!important}.canvas-tools button{background:#f6f6fb!important;border:1px solid var(--fx-line)!important;color:var(--fx-muted)!important;border-radius:7px!important}
 #flux-flow-overview{display:none!important}
 #flux-editor-stage{margin:0 24px 24px!important;width:calc(100% - 48px)!important;border:1px solid var(--fx-line)!important;border-top:0!important;border-radius:0 0 16px 16px!important;overflow:hidden!important}
-#flux-editor-stage #viewport{background-color:#edf4fc!important;background-image:none!important;min-height:560px!important}
+#flux-editor-stage #viewport{background-color:#f5f2eb!important;background-image:none!important;min-height:560px!important}
 #nodes .node{background:#fff!important;border:1px solid #dedfee!important;border-radius:20px!important;box-shadow:0 8px 22px #3029540c!important;transition:box-shadow .16s,border-color .16s!important}
 #nodes .node.selected{border-color:var(--fx-accent)!important;box-shadow:0 0 0 4px #6957e819,0 10px 26px #30295412!important}
 #nodes .node .node-head span:not(.block-icon){color:var(--fx-ink)!important;font-size:12px!important}
@@ -188,3 +188,68 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 .flux-library-pager button:disabled { opacity: .5; }
 #canvas-shell #flux-automation-cards .flux-automation-card[aria-current="true"]::before { content: none; }
 #flux-automation-cards .flux-automation-card strong { grid-column: 1; grid-row: 1; }
+
+/* Scenario builder palette: warm paper, ink, and violet controls. */
+#canvas-shell {
+ --fx-editor-ink: #282233;
+ --fx-editor-accent: #5936b4;
+ --fx-editor-line: #e4ded6;
+ --fx-editor-surface: #fbf9f5;
+}
+#canvas-shell .flux-m1-intro { background: var(--fx-editor-surface) !important; }
+#canvas-shell .flux-m1-intro h2 { color: var(--fx-editor-ink) !important; }
+#canvas-shell .flux-m1-eyebrow { color: var(--fx-editor-accent) !important; }
+#canvas-shell .compact-actions,
+#canvas-shell .canvas-tools { border-color: var(--fx-editor-line) !important; }
+#canvas-shell .compact-actions button {
+ color: var(--fx-editor-ink) !important;
+ border-color: var(--fx-editor-line) !important;
+ background: #fff !important;
+}
+#canvas-shell .compact-actions #execute,
+#canvas-shell .compact-actions #flux-add-block {
+ background: var(--fx-editor-accent) !important;
+ border-color: var(--fx-editor-accent) !important;
+ color: white !important;
+}
+#canvas-shell .compact-actions #flux-run-live {
+ color: var(--fx-editor-accent) !important;
+ border-color: #bfb0e1 !important;
+ background: #f6f1ff !important;
+}
+#canvas-shell .compact-actions button:focus-visible,
+#flux-editor-stage #flux-first-block:focus-visible {
+ outline: 2px solid var(--fx-editor-accent);
+ outline-offset: 3px;
+}
+#flux-editor-stage #flux-first-block {
+ border-color: var(--fx-editor-line) !important;
+ color: var(--fx-editor-accent) !important;
+}
+#flux-editor-stage #nodes .node:not(.selected) { border-color: var(--fx-editor-line) !important; }
+#flux-editor-stage #nodes .node .node-head span:not(.block-icon) { color: var(--fx-editor-ink) !important; }
+#flux-editor-stage #nodes .node .node-head .block-icon {
+ background: #f0e9fb !important;
+ color: var(--fx-editor-accent) !important;
+ border-radius: 12px !important;
+}
+#flux-editor-stage #nodes .node .node-head .block-icon[data-type="mapper"] {
+ background: #eaeef9 !important;
+ color: #3c4f89 !important;
+}
+#flux-editor-stage #nodes .node .node-head .block-icon[data-type="filter"] {
+ background: #faeadb !important;
+ color: #88441e !important;
+}
+#flux-editor-stage #nodes .node .node-head .block-icon[data-type="log"] {
+ background: #f1eee9 !important;
+ color: #504638 !important;
+}
+#flux-editor-stage #nodes .node .port.in { background: #8065c4 !important; border-color: white !important; }
+#flux-editor-stage #nodes .node .port.out { background: #655275 !important; border-color: white !important; }
+#flux-editor-stage #nodes .node .flux-next-plus {
+ color: var(--fx-editor-accent) !important;
+ border-color: #cbbce9 !important;
+ background: white !important;
+}
+#flux-editor-stage .flux-connection-path[stroke-width="4"] { stroke: #897a9e; }
