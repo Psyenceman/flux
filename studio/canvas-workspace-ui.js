@@ -29,11 +29,13 @@
  main.insertBefore(body,navigation);
  main.insertBefore(navigation,body);
  main.insertBefore(actions,navigation);
- const primaryIds=['save','load','validate','execute'];
+ // Saved account workflows open from My automations.
+ actions.querySelector('#load')?.remove();
+ const primaryIds=['save','validate','execute'];
  const overflow=document.createElement('details');overflow.className='more-actions';
  const overflowLabel=document.createElement('summary');overflowLabel.textContent='More ···';overflow.append(overflowLabel);
  for(const id of ['export','import','reset']){const button=document.getElementById(id);if(button)overflow.append(button);}
- const labels={save:'Save',load:'Open',validate:'Validate',execute:'Test workflow'};
+ const labels={save:'Save',validate:'Validate',execute:'Test workflow'};
  for(const id of primaryIds){const button=document.getElementById(id);if(button)button.textContent=labels[id];}
  const inspectorToggle=workspaceActions?.querySelector('#toggle-inspector');
  if(inspectorToggle)overflow.append(inspectorToggle);
