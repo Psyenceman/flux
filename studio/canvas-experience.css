@@ -242,22 +242,59 @@ body>header p{display:none!important}body>header a{color:var(--fx-muted)!importa
 }
 #flux-editor-stage #nodes .node:not(.selected) { border-color: var(--fx-line) !important; }
 #flux-editor-stage #nodes .node .node-head span:not(.block-icon) { color: var(--fx-ink) !important; }
+#flux-editor-stage #nodes .node {
+ --node-fill: #e4eff7;
+ --node-icon: #254e69;
+ --node-icon-surface: transparent;
+ background: linear-gradient(155deg, #fff, var(--node-fill) 72%) !important;
+}
+#flux-editor-stage #nodes .node:is([data-type="manual"], [data-type="schedule"], [data-type="webhook"]) {
+ --node-fill: #ffcba6;
+ --node-icon: #8e310f;
+}
+#flux-editor-stage #nodes .node:is([data-type="filter"], [data-type="router"], [data-type="miro"], [data-type="airtable"]) {
+ --node-fill: #ffe5a0;
+ --node-icon: #6c460b;
+}
+#flux-editor-stage #nodes .node:is([data-type="mapper"], [data-type="drive"], [data-type="sheets"], [data-type="database"]) {
+ --node-fill: #bde9df;
+ --node-icon: #14594f;
+}
+#flux-editor-stage #nodes .node:is([data-type="trello"], [data-type="wordpress"]) {
+ --node-fill: #c1e0ff;
+}
+#flux-editor-stage #nodes .node[data-type="slack"] {
+ --node-fill: #f4ccdf;
+}
+#flux-editor-stage #nodes .node[data-type="github"] {
+ --node-fill: #d5dce7;
+}
+#flux-editor-stage #nodes .node:is([data-type="github"], [data-type="miro"], [data-type="airtable"]) {
+ --node-icon-surface: #24313e;
+}
+#flux-editor-stage #nodes .node .node-head {
+ gap: 6px !important;
+}
 #flux-editor-stage #nodes .node .node-head .block-icon {
- background: var(--fx-accent-soft) !important;
- color: var(--fx-accent) !important;
- border-radius: 12px !important;
+ width: 54px !important;
+ height: 54px !important;
+ min-width: 54px !important;
+ flex: 0 0 54px !important;
+ background: transparent !important;
+ color: var(--node-icon) !important;
+ font-size: 42px !important;
+ line-height: 1 !important;
+ transform: none !important;
 }
-#flux-editor-stage #nodes .node .node-head .block-icon[data-type="mapper"] {
- background: #eaeef9 !important;
- color: #3c4f89 !important;
+#flux-editor-stage #nodes .node .node-head .block-icon:has(img) {
+ background: var(--node-icon-surface) !important;
+ border-radius: 15px !important;
 }
-#flux-editor-stage #nodes .node .node-head .block-icon[data-type="filter"] {
- background: #faeadb !important;
- color: #88441e !important;
-}
-#flux-editor-stage #nodes .node .node-head .block-icon[data-type="log"] {
- background: #f1eee9 !important;
- color: #504638 !important;
+#flux-editor-stage #nodes .node .node-head .block-icon img {
+ width: 40px !important;
+ height: 40px !important;
+ min-width: 40px !important;
+ max-width: 40px !important;
 }
 #flux-editor-stage #nodes .node .port.in { background: #aa5935 !important; border-color: white !important; }
 #flux-editor-stage #nodes .node .port.out { background: #5d5146 !important; border-color: white !important; }
